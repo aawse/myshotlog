@@ -164,13 +164,15 @@ Hämta UUID:t från `<prefix>/users/<UUID>/` och kontrollera kopplingen manuellt
 
 Ta bort ID:t ur tillåtelselistan och starta om/publicera om för att återkalla åtkomst. Roterad `AUTH_SESSION_SECRET` ogiltigförklarar samtliga sessioner. Avaktivera äldre deployment-URL:er med gammal konfiguration vid återkallad åtkomst.
 
-Sessioner gäller högst åtta timmar och kräver både giltig signatur och en aktiv post i Git. Utloggning återkallar den posten innan cookien tas bort; lagringsfel gör att utloggningen misslyckas. Ändrat GitHub-lösenord eller återkallad OAuth-auktorisering återkallar inte appens befintliga sessioner omedelbart. Använd tillåtelselistan eller sessionshemligheten för omedelbar avstängning. OAuth-tokenen används för identitetskontroll och sparas inte.
+Sessioner är stateless och gäller högst åtta timmar. Signatur, tokenversion, utfärdandetid, utgångstid, origin och aktuell tillåtelselista kontrolleras lokalt, utan Git-läsning eller extra tjänst. Utloggning raderar webbläsarens cookie utan Git-skrivning. En kopierad cookie kan fortfarande användas fram till utgångstiden; utloggning är inte återkallelse på servern. Ändrat GitHub-lösenord eller återkallad OAuth-auktorisering återkallar inte appens befintliga sessioner omedelbart. Använd tillåtelselistan eller sessionshemligheten för omedelbar avstängning. OAuth-tokenen används för identitetskontroll och sparas inte.
+
+Efter uppdateringen till stateless sessionscookies måste befintliga användare logga in på nytt. Äldre cookies med Git-registrets tokenversion accepteras inte, så tidigare utloggade tokens blir inte giltiga igen. Gamla sessionshashar ignoreras och utelämnas vid nästa skrivning av säkerhetstillstånd; journaldata påverkas inte.
 
 ## Säkerhetstillstånd och trafikgränser
 
-Sessionernas cookie-hashar, engångsflöden och trafikräknare ligger under `<prefix>/security/<installationshash>/state.json`. Inga bearer-cookies, OAuth-koder, PKCE-hemligheter eller råa IP-adresser sparas. IP-baserade räknarnycklar använder HMAC. Installationshashen beror på origin och sessionshemlighet. Alla instanser som ska dela tillstånd måste använda samma origin, hemlighet, lagringsrepo, branch och prefix.
+Engångsflöden för OAuth och trafikräknare ligger under `<prefix>/security/<installationshash>/state.json`. Inga bearer-cookies, OAuth-koder, PKCE-hemligheter eller råa IP-adresser sparas. IP-baserade räknarnycklar använder HMAC. Installationshashen beror på origin och sessionshemlighet. Alla instanser som ska dela tillstånd måste använda samma origin, hemlighet, lagringsrepo, branch och prefix.
 
-Inloggning, utloggning och godkända API-anrop kan skapa säkerhetscommits utöver journalens postcommits. Sessionskontroller läser Git utan positiv cache. OAuth-flöden förbrukas atomiskt före kodutbyte, även om GitHub avvisar koden. Utgångna poster rensas vid nästa säkerhetsskrivning. Lagringsfel stoppar åtgärden; appen använder ingen oskyddad lokal fallback.
+OAuth-flöden och godkända API-anrop kan skapa säkerhetscommits utöver journalens postcommits. Utfärdande av sessionscookies efter godkänd OAuth, sessionskontroller och utloggning använder inget Git-register. OAuth-flöden förbrukas atomiskt före kodutbyte, även om GitHub avvisar koden. Utgångna poster rensas vid nästa säkerhetsskrivning. Lagringsfel stoppar åtgärden; appen använder ingen oskyddad lokal fallback.
 
 Fasta fönster börjar vid första godkända anropet:
 
@@ -201,7 +203,7 @@ git clone --mirror REMOTE BACKUP_DIRECTORY
 
 Radering i appen tar bort aktuella journalposter men Git behåller äldre versioner och foton. Backups och kloner måste skyddas lika noggrant som originalet. Fullständig historikradering kräver separat repository-administration.
 
-Behåll en framåtgående databranch och undvik force-push eller manuella filändringar under appskrivningar. Efter återställning av en backup eller säkerhetshistorik ska `AUTH_SESSION_SECRET` roteras, eftersom en återställd säkerhetsfil kan återaktivera sessioner. GitHub API-gränser, trädstorlek och funktionernas körtid begränsar kapaciteten; installationen är avsedd för små personliga journaler.
+Behåll en framåtgående databranch och undvik force-push eller manuella filändringar under appskrivningar. Efter återställning av en backup eller säkerhetshistorik ska `AUTH_SESSION_SECRET` roteras, för att ogiltigförklara befintliga cookies och undvika återanvändning av återställt OAuth-tillstånd. GitHub API-gränser, trädstorlek och funktionernas körtid begränsar kapaciteten; installationen är avsedd för små personliga journaler.
 
 ## Foton och passvillkor
 

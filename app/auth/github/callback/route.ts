@@ -34,11 +34,7 @@ export async function GET(request: NextRequest) {
         securityStore().consumeFlow(state, exp, clientAddress(request)),
     );
     const now = Date.now(),
-      token = signSession(identity, config.secret, now);
-    await securityStore().addSession(
-      token,
-      Math.floor(now / 1000) + sessionSeconds,
-    );
+      token = signSession(identity, config.secret, config.siteUrl, now);
     response = NextResponse.redirect(config.siteUrl + "/dashboard");
     response.cookies.set("skytte_session", token, {
       httpOnly: true,

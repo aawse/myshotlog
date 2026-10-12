@@ -19,14 +19,16 @@ const expiry = z.number().int().positive();
 const stateSchema = z
   .object({
     version: z.literal(1),
-    sessions: z.record(hashSchema, expiry),
+    // Read older security files, but discard the obsolete session registry.
+    sessions: z.record(hashSchema, expiry).optional(),
     flows: z.record(hashSchema, expiry),
     rates: z.record(
       hashSchema,
       z.object({ count: z.number().int().positive(), exp: expiry }).strict(),
     ),
   })
-  .strict();
+  .strict()
+  .transform(({ sessions: _legacySessions, ...state }) => state);
 type State = z.infer<typeof stateSchema>;
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -44,11 +46,10 @@ export class GitSecurityStore {
     this.path = validPath(prefix) + "/state.json";
   }
   private decode(content?: string): State {
-    if (!content) return { version: 1, sessions: {}, flows: {}, rates: {} };
+    if (!content) return { version: 1, flows: {}, rates: {} };
     if (Buffer.byteLength(content) > 1_000_000) throw new DatabaseUnavailable();
     const state = stateSchema.parse(JSON.parse(content));
     if (
-      Object.keys(state.sessions).length > 1000 ||
       Object.keys(state.flows).length > 100 ||
       Object.keys(state.rates).length > 4000
     )
@@ -60,9 +61,8 @@ export class GitSecurityStore {
       const snapshot = await this.db.snapshot(this.prefix);
       const state = this.decode(snapshot.files.get(this.path)),
         now = this.clock();
-      for (const field of [state.sessions, state.flows])
-        for (const [key, exp] of Object.entries(field))
-          if (exp <= now) delete field[key];
+      for (const [key, exp] of Object.entries(state.flows))
+        if (exp <= now) delete state.flows[key];
       for (const [key, rate] of Object.entries(state.rates))
         if (rate.exp <= now) delete state.rates[key];
       if (!edit(state, now)) return;
@@ -144,29 +144,6 @@ export class GitSecurityStore {
       this.charge(data, now, "callback", "global", 40, 600);
       this.charge(data, now, "callback-client", client, 10, 600);
       delete data.flows[hash(state)];
-      return true;
-    });
-  }
-  async addSession(token: string, exp: number) {
-    await this.change((data, now) => {
-      if (exp <= now || exp > now + 8 * 60 * 60)
-        throw new DatabaseUnavailable();
-      if (Object.keys(data.sessions).length >= 1000) throw new RateLimited(600);
-      data.sessions[hash(token)] = exp;
-      return true;
-    });
-  }
-  async activeSession(token: string) {
-    const snapshot = await this.db.snapshot(this.prefix);
-    return (
-      (this.decode(snapshot.files.get(this.path)).sessions[hash(token)] ?? 0) >
-      this.clock()
-    );
-  }
-  async revokeSession(token: string) {
-    await this.change((data) => {
-      if (!data.sessions[hash(token)]) return false;
-      delete data.sessions[hash(token)];
       return true;
     });
   }

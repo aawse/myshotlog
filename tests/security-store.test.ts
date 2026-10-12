@@ -51,22 +51,7 @@ function fixture() {
     },
   };
 }
-it("revokes sessions across independent instances and rejects unknown/expired sessions", async () => {
-  const f = fixture(),
-    a = f.instance(),
-    b = f.instance();
-  expect(await a.activeSession("copied-cookie")).toBe(false);
-  await a.addSession("copied-cookie", 1100);
-  await a.addSession("another-cookie", 1100);
-  expect(await b.activeSession("copied-cookie")).toBe(true);
-  await a.revokeSession("copied-cookie");
-  expect(await b.activeSession("copied-cookie")).toBe(false);
-  expect(await b.activeSession("another-cookie")).toBe(true);
-  f.advance(100);
-  expect(await b.activeSession("another-cookie")).toBe(false);
-  expect(f.files.get("journal/users/owner/profile.json")).toBe("unchanged");
-  expect(JSON.stringify([...f.files])).not.toContain("copied-cookie");
-});
+
 it("consumes flows once, including concurrent callbacks, and rejects unregistered/expired state", async () => {
   const f = fixture(),
     a = f.instance(),
@@ -107,30 +92,33 @@ it("enforces shared client and global limits, resets expired windows and does no
   f.advance(600);
   await f.instance().registerFlow("new-window", 2200, "client");
 });
-it("does not lose concurrent session writes and preserves unrelated journal files", async () => {
+it("does not lose concurrent rate writes and preserves unrelated journal files", async () => {
   const f = fixture();
   await Promise.all([
-    f.instance().addSession("one", 1100),
-    f.instance().addSession("two", 1100),
+    f.instance().limitApi("one", true),
+    f.instance().limitApi("two", true),
   ]);
-  expect(await f.instance().activeSession("one")).toBe(true);
-  expect(await f.instance().activeSession("two")).toBe(true);
+  const state = JSON.parse(f.files.get("journal/security/test/state.json")!);
+  expect(Object.keys(state.rates)).toHaveLength(3);
+  expect(state.sessions).toBeUndefined();
   expect(f.files.get("journal/users/owner/profile.json")).toBe("unchanged");
 });
+
 it("fails closed when the database cannot publish, read or contains malformed state", async () => {
   const f = fixture();
   vi.mocked(f.db.publish).mockRejectedValue(new DatabaseUnavailable());
-  await expect(f.instance().addSession("one", 1100)).rejects.toBeInstanceOf(
-    DatabaseUnavailable,
-  );
-  expect(await f.instance().activeSession("one")).toBe(false);
+  await expect(
+    f.instance().registerFlow("one", 1600, "client"),
+  ).rejects.toBeInstanceOf(DatabaseUnavailable);
   vi.mocked(f.db.snapshot).mockRejectedValue(new DatabaseUnavailable());
-  await expect(f.instance().activeSession("one")).rejects.toBeInstanceOf(
-    DatabaseUnavailable,
-  );
+  await expect(
+    f.instance().consumeFlow("one", 1600, "client"),
+  ).rejects.toBeInstanceOf(DatabaseUnavailable);
   const corrupt = fixture();
   corrupt.files.set("journal/security/test/state.json", '{"version":2}');
-  await expect(corrupt.instance().activeSession("one")).rejects.toThrow();
+  await expect(
+    corrupt.instance().consumeFlow("one", 1600, "client"),
+  ).rejects.toThrow();
 });
 it("enforces per-user expensive API budgets across instances", async () => {
   const f = fixture();
@@ -143,7 +131,7 @@ it("enforces per-user expensive API budgets across instances", async () => {
   f.advance(60);
   await f.instance().limitApi("owner", true);
 });
-it("persists revocation and one-time flow consumption through real Git and retains journal data", async () => {
+it("persists one-time flow consumption through real Git and retains journal data", async () => {
   const { mkdtemp, rm } = await import("node:fs/promises");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
@@ -172,10 +160,6 @@ it("persists revocation and one-time flow consumption through real Git and retai
         "s".repeat(32),
         () => 1000,
       );
-    await instance().addSession("cookie", 1100);
-    expect(await instance().activeSession("cookie")).toBe(true);
-    await instance().revokeSession("cookie");
-    expect(await instance().activeSession("cookie")).toBe(false);
     await instance().registerFlow("state", 1600, "client");
     const outcomes = await Promise.allSettled([
       instance().consumeFlow("state", 1600, "client"),
@@ -198,4 +182,27 @@ it("persists revocation and one-time flow consumption through real Git and retai
       retryDelay: 100,
     });
   }
+});
+
+it("drops legacy session state during the next security write while preserving flow protection", async () => {
+  const { createHash } = await import("node:crypto");
+  const f = fixture(),
+    hash = createHash("sha256").update("legacy-cookie").digest("hex");
+  f.files.set(
+    "journal/security/test/state.json",
+    JSON.stringify({
+      version: 1,
+      sessions: { [hash]: 1100 },
+      flows: {},
+      rates: {},
+    }),
+  );
+  await f.instance().registerFlow("state", 1600, "client");
+  expect(
+    JSON.parse(f.files.get("journal/security/test/state.json")!).sessions,
+  ).toBeUndefined();
+  await f.instance().consumeFlow("state", 1600, "client");
+  await expect(
+    f.instance().consumeFlow("state", 1600, "client"),
+  ).rejects.toBeInstanceOf(InvalidOAuthFlow);
 });

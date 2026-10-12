@@ -60,7 +60,9 @@ Vid nya texter lägger du till en nyckel i båda språken och använder `tr(...)
 
 Profiler, vapen, pass och okopplade serier lagras som JSON. Foton ligger i ett separat användarprefix och publiceras atomiskt med tillhörande poster. Bilden får en egen commit; identiska optimerade bilder återanvänds per användare. Webbläsaren begränsar bilder till **1600 pixlar på längsta sidan och 180 kB**. JPEG som redan uppfyller gränserna och saknar metadata används utan omkomprimering. Andra bilder konverteras automatiskt till JPEG; för stora JPEG-bilder optimeras och metadata tas bort. Filvalet kräver inte ett visst format eller en MIME-typ, men webbläsaren måste kunna avkoda bilden. Ett original får vara högst **25 MB**; högst **tio nya foton** kan skickas i ett anrop. Servern validerar bilden utan att komprimera om den och behåller ingen permanent upload-kopia.
 
-Git lagrar även gemensamt säkerhetstillstånd för sessioner, engångsflöden för OAuth och trafikgränser. Det innebär ytterligare Git-läsningar och säkerhetscommits. Utloggning återkallar sessionen på servern innan cookien tas bort.
+Inloggningssessioner använder stateless HMAC-signerade cookies med åtta timmars livslängd och kontroll av webbplatsens origin och aktuell tillåtelselista. Sessionskontroller och utloggning gör inga Git-anrop och kräver ingen extra tjänst. Utloggning raderar cookien i webbläsaren; en kopierad cookie är fortfarande giltig till utgångstiden. Rotera sessionshemligheten eller ta bort användarens ID ur tillåtelselistan för att återkalla åtkomst. Befintliga sessionscookies från den tidigare Git-registret accepteras inte; logga in på nytt efter uppdateringen.
+
+Git lagrar fortfarande engångsflöden för OAuth och gemensamma trafikgränser. OAuth-flöden och godkända records/photo-API-anrop kan därför skapa säkerhetscommits. Journalens poster och foton lagras fortsatt i Git.
 
 Radering tar bort uppgifter från aktuell journal; **tidigare versioner finns kvar i Git-historiken och dess kopior**. JSON-export är en flyttbar journalbackup, medan Git-backup även bevarar historiken. Import är begränsad till **3 MB per anrop**, inklusive bilddata.
 

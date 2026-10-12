@@ -77,9 +77,17 @@ A tracked-file scan across eight reachable commits found no matches for GitHub t
 
 Not inspected: deployed TLS/security headers, Vercel firewall and body limits, actual GitHub token permissions, OAuth app settings, branch protection, remote data-repository access, backups, or operating-system/native-code vulnerabilities. The review and tests do not constitute a complete independent security certification.
 
-## Remediation — 2026-10-12
+## Current session design — stateless cookies (2026-10-12)
 
-All six recorded findings have been addressed in source:
+The owner explicitly chose signed cookies without an additional service. Session verification and local logout no longer access Git. Version 2 cookies bind the GitHub identity to the configured site origin and include issue/expiry times and a random ID. The existing eight-hour absolute lifetime, HttpOnly/SameSite/Secure flags, signature checks and current allowlist remain. Old registry-era cookies are rejected and require fresh login; legacy session hashes are ignored and removed from current security state on its next write.
+
+**S1 is an accepted limitation of this design:** logout clears the browser cookie but cannot invalidate a copied token before its expiry. Removing the numeric GitHub ID or rotating the signing key still invalidates access on deployments using the updated configuration. Immediate per-session revocation requires shared server-side state and is not claimed for this mode. OAuth one-time flow consumption and shared API limits remain Git-backed; journal records still use Git.
+
+The remediation and 225-test verification below describe the earlier registry implementation, not the current logout behavior. Current regression tests assert zero Git calls for session checks/logout and explicitly test the copied-cookie limitation, legacy rejection, origin binding, expiry, allowlist checks, OAuth replay protection and rate limits.
+
+## Earlier remediation — 2026-10-12
+
+The earlier implementation addressed all six recorded findings; S1 was subsequently superseded by the explicitly selected stateless design above:
 
 - **S1:** Random session IDs and a shared Git-backed active-session registry. Logout removes the cookie hash atomically before deleting the local cookie. Unregistered legacy cookies are rejected.
 - **S2:** OAuth flow hashes are registered and consumed atomically before the provider request, including failed exchanges. Shared fixed-window limits protect flow creation/consumption and authenticated records/photo APIs. Replays cannot exchange another code. Limits and proxy trust settings are documented in [SETUP.md](SETUP.md#säkerhetstillstånd-och-trafikgränser).

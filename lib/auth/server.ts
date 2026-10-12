@@ -1,7 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { verifySession } from "./session";
-import { securityStore } from "./security";
 import { oauthConfig } from "./github";
 import { databaseConfigured } from "../git-database/config";
 export const sessionCookie = "skytte_session";
@@ -25,12 +24,11 @@ export async function currentUser() {
   const user = verifySession(
     token,
     config.secret,
+    config.siteUrl,
     config.allowed,
     config.mapping,
   );
-  return user && token && (await securityStore().activeSession(token))
-    ? user
-    : null;
+  return user;
 }
 export async function authenticated() {
   const user = await currentUser();
@@ -38,12 +36,6 @@ export async function authenticated() {
   return { user };
 }
 export async function endSession() {
-  const jar = await cookies(),
-    token = jar.get(sessionCookie)?.value;
-  if (token) {
-    const config = oauthConfig();
-    if (verifySession(token, config.secret, config.allowed, config.mapping))
-      await securityStore().revokeSession(token);
-  }
-  jar.delete(sessionCookie);
+  // Stateless logout clears this browser's cookie; it requires no database.
+  (await cookies()).delete(sessionCookie);
 }

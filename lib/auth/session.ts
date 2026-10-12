@@ -75,7 +75,9 @@ export function unseal(value: string | undefined, secret: string): unknown {
 }
 const tokenSchema = identitySchema
   .extend({
-    purpose: z.literal("github-session"),
+    purpose: z.literal("github-cookie-session-v2"),
+    aud: z.url(),
+    iat: z.number().int().nonnegative(),
     exp: z.number().int(),
     sid: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
   })
@@ -83,12 +85,17 @@ const tokenSchema = identitySchema
 export function signSession(
   identity: Identity,
   secret: string,
+  origin: string,
   now = Date.now(),
 ) {
+  if (new URL(origin).origin !== origin)
+    throw new Error("Session audience must be a site origin");
   return seal(
     {
       ...identitySchema.parse(identity),
-      purpose: "github-session",
+      purpose: "github-cookie-session-v2",
+      aud: origin,
+      iat: Math.floor(now / 1000),
       sid: randomBytes(32).toString("base64url"),
       exp: Math.floor(now / 1000) + sessionSeconds,
     },
@@ -98,6 +105,7 @@ export function signSession(
 export function verifySession(
   value: string | undefined,
   secret: string,
+  origin: string,
   allowed: string[],
   mapping: Record<string, string> = {},
   now = Date.now(),
@@ -106,8 +114,11 @@ export function verifySession(
   if (!parsed.success) return null;
   const token = parsed.data;
   if (
+    token.aud !== origin ||
+    token.iat > Math.floor(now / 1000) + 30 ||
     token.exp <= Math.floor(now / 1000) ||
-    token.exp > Math.floor(now / 1000) + sessionSeconds ||
+    token.exp <= token.iat ||
+    token.exp - token.iat > sessionSeconds ||
     !allowed.includes(token.githubId)
   )
     return null;

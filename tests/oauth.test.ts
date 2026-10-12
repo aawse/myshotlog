@@ -14,7 +14,6 @@ import {
 const controls = vi.hoisted(() => ({
   registerFlow: vi.fn(),
   consumeFlow: vi.fn(),
-  addSession: vi.fn(),
 }));
 vi.mock("../lib/auth/security", () => ({
   securityStore: () => controls,
@@ -178,9 +177,9 @@ it("sets secure HTTP-only cookies, consumes the flow cookie and redirects to a f
   expect(response.headers.get("location")).toBe(config.siteUrl + "/dashboard");
   expect(response.cookies.get(oauthCookie)?.value).toBe("");
   const session = response.cookies.get("skytte_session")!.value;
-  expect(verifySession(session, config.secret, ["12345"])?.githubId).toBe(
-    "12345",
-  );
+  expect(
+    verifySession(session, config.secret, config.siteUrl, ["12345"])?.githubId,
+  ).toBe("12345");
   expect(response.headers.get("set-cookie")).not.toContain(
     "private-oauth-token",
   );
@@ -243,21 +242,23 @@ it("returns rate limits without issuing OAuth cookies or calling GitHub", async 
   expect(response.headers.get("Retry-After")).toBe("60");
   expect(request).not.toHaveBeenCalled();
 });
-it("does not issue a session if durable registration fails", async () => {
+it("issues a signed session after OAuth without registering it in Git", async () => {
   env();
   const a = flow();
   vi.stubGlobal("fetch", api());
-  controls.addSession.mockRejectedValue(new Error("storage unavailable"));
   const response = await callback(
     new NextRequest(config.siteUrl + "/auth/github/callback?" + a.params, {
       headers: { cookie: oauthCookie + "=" + a.cookie },
     }),
   );
-  expect(response.cookies.get("skytte_session")).toBeUndefined();
-  expect(response.headers.get("location")).toBe(
-    config.siteUrl + "/login?error=oauth",
-  );
+  const token = response.cookies.get("skytte_session")?.value;
+  expect(
+    verifySession(token, config.secret, config.siteUrl, ["12345"])?.githubId,
+  ).toBe("12345");
+  expect(controls.consumeFlow).toHaveBeenCalledTimes(1);
+  expect(Object.keys(controls)).toEqual(["registerFlow", "consumeFlow"]);
 });
+
 it("makes exactly one provider request when a saved flow is replayed after provider rejection", async () => {
   const { securityFixture } = await import("./security-fixture");
   const a = flow(),
@@ -281,4 +282,23 @@ it("makes exactly one provider request when a saved flow is replayed after provi
       ),
     ).rejects.toBeInstanceOf(OAuthFailure);
   expect(request).toHaveBeenCalledOnce();
+});
+
+it("sets secure production cookie flags and the absolute session lifetime", async () => {
+  env();
+  vi.stubEnv("NODE_ENV", "production");
+  const a = flow();
+  vi.stubGlobal("fetch", api());
+  const response = await callback(
+    new NextRequest(config.siteUrl + "/auth/github/callback?" + a.params, {
+      headers: { cookie: oauthCookie + "=" + a.cookie },
+    }),
+  );
+  expect(response.cookies.get("skytte_session")).toMatchObject({
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 8 * 60 * 60,
+  });
 });
