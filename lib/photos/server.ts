@@ -6,6 +6,9 @@ import {
   photoAssetSchema,
   type PhotoAsset,
 } from "./schema";
+// Uploads are processed with buffers only. Do not retain photo operations between
+// requests in libvips' process-wide cache or create upload files on the server.
+sharp.cache(false);
 export async function optimizeTargetPhoto(input: Buffer): Promise<PhotoAsset> {
   if (!input.length || input.length > 260_000)
     throw new Error("Bilden är för stor eller tom.");

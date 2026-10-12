@@ -30,18 +30,32 @@ export class GitRemoteDatabase implements GitDatabase {
     input?: string,
   ): Promise<string> {
     return new Promise((resolve, reject) => {
-      const child = spawn("git", ["-C", directory, ...args], {
-        env: {
-          ...process.env,
-          GIT_TERMINAL_PROMPT: "0",
-          GIT_CONFIG_NOSYSTEM: "1",
-          GIT_AUTHOR_NAME: "MyShotLog",
-          GIT_AUTHOR_EMAIL: "journal@myshotlog.invalid",
-          GIT_COMMITTER_NAME: "MyShotLog",
-          GIT_COMMITTER_EMAIL: "journal@myshotlog.invalid",
+      // Fetch/push must not spawn background maintenance that outlives the request
+      // and recreates files while the temporary photo-containing repository is removed.
+      const child = spawn(
+        "git",
+        [
+          "-c",
+          "gc.auto=0",
+          "-c",
+          "maintenance.auto=false",
+          "-C",
+          directory,
+          ...args,
+        ],
+        {
+          env: {
+            ...process.env,
+            GIT_TERMINAL_PROMPT: "0",
+            GIT_CONFIG_NOSYSTEM: "1",
+            GIT_AUTHOR_NAME: "MyShotLog",
+            GIT_AUTHOR_EMAIL: "journal@myshotlog.invalid",
+            GIT_COMMITTER_NAME: "MyShotLog",
+            GIT_COMMITTER_EMAIL: "journal@myshotlog.invalid",
+          },
+          stdio: ["pipe", "pipe", "pipe"],
         },
-        stdio: ["pipe", "pipe", "pipe"],
-      });
+      );
       let output = "",
         size = 0;
       const timer = setTimeout(() => child.kill("SIGKILL"), 30000);
@@ -70,7 +84,12 @@ export class GitRemoteDatabase implements GitDatabase {
       await this.git(directory, ["init", "--bare"]);
       return await run(directory);
     } finally {
-      await rm(directory, { recursive: true, force: true });
+      await rm(directory, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 100,
+      });
     }
   }
   private async fetch(directory: string) {
