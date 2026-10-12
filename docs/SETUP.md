@@ -1,99 +1,178 @@
-# Installation
+# Installation av MyShotLog
 
-## Lokal utveckling på Windows, macOS och Linux
+## Förbered lokal utveckling
 
-Installera Node.js 24 och Git. Kontrollera `node --version`, `npm --version` och `git --version` i en ny terminal. På Windows kan du använda PowerShell eller cmd med Git for Windows i PATH; bash/WSL och OpenSSL behövs inte. Kör `npm ci`, `npm run setup:local` och därefter `npm run dev`. Setup-kommandot bevarar en befintlig `.env.local`. Tester och byggen behöver inga riktiga databas- eller OAuth-hemligheter; för inloggning i utvecklingsservern fyller du i `.env.local` enligt nedan.
+Installera **Node.js 24** och **Git** och kontrollera `node --version`, `npm --version` och `git --version` i en ny terminal. Node.js 24 används även i CI. Om du väljer Node.js 22 kräver testverktygen minst 22.12.0. På Windows fungerar PowerShell eller cmd med Git for Windows i PATH; WSL och OpenSSL behövs inte.
 
-## GitHub och Vercel
+Kör från projektets rot:
 
-1. Skapa ett separat **privat** GitHub-repository för journaldata. Lägg till README så att `main` har en första commit. Databasrepot ska inte vara appens kodrepo eller utlösa nya Vercel-deployments vid journaländringar.
-2. Skapa en fine-grained personal access token begränsad till databasrepot, med **Contents: read and write**. Organisationer kan behöva godkänna token. Branchregler måste tillåta appens direkta commits. Ge inte token åtkomst till fler repositories än nödvändigt.
-3. Kör `npm run setup:local` för att skapa `.env.local` från `.env.example` utan att skriva över befintliga inställningar. Ange `GIT_DATABASE_PROVIDER=github`, `GIT_DATABASE_REPOSITORY=owner/repo`, `GIT_DATABASE_BRANCH=main`, `GIT_DATABASE_TOKEN` och `GIT_DATABASE_PREFIX=myshotlog/v1`. API-adressen är normalt `https://api.github.com`.
-4. Registrera en **GitHub OAuth App** via GitHub → Settings → Developer settings → OAuth Apps. Ange installationens origin som Homepage URL och exakt `https://YOUR_SITE/auth/github/callback` som Authorization callback URL. För lokal utveckling används `http://localhost:3000/auth/github/callback`; skapa en separat OAuth-app för utveckling och produktion. Generera en klienthemlighet. Se [GitHubs OAuth-guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
-5. Ange `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` och `GITHUB_ALLOWED_USER_IDS` (kommaseparerade numeriska GitHub-ID:n). Följ avsnittet [Hitta användarens numeriska GitHub-ID](#hitta-användarens-numeriska-github-id) nedan. Använd det numeriska ID:t, inte användarnamnet. Endast listade konton får logga in; en tom lista stoppar inloggning. Varje konto får sin egen journal.
-6. Generera en hemlighet med `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` och ange `AUTH_SESSION_SECRET`. Ange `NEXT_PUBLIC_SITE_URL` till exakt samma origin som OAuth-appens callback, utan subpath, query eller fragment. Produktionsdomänen måste använda HTTPS. Hemligheter får aldrig ha `NEXT_PUBLIC_`-prefix, läggas i koden eller databasrepot.
-7. Kör `npm ci`, `npm run typecheck`, `npm test`, `npm run build` och `npm run dev`. Välj ”Logga in med GitHub” och slutför GitHubs inloggning. Utan fullständig konfiguration visas installationssidan.
-8. För Vercel: importera **kodrepot**, välj Next.js och ange samma miljövariabler i rätt miljö. Ange inte `.env.local`-filens omgivande shell-citat i Vercels fält. Publicera om efter ändrade miljövariabler. Använd en stabil produktionsdomän i OAuth-appens callback och `NEXT_PUBLIC_SITE_URL`; preview-deployments behöver separat OAuth-konfiguration. Aktivera plattformens trafikskydd vid publik exponering.
+```sh
+npm ci
+npm run setup:local
+```
 
-GitHub-konfigurationen behöver ingen Git-binär eller beständig serverdisk. Databas-token, OAuth-klienthemlighet och sessionshemlighet är endast tillgängliga på servern. OAuth-inloggningen begär inga repository-scopes. Databasåtkomst använder den separata server-tokenen; användarnas GitHub-konton behöver inte ha repository-åtkomst. Repository-åtkomst ger möjlighet att läsa hela journalhistoriken: begränsa även medlemmar och integrationer.
+`setup:local` kopierar `.env.example` till `.env.local` om filen saknas. En befintlig fil skrivs inte över. Fyll i konfigurationen nedan innan du startar appen. Tester och byggen kräver inga riktiga konton eller lagringshemligheter, men inloggning och användning av journalen kräver konfigurerad Git-lagring och GitHub OAuth.
 
-## Vercel Web Analytics
+## GitHub som databas
 
-`@vercel/analytics/next` är integrerat i rotlayouten och registrerar sidvisningar och navigering. Aktivera **Web Analytics** för kodprojektet i Vercels dashboard och publicera sedan en ny deployment. Se [Vercels snabbstart](https://vercel.com/docs/analytics/quickstart). Inga nya miljövariabler behövs för standardintegrationen. Lokal utveckling använder SDK:ns utvecklingsläge; datainsamlingen verifieras på Vercel efter aktivering. Den befintliga CSP:n använder `strict-dynamic` för SDK:ns dynamiskt laddade script och tillåter insamling via samma origin.
+1. Skapa ett separat **privat GitHub-repository** för journaldata. Lägg till en README så att vald branch, normalt `main`, har en första commit. Datarepot ska inte vara kodrepot eller utlösa nya app-deployments vid journaländringar.
+2. Skapa en fine-grained personal access token begränsad till datarepot med **Contents: read and write**. Organisationer kan behöva godkänna token. Branchregler måste tillåta appens direkta commits.
+3. Ange lagringsvariablerna i `.env.local`:
+
+```dotenv
+GIT_DATABASE_PROVIDER=github
+GIT_DATABASE_REPOSITORY=YOUR_OWNER/YOUR_PRIVATE_DATA_REPO
+GIT_DATABASE_BRANCH=main
+GIT_DATABASE_PREFIX=myshotlog/v1
+GIT_DATABASE_TOKEN=YOUR_REPOSITORY_SCOPED_TOKEN
+GIT_DATABASE_API_URL=https://api.github.com
+```
+
+Ersätt platshållarna. Ange prefixet uttryckligen; behåll det befintliga värdet om installationen redan har data. Ett annat prefix väljer en annan plats i repositoryt och flyttar inga filer.
+
+GitHub-adaptern behöver ingen Git-binär eller beständig serverdisk när appen körs. Git behövs fortfarande lokalt för utveckling och integrationstester. Repository-åtkomst ger tillgång till hela datahistoriken; begränsa även medlemmar, integrationer och backups.
+
+## GitHub-inloggning
+
+1. Registrera en **GitHub OAuth App** via GitHub → Settings → Developer settings → OAuth Apps. Detta är separat från datarepo-tokenen.
+2. För lokal utveckling, använd `http://localhost:3000` som Homepage URL och `http://localhost:3000/auth/github/callback` som Authorization callback URL. Skapa en separat OAuth-app för produktion med din stabila HTTPS-domän och samma callback-sökväg. Se [GitHubs OAuth-guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
+3. Generera OAuth-appens klienthemlighet och fyll i följande:
+
+```dotenv
+GITHUB_CLIENT_ID=YOUR_OAUTH_CLIENT_ID
+GITHUB_CLIENT_SECRET=YOUR_OAUTH_CLIENT_SECRET
+GITHUB_ALLOWED_USER_IDS=YOUR_GITHUB_NUMERIC_USER_ID
+AUTH_SESSION_SECRET=YOUR_RANDOM_SECRET_AT_LEAST_32_BYTES
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+Generera sessionshemligheten med detta kommando på alla tre operativsystem:
+
+```sh
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+`NEXT_PUBLIC_SITE_URL` ska vara webbplatsens exakta origin, utan sökväg, query eller fragment. Använd samma adress i webbläsaren och som bas för OAuth-appens callback. Produktion kräver HTTPS; utveckling tillåter HTTP för `localhost` och `127.0.0.1`. Blandning av adresserna kan ge fel vid inloggning eller sparande.
+
+`GITHUB_ALLOWED_USER_IDS` innehåller ett eller flera numeriska personliga GitHub-ID:n, separerade med kommatecken. En tom lista stoppar inloggning. Användarnas OAuth-inloggning begär inga repository-scopes; datarepot nås med serverns separata token. Användarna behöver därför inte vara medlemmar i datarepot.
+
+Alla Git-/auth-hemligheter är servervariabler. Ge dem aldrig `NEXT_PUBLIC_`-prefix och lägg dem inte i koden eller datarepot. `.env.local` är ignorerad av Git.
 
 ## Hitta användarens numeriska GitHub-ID
 
 ### I webbläsaren
 
-1. Öppna personens GitHub-profil, exempelvis `https://github.com/YOUR_LOGIN`. Kopiera användarnamnet från adressen; använd inte profilens visningsnamn eller e-postadress.
-2. Öppna `https://api.github.com/users/YOUR_LOGIN` och ersätt `YOUR_LOGIN` med användarnamnet. För vanliga offentliga konton behövs ingen API-token för denna uppslagning.
-3. I JSON-svaret: kontrollera att `login` och `html_url` pekar på rätt profil och att `type` är `User`. Kopiera det numeriska fältet **`id`**. `node_id` är ett annat fält och ska inte användas.
-4. Lägg ID:t i `GITHUB_ALLOWED_USER_IDS`. Upprepa för varje person. Använd personliga konton; ett organisations-ID ger ingen användarinloggning.
+1. Öppna personens GitHub-profil och kopiera användarnamnet från adressen.
+2. Öppna `https://api.github.com/users/YOUR_LOGIN`, där `YOUR_LOGIN` ersätts med användarnamnet. Offentliga personliga konton kan slås upp utan token.
+3. Kontrollera att `login` och `html_url` avser rätt profil och att `type` är `User`. Kopiera det numeriska fältet **`id`**, inte `node_id`.
+4. Lägg ID:t i `GITHUB_ALLOWED_USER_IDS`. Upprepa för fler personer; organisations-ID:n ger ingen användarinloggning.
 
-Illustration med fiktiva värden:
+Exempel med fiktiva värden:
 
 ```json
 {
   "login": "ditt-anvandarnamn",
   "id": 123456,
-  "node_id": "ANNAT_ID_ANVANDS_INTE",
   "html_url": "https://github.com/ditt-anvandarnamn",
   "type": "User"
 }
 ```
 
 ```dotenv
-# Ersätt exemplen med de ID:n du själv verifierat.
 GITHUB_ALLOWED_USER_IDS=123456,789012
 ```
 
 ### I terminalen
 
-Hämta användarnamn, numeriskt ID och kontotyp med Node.js, som redan behövs för appen. Kommandot fungerar i PowerShell, cmd, bash och zsh:
+Detta Node.js-kommando fungerar i PowerShell, cmd, bash och zsh. Ersätt `YOUR_LOGIN`:
 
 ```sh
 node -e "fetch('https://api.github.com/users/YOUR_LOGIN').then(r=>{if(r.ok)return r.json();throw new Error('HTTP '+r.status)}).then(({login,id,type})=>console.log({login,id,type})).catch(e=>{console.error(e.message);process.exitCode=1})"
 ```
 
-Om GitHub CLI är installerat och du redan har loggat in kan du visa det egna kontots ID tillsammans med användarnamnet:
+Om GitHub CLI är installerat och inloggat kan du visa ditt eget konto:
 
 ```sh
-gh api user --jq '{login: .login, id: .id, type: .type}'
+gh api user --jq "{login: .login, id: .id, type: .type}"
 ```
 
-Efter ändringen: starta om den lokala appen eller uppdatera miljövariabeln i Vercel och publicera om. Vid `404`, kontrollera användarnamnet; vissa Enterprise Managed Users kräver autentiserad uppslagning med organisationsåtkomst. Vid API-gräns, vänta eller använd autentiserad GitHub CLI.
+Vid `404`, kontrollera användarnamnet. Enterprise Managed Users kan kräva autentiserad uppslagning med organisationsåtkomst. Vid API-gräns, vänta eller använd autentiserad GitHub CLI. GitHubs numeriska ID består vid namnbyte; se [användar-API:t](https://docs.github.com/en/rest/users/users).
 
-GitHub beskriver ID:t som beständigt även när användarnamnet ändras. Se [GitHubs användar-API](https://docs.github.com/en/rest/users/users).
+## Starta och kontrollera lokalt
+
+Efter konfigurationen:
+
+```sh
+npm run dev
+```
+
+Öppna `http://localhost:3000` och välj **Logga in med GitHub**. Vid ofullständig konfiguration visar startsidan installationsguiden. Starta om servern efter ändrade miljövariabler.
+
+Kör kontrollerna före en ändring publiceras:
+
+```sh
+npm run typecheck
+npm test
+npm run format:check
+npm run build
+```
+
+`npm run build` skapar produktionsbygget; `npm run start` kör det. För en egen produktionsserver behöver du en HTTPS-proxy och korrekt HTTPS-origin redan när bygget skapas, eftersom `NEXT_PUBLIC_`-värden byggs in i appen. Använd `npm run dev` för HTTP-utveckling på localhost.
+
+Kör `npm ci` på varje utvecklingsdator och kopiera inte `node_modules` mellan operativsystem. Vid byte av plattform i samma checkout kan byggcachen tas bort med:
+
+```sh
+node -e "require('node:fs').rmSync('.next', { recursive: true, force: true })"
+```
+
+## Publicera på Vercel
+
+1. Importera **kodrepot** som ett Next.js-projekt. Välj Node.js 24 och projektets rot som Root Directory.
+2. Ange lagrings- och OAuth-variablerna ovan i rätt Vercel-miljö. Använd GitHub-adaptern och den separata produktions-OAuth-appen. `NEXT_PUBLIC_SITE_URL` måste vara din stabila HTTPS-origin.
+3. Kopiera miljövärden utan eventuella omgivande shell-citat från `.env.local`. Publicera om efter ändringar.
+4. Kontrollera inloggning, sparande, utloggning och export på den konfigurerade domänen. Preview-installationer som ska användas behöver egna matchande origin-/OAuth-inställningar; miljövärden från en annan origin räcker inte.
+
+Vercels tillfälliga filsystem ska inte användas som lokal databas. GitHub-lagringen och säkerhetstillståndet delas mellan instanser med samma konfiguration. Plattformens trafikskydd kan stoppa större attacker innan de når appen.
+
+### Vercel Web Analytics
+
+`@vercel/analytics/next` finns i rotlayouten. Aktivera **Web Analytics** för kodprojektet i Vercels dashboard och gör en ny deployment. Inga ytterligare miljövariabler behövs för standardintegrationen. Kontrollera därefter sidvisningar i dashboarden enligt [Vercels snabbstart](https://vercel.com/docs/analytics/quickstart). Lokal utveckling använder SDK:ns utvecklingsläge. Den befintliga CSP:n stödjer det dynamiska scriptet och insamling via samma origin.
 
 ## Annan Git-server eller lokal databas
 
-Ange `GIT_DATABASE_PROVIDER=git` och `GIT_DATABASE_REMOTE` till ett SSH-/HTTPS-remote eller en absolut sökväg till ett bare repository. Servern måste ha Git installerat och autentisering konfigurerad utan interaktiva frågor. Undvik tokens i remote-URL; använd serverns credential helper eller SSH-nyckel.
+För egen server, ange `GIT_DATABASE_PROVIDER=git` och `GIT_DATABASE_REMOTE` till ett SSH-/HTTPS-remote eller en absolut sökväg till ett bare repository. Ange också branch och prefix. GitHub OAuth-konfigurationen behövs även med denna lagringsadapter.
+
+Servern måste ha Git och autentisering utan interaktiva frågor. Använd SSH-nyckel eller credential helper för remotes; lägg inte tokens i remote-URL:en. För lokalt bare repo:
 
 ```sh
 git init --bare /ABSOLUTE/PERSISTENT/PATH/myshotlog-data.git
 ```
 
-På Windows kan du till exempel använda `git init --bare "C:/Users/YOUR_NAME/myshotlog-data.git"` och ange samma absoluta sökväg med snedstreck i `GIT_DATABASE_REMOTE`. Sökvägar med mellanslag stöds; omge miljövärdet med citattecken i `.env.local`.
+På Windows kan du exempelvis använda `git init --bare "C:/Users/YOUR_NAME/myshotlog-data.git"`. Ange samma absoluta sökväg med snedstreck i `GIT_DATABASE_REMOTE`. Sökvägar med mellanslag stöds; omge värdet med citattecken i `.env.local`.
 
-Ett tomt bare repo får sin första commit vid första sparningen. Lagra det utanför appens källkod på beständig disk. En lokal sökväg i Vercels temporära filsystem är inte en beständig databas. Använd GitHub-adaptern på Vercel.
+Ett tomt bare repo får sin första commit när appen registrerar det första OAuth-flödet. Det behöver ingen manuell initial commit. Lagra repot utanför källkoden på beständig disk och skydda det som journaldata. Denna adapter är avsedd för en egen server med Git, inte Vercels standardruntime.
 
-## GitHub-konton och befintliga journaler
+## Konton och befintliga Git-journaler
 
-Appen har inga lokala lösenord eller skapande av lokala konton. GitHub sköter inloggning, återställning och kontots tvåfaktorsautentisering. Tillåt åtkomst genom att lägga till det verifierade numeriska ID:t i `GITHUB_ALLOWED_USER_IDS`. Ta bort ID:t för att återkalla åtkomst, inklusive befintliga sessionscookies, när den nya konfigurationen körs. Roterad sessionshemlighet ogiltigförklarar alla sessioner. Avaktivera äldre deployment-URL:er med gammal konfiguration vid återkallad åtkomst.
+Journalens UUID härleds från GitHub-kontots numeriska ID. Byten av användarnamn eller e-post flyttar inte data. För att koppla ett konto till ett redan befintligt journalprefix kan du ange den aktuella, valfria inställningen:
 
-Journalens UUID härleds deterministiskt från kontots numeriska GitHub-ID. Byten av användarnamn eller e-post flyttar därför inte data. För att behålla en journal från den tidigare kontolösningen, ange en explicit mapping i `GITHUB_USER_ID_MAP`, exempelvis `{"123456":"EXISTING_JOURNAL_UUID"}`. Kopiera UUID:t från den gamla kontokonfigurationen eller journalens filprefix. Kontrollera kopplingen manuellt; appen kopplar aldrig på e-post eller användarnamn. Varje tillåtet GitHub-konto måste få ett unikt journal-UUID. Behåll mappingen även efter migrationen. Den som ändrar mappingen ändrar vilket journalprefix kontot får åtkomst till.
+```dotenv
+GITHUB_USER_ID_MAP='{"123456":"EXISTING_JOURNAL_UUID"}'
+```
 
-Gamla lokala sessionscookies godtas inte längre. Ta bort `AUTH_USERS_JSON`; kommandot `account:create` har avvecklats. För nya journaler behövs ingen mapping.
+Hämta UUID:t från `<prefix>/users/<UUID>/` och kontrollera kopplingen manuellt. Varje tillåtet konto måste få ett unikt journal-UUID. Behåll mappingen så länge samma koppling ska gälla. Att ändra mapping eller prefix flyttar inga poster utan ändrar vilken journal kontot öppnar.
 
-Sessioner gäller högst åtta timmar. Utloggning återkallar den sparade sessionen i Git innan aktuell lokal cookie tas bort. En kopia av cookien godtas därefter inte. Om Git inte kan bekräfta återkallelsen misslyckas utloggningen i stället för att visa en falsk bekräftelse. Äldre signerade cookies utan registrerad session godtas inte; efter denna uppdatering behöver befintliga användare logga in igen. Återkallad OAuth-auktorisering eller ändrat GitHub-lösenord upptäcks vid nästa GitHub-inloggning, men återkallar inte omedelbart en redan signerad lokal session. För omedelbar avstängning, ta bort kontot ur tillåtelselistan och publicera om. OAuth-tokenen används endast för att hämta identiteten vid inloggning; den sparas inte i cookies eller databas.
+Ta bort ID:t ur tillåtelselistan och starta om/publicera om för att återkalla åtkomst. Roterad `AUTH_SESSION_SECRET` ogiltigförklarar samtliga sessioner. Avaktivera äldre deployment-URL:er med gammal konfiguration vid återkallad åtkomst.
+
+Sessioner gäller högst åtta timmar och kräver både giltig signatur och en aktiv post i Git. Utloggning återkallar den posten innan cookien tas bort; lagringsfel gör att utloggningen misslyckas. Ändrat GitHub-lösenord eller återkallad OAuth-auktorisering återkallar inte appens befintliga sessioner omedelbart. Använd tillåtelselistan eller sessionshemligheten för omedelbar avstängning. OAuth-tokenen används för identitetskontroll och sparas inte.
 
 ## Säkerhetstillstånd och trafikgränser
 
-Appen sparar sessionernas cookie-hashar, engångsflöden för OAuth och trafikräknare under `GIT_DATABASE_PREFIX/security/<installationshash>/state.json`. Inga sessionscookies, OAuth-koder, PKCE-hemligheter eller IP-adresser sparas där. IP-baserade räknarnycklar använder HMAC. Installationshashen beror på `NEXT_PUBLIC_SITE_URL` och sessionshemligheten: använd samma origin, hemlighet, databasbranch och prefix på alla instanser som ska dela säkerhetstillstånd. Git bevarar även denna filhistorik. Utgångna poster rensas vid nästa säkerhetsskrivning.
+Sessionernas cookie-hashar, engångsflöden och trafikräknare ligger under `<prefix>/security/<installationshash>/state.json`. Inga bearer-cookies, OAuth-koder, PKCE-hemligheter eller råa IP-adresser sparas. IP-baserade räknarnycklar använder HMAC. Installationshashen beror på origin och sessionshemlighet. Alla instanser som ska dela tillstånd måste använda samma origin, hemlighet, lagringsrepo, branch och prefix.
 
-Inloggning, utloggning och API-anrop som passerar trafikgränserna skapar säkerhetscommits. Sessionskontroller läser Git utan positiv cache, så återkallelse fungerar även mellan instanser. Engångsflöden förbrukas med en atomisk Git-uppdatering **före** kontakt med GitHub, även om GitHub avvisar koden. Konflikter läses om med ett begränsat antal försök. Lagringsfel stoppar åtgärden; appen faller inte tillbaka till oskyddade lokala sessioner. Ingen extra databastjänst behöver konfigureras.
+Inloggning, utloggning och godkända API-anrop kan skapa säkerhetscommits utöver journalens postcommits. Sessionskontroller läser Git utan positiv cache. OAuth-flöden förbrukas atomiskt före kodutbyte, även om GitHub avvisar koden. Utgångna poster rensas vid nästa säkerhetsskrivning. Lagringsfel stoppar åtgärden; appen använder ingen oskyddad lokal fallback.
 
-Följande fasta fönster gäller från första godkända anropet:
+Fasta fönster börjar vid första godkända anropet:
 
 | Åtgärd                     | Per klient/användare | Hela installationen |
 | -------------------------- | -------------------- | ------------------- |
@@ -102,40 +181,59 @@ Följande fasta fönster gäller från första godkända anropet:
 | Läsa via records/photo-API | 60 per minut         | 300 per minut       |
 | Skriva via records-API     | 30 per minut         | 120 per minut       |
 
-För många anrop ger HTTP 429 och `Retry-After`. Gränserna finns i `lib/auth/security-store.ts`. De avser en liten privat installation. Alla direktanrop till en egen server delar klientgräns tills en säker proxy är konfigurerad. På Vercel används plattformens `x-vercel-forwarded-for`. På egen server kan `AUTH_TRUSTED_IP_HEADER=x-real-ip` användas **endast** om proxyn ersätter inkommande värden och direktåtkomst till servern är blockerad. Godtycklig `X-Forwarded-For` från webbläsaren godtas inte. Se [Vercels dokumentation om klient-IP](https://vercel.com/docs/headers/request-headers#x-vercel-forwarded-for).
+Gränserna finns i `lib/auth/security-store.ts`. För många anrop ger HTTP 429 och `Retry-After`. Export och bildhämtning räknas också som API-läsningar. Git innebär extra API-anrop; även avvisad trafik kan kräva läsningar.
 
-Git-lagringen innebär extra API-anrop och commits, och även avvisad trafik kan kräva en läsning. Använd värdtjänstens brandvägg/trafikgränser för att stoppa stora attacker innan de når appen; applikationsgränserna är inget skydd mot all nätverksöverbelastning. En återställning eller force-push av säkerhetshistoriken kan återaktivera äldre sessioner: rotera `AUTH_SESSION_SECRET` efter återställning av backup eller databasbranch. Gör inte manuella ändringar i säkerhetsfilen.
+Vercel använder plattformens `x-vercel-forwarded-for`. På egen server delar klienter inloggningsgräns tills en säker proxy konfigureras. Ange `AUTH_TRUSTED_IP_HEADER=x-real-ip` endast om proxyn **ersätter** inkommande värden och direktåtkomst till servern är blockerad. Användarbaserade API-gränser gäller oberoende av klient-IP. Se [Vercels headerdokumentation](https://vercel.com/docs/headers/request-headers#x-vercel-forwarded-for).
 
-Appen skickar en Content Security Policy med en ny script-nonce för varje svar. Sidor renderas dynamiskt så att Next.js kan applicera rätt nonce. Målfoton kan visas från appens egna URL:er samt `blob:`/`data:`-förhandsvisningar. Endast stilattribut för diagram tillåts inline; scripts använder nonce. Utvecklingsläget tillåter dessutom verktygens eval/stiltaggar, men produktionsläget gör inte det. Schema-valideringen använder Zods `jitless`-läge för att undvika dess eval-probe och dynamiska kodgenerering. Se [Next.js CSP-guide](https://nextjs.org/docs/app/guides/content-security-policy).
+Sidornas CSP använder en ny script-nonce och dynamisk rendering. Script får inte använda inline-kod utan nonce eller eval i produktion; dynamiskt laddade script från betrodda script stöds genom `strict-dynamic`. Diagrammens stilattribut och fotoförhandsvisningar stöds. Zod använder `jitless`-läge. Records-API kräver Origin som motsvarar `NEXT_PUBLIC_SITE_URL` och läser högst **3 MB** från originalströmmen; API-rutter går förbi Proxy:s body-buffring.
 
-POST-anrop måste ha samma Origin som `NEXT_PUBLIC_SITE_URL`; använd installationens kanoniska URL i webbläsaren. API-rutter går förbi Next.js Proxy för att undvika dess separata buffring och trunkering av request-body. Records-API läser högst 3 MB från strömmen, oavsett saknad eller felaktig Content-Length. En större deklarerad storlek avvisas innan läsning. CI-actions är fästa vid fullständiga commit-SHA:n; Dependabot öppnar uppdateringar varje vecka.
+## Export, import och backup
 
-## Flytta från Supabase
+Exportera från **Inställningar**. JSON innehåller profil, vapen, pass, bedömningsunderlag, okopplade serier och foton. CSV innehåller passens resultat och kan inte användas som fullständig import. Välj appens version 1 JSON-format vid flytt mellan installationer och behåll formatfält och ID:n oförändrade.
 
-Exportera först varje användares fullständiga JSON från den gamla installationens inställningar. Behåll gamla installationen till dess att exporterna verifierats. Konfigurera Git-installationen och tillåt rätt GitHub-konton. Använd `GITHUB_USER_ID_MAP` om befintliga journalprefix ska återanvändas. Logga in som rätt användare och importera dennes export. Befintliga UUID:er hoppas över vid återimport; import skriver inte över befintliga poster. CSV är en läsbar resultatexport, inte ett komplett migreringsformat. Jämför profil, vapen, pass och bedömningar innan den gamla tjänsten avvecklas. Appen utför ingen automatisk migration.
+Import är atomär och begränsad till **3 MB per anrop**, inklusive bilddata. Befintliga poster med samma ID hoppas över; de skrivs inte över. Profilen importeras endast om ingen profilfil redan finns. Importera därför innan du sparar en ny profil om den exporterade profilen ska användas. En stor fullständig export kan vara för stor för återimport och kräver en mindre, giltig export eller separat repository-hantering.
 
-## Historik, backup och gränser
+Git-backup bevarar även historiken:
 
-Radering i appen tar bort aktuella filer men Git behåller tidigare versioner, även serienummer och anteckningar. Fullständig historikradering kräver separat repository-administration och hantering av kloner, backups och tjänstens retention. Appen lovar inte permanent radering.
+```sh
+git clone --mirror REMOTE BACKUP_DIRECTORY
+```
 
-Säkerhetskopiera privat med exempelvis `git clone --mirror REMOTE BACKUP_DIRECTORY`; skydda backupen lika noggrant som originalet. JSON-export fungerar för flytt mellan installationer, medan Git-backup också bevarar commit-historiken.
+Radering i appen tar bort aktuella journalposter men Git behåller äldre versioner och foton. Backups och kloner måste skyddas lika noggrant som originalet. Fullständig historikradering kräver separat repository-administration.
 
-Behåll en framåtgående databasbranch: undvik force-push, ompekning och manuella filändringar under appskrivningar. GitHub-adaptern publicerar utan force och försöker om vid konkurrerande commits. Föråldrad passrevision ger konflikt och behöver laddas om. API-gränser, repository-storlek och funktionskörtid begränsar kapaciteten. Avsedd för mindre personliga/föreningsjournaler; stora importer kan kräva mindre exporter eller en egen server med längre körtid. Import är begränsad till 3 MB. Trunkerade GitHub-träd avvisas för att förhindra ofullständig läsning.
+Behåll en framåtgående databranch och undvik force-push eller manuella filändringar under appskrivningar. Efter återställning av en backup eller säkerhetshistorik ska `AUTH_SESSION_SECRET` roteras, eftersom en återställd säkerhetsfil kan återaktivera sessioner. GitHub API-gränser, trädstorlek och funktionernas körtid begränsar kapaciteten; installationen är avsedd för små personliga journaler.
 
-GitHub API-modellen följer [Git database API](https://docs.github.com/en/rest/guides/using-the-rest-api-to-interact-with-your-git-database), [träd](https://docs.github.com/en/rest/git/trees) och [referenser](https://docs.github.com/en/rest/git/refs).
+## Foton och passvillkor
 
-## Lägg till kalibrar och måltyper
+Vapen kan ha en förvald gren. Avstånd, måltyp, starttid och skjuttid anges på passet. Måltyp och kaliber väljs i dropdowns. Platsfältet föreslår tidigare sparade platser. Nya precisionspass börjar med 25 meter, pistoltavla precision och 300 sekunder som ändringsbara standardvärden.
 
-Kaliberlistan finns i `lib/data/calibers.json`. Den är en vanlig JSON-array med `value` (värdet som sparas) och `label` (namnet i listan). Lägg till exempelvis:
+Varje serie kan ha ett tavelfoto. Webbläsaren måste kunna öppna originalet och skapa WebP. Originalgränsen är **25 MB**; uppladdningen begränsas till **1600 pixlar på längsta sidan och 180 kB** per foto. Högst **tio nya foton** kan skickas samtidigt. Servern validerar format, mått, storlek, metadata och hash utan att komprimera om bilden. Bilder lagras i Git och visas genom en privat användarstyrd rutt. Appservern behåller ingen permanent fotokopia; Git-adaptern städar sina tillfälliga repositories även vid fel.
+
+## Kalibrar, mål och regelupplagor
+
+`lib/data/calibers.json` är en JSON-array med unika `value` och visningsnamn i `label`. Lägg till exempelvis:
 
 ```json
 { "value": ".41 Magnum", "label": ".41 Magnum" }
 ```
 
-Håll `value` unikt och lägg ett komma mellan objekten; JSON tillåter inte kommentarer. Starta om utvecklingsservern eller bygg/publicera om appen efter ändringen. Nya alternativ visas automatiskt i vapnets kaliberlista. Äldre sparade värden visas fortfarande även om de saknas i katalogen; befintliga vapen och snapshots ändras inte. Listan är ett praktiskt starturval för personligt bruk, inte en statistisk rangordning eller automatisk klassificering av vapen. Urvalet stöds av kaliberexemplen i [SPSF:s Skjuthandbok 2026](https://www.svenskappccupen.se/wp-content/uploads/2026/01/SHB_2026.pdf), avsnitt F.4 och E.4/G.4.
+Måltyper ligger i `lib/data/targets.json`. Behåll koderna `precision25`, `B100`, `C30` och `sixth`, eftersom regelmotorn använder dem. Nya listalternativ lägger inte automatiskt till beräkningsregler. Befintliga sparade värden kan visas även om de saknas i katalogen. Starta om utvecklingsservern eller bygg/publicera om efter ändringar.
 
-Måltyper ligger på samma sätt i `lib/data/targets.json`. Behåll koderna `precision25`, `B100`, `C30` och `sixth` eftersom regelmotorn använder dem. Att lägga till ett nytt målval ändrar inte märkesberäkningens regler. Måltyp väljs från en dropdown på passnivå.
+Regelkatalogen är `lib/rules/versions.json`. Automatisk märkesbedömning finns för precision och tillämpning; andra grenar eller datum utan katalogversion kan visas som ej bedömda. Den nuvarande katalogperioden är `2026-01-01` till före `2028-01-01`. Detta är appens konfigurerade täckning, inte en garanti att alla efterföljande regeländringar är införda. Se [regelkällor och täckning](RULES.md).
 
-MyShotLog används för personlig resultatuppföljning. Nya serier kräver varken skjutledare, signatur eller bekräftelsefält. Poäng, skott, tid, mål, avstånd och sparade födelseuppgifter används för beräkningen. Listor och pass visar direkta beräkningar med regelversionen för passdatumet. Tidigare verifieringsstatusar ignoreras och ingen ombedömning behövs.
+Lägg till nya regelversioner med unikt ID och giltighetsperiod utan överlapp. Behåll tidigare perioders regler och trösklar för att bevara historiska beräkningar. Kör:
 
-Nya precisionspass börjar med 25 meter, pistoltavla precision och 300 sekunders skjuttid som synliga standardvärden. Ändra dem om ditt pass använder andra villkor. Verifiering och signatur krävs aldrig för brons/silver/guldberäkningen. Utan födelseuppgifter används ordinarie gränser utan åldersavdrag. Ogiltiga resultat eller grenar/datum utan regler kan fortfarande vara ej bedömda; orsaken visas i passets serieberäkningar.
+```sh
+npm run rules:sync
+npm run typecheck
+npm test
+npm run build
+```
+
+`rules:sync` kontrollerar reglerna och uppdaterar `public/rule-versions.json`; det hämtar inte regler från nätet. Publicera om appen efter ändringen. Bedömningarna väljs efter passdatum; det finns ingen ombedömningsåtgärd eller signaturkontroll. Sparade födelseuppgifter används när de finns i seriens underlag, annars profilen. Precisionens åldersavdrag baseras på året före passåret, inte dagens ålder. Utan födelseuppgifter används ordinarie gränser.
+
+## CI
+
+Workflowen **Tests** i `.github/workflows/tests.yml` kör `npm ci`, `npm test`, typkontroll och produktionsbygge på **`ubuntu-latest` med Node.js 24**. Den utlöses av pull requests, push till `main` och `workflow_dispatch`. GitHub-hemligheter för appen eller åtkomst till datarepot behövs inte. Starta manuellt via **Actions → Tests → Run workflow**; workflowfilen behöver finnas på standardbranchen. Se [GitHubs guide](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
+
+Actions är fästa vid commit-SHA:n. Dependabot kontrollerar GitHub Actions varje vecka och kan öppna uppdaterings-PR:er. Lokal utveckling och tester använder fortfarande samma npm-kommandon på Windows, macOS och Linux.

@@ -1,19 +1,39 @@
 # Arkitektur
 
-Next.js App Router kör privata sidor och `/api/records` på servern. Inloggning använder GitHub OAuth authorization-code-flödet med slumpmässig state, S256 PKCE och en signerad HttpOnly-cookie som gäller tio minuter. Callback verifierar state och utgång innan kodutbyte, använder en fast konfigurerad callback-origin och hämtar den aktuella identiteten från GitHubs `/user`-API. OAuth-tokenen används tillfälligt på servern och sparas inte.
+## Webbapp och inloggning
 
-Endast numeriska GitHub-ID:n i serverns tillåtelselista får en lokal HMAC-signerad sessionscookie. Cookie har HttpOnly, SameSite=Lax och Secure i produktion och gäller åtta timmar. Varje privat anrop kontrollerar aktuell tillåtelselista. En deterministic UUID från GitHub-ID väljer journalprefix; en explicit unik mapping kan återanvända gamla UUID:n. Användarnamn visas som identitet men väljer aldrig data. Lokala lösenord har avvecklats. Den separata databas-tokenen ger repository-åtkomst och begärs inte från användarnas OAuth-konton.
+Next.js App Router kör privata sidor och records/photo-API på servern. GitHub OAuth använder authorization-code-flödet med slumpmässig state, S256 PKCE och en signerad HttpOnly-flödescookie med tio minuters livslängd. Flödet registreras i Git och förbrukas atomiskt före kodutbyte. Callback använder en konfigurerad origin och hämtar identiteten från GitHubs `/user`-API. OAuth-tokenen används tillfälligt och sparas inte.
 
-API-skrivningar kontrollerar Origin. Servern väljer alltid användarens UUID; klienten får inte bestämma ägarskap. Privat data cachelagras inte i delade HTTP-cacher. OAuth-routes skickar no-store och no-referrer, rensar flödescookien efter callback och visar generiska fel utan provider-svar eller tokens.
+Numeriska GitHub-ID:n i tillåtelselistan får en HMAC-signerad sessionscookie med slumpmässigt sessions-ID. Cookie har HttpOnly, SameSite=Lax och Secure i produktion och gäller högst åtta timmar. Privat åtkomst kräver aktuell tillåtelselista och en aktiv cookie-hash i Git. Utloggning återkallar den posten före borttagning av cookien. En deterministisk UUID från GitHub-ID väljer journalprefix; en explicit unik mapping kan välja ett befintligt UUID. Användarnamn väljer aldrig data.
 
-`lib/git-database/types.ts` definierar adaptergränsen: läs ett oföränderligt branch-snapshot och publicera en kedja av entry-commits. `github.ts` använder HTTPS GitHub API; `git-remote.ts` använder Git-objektkommandon i tillfälliga bare repositories. De använder ingen checkout och inga användarfält interpoleras som shellkod. Tokens och upstream-fel loggas inte till klienten.
+Databasåtkomst använder en separat server-token eller serverns Git-autentisering. Användarnas OAuth-konton behöver inte repository-åtkomst. API-skrivningar jämför Origin med den konfigurerade webbplatsen, och servern väljer alltid ägarens UUID. Privata svar använder no-store. Provider-fel och tokens visas inte i klienten.
 
-`store.ts` validerar JSON-filer under `<prefix>/users/<UUID>/`. Profil, vapen och pass har egna filer och varje sparning får en commit. Import publicerar en commit per post som en atomär kedja; konflikter bygger om planen upp till tre gånger, och passrevisioner hindrar föråldrade redigeringar. Git-historik bevarar gamla filversioner även efter radering.
+## Git-lagring
 
-Journalen räknar brons/silver/guld direkt vid läsning från varje series råresultat med regelversionen för passets datum. Tidigare sparade statusar, verifieringsfält och regelsnapshots styr inte beräkningen. Läsning är skrivskyddad och skapar inga commits. Funktioner och API-åtgärder för ombedömning har avvecklats. Sparade äldre bedömningar finns kvar i Git-filer/historik; gränssnitt och export visar aktuella beräkningar med stabila UUID:n.
+`lib/git-database/types.ts` definierar adaptergränsen: läs ett branch-snapshot och publicera en kedja av postcommits. GitHub-adaptern använder HTTPS API och kräver ett privat repository med en initial commit. Git-adaptern använder objektkommandon i tillfälliga bare repositories, utan checkout, och städar katalogerna efter anropet. Den kan initiera en tom databranch.
 
-Födelseuppgifter från seriens ursprungliga underlag används när de finns. Äldre serier utan födelseunderlag använder profilen. Åldersavdrag baseras alltid på året före passåret; utan födelseuppgifter används ordinarie gränser utan avdrag. Precision kräver fem skott och heltalspoäng 0–50 (med eventuellt poängavdrag), men inga mål-, tids-, avstånds- eller signaturbevis. Tillämpning använder sex skott, träffar och tid.
+Journalposter ligger under `<prefix>/users/<UUID>/`. Profil, vapen, pass och okopplade snabbserier har egna JSON-filer. En sparning skapar en commit per post, med passets resultat och bedömningsunderlag tillsammans. Import och koppling av snabbserier publicerar hela commit-kedjan atomiskt. Föråldrade passrevisioner avvisas, och branchkonflikter bygger om planen med ett begränsat antal försök. Git bevarar historiska filversioner även efter radering.
 
-Passet har gemensamt avstånd, måltyp och skjuttid per serie. Samma skjuttid används av beräkning och CSV-export för varje resultat. Äldre serievisa villkor stöds för import/läsning. Gemensamma äldre tider lyfts till passnivå redan vid läsning och tas bort från de enskilda serierna i formulär och API-svar; olika tider behålls tills en gemensam tid väljs. Starttid och strafftid är separata uppgifter. Vapen kan ange `defaultDiscipline` för nya pass; gamla pass påverkas inte av ändrade vapenpreferenser. Dropdown-listor kommer från `lib/data/calibers.json` och `lib/data/targets.json`.
+Foton ligger separat under `<prefix>/photos/users/<UUID>/<bildhash>/image.json`. Webbläsaren rasteriserar och komprimerar före uppladdning. Servern validerar WebP-byten, dimensioner, storlek, metadata och SHA-256 utan att komprimera om bilden. Identiska bilder återanvänds per användare. Bildändringar och journalposter publiceras atomiskt. Privata bildanrop hämtar samma användares foto från Git; ingen permanent upload-katalog används.
 
-Passlistan visar varje serie under sin högsta uppnådda valör, samt totalt antal serier/stationer och skott. Listkomponenten får endast aggregerade antal. Märkesprogress räknar samma beräkningar. Nya regelupplagor läggs till med egna giltighetsperioder i `lib/rules/versions.json`; historiska versioner behålls.
+## Säkerhetstillstånd och trafik
+
+`lib/auth/security-store.ts` lagrar sessionernas cookie-hashar, engångsflöden och HMAC-baserade trafikräknare under ett separat installationsprefix i samma repo. Origin och sessionshemlighet bestämmer installationshashen. Uppdateringar använder icke-forcerad Git-publicering och läses om vid konflikter. Lagringsfel stoppar åtgärden. Minnescachen innehåller endast nekade trafikbeslut, aldrig beviljade sessioner.
+
+Records/photo-API har gemensamma användar- och installationsgränser, medan OAuth har klient- och installationsgränser. Godkända API-läsningar kan därför skapa säkerhetscommits även om journalens beräkningsfunktion inte skriver data. Sessionskontroller kräver också Git-läsningar. Gränser och proxykonfiguration finns i [installationsguiden](SETUP.md#säkerhetstillstånd-och-trafikgränser).
+
+API-rutter går förbi Next.js Proxy:s body-kloning. Records-API läser högst 3 MB från originalströmmen efter origin- och autentiseringskontroll. Sidornas Proxy genererar CSP-nonces och rotlayouten renderas dynamiskt. Zod använder `jitless`-läge för att undvika dynamisk kodgenerering. Vercel Analytics integreras i rotlayouten för sidvisningar och navigering; datainsamling kräver aktivering i Vercel.
+
+## Resultat och regler
+
+Journalen beräknar brons/silver/guld från råresultat med regelkatalogen för passdatumet. Beräkningsfunktionen skapar inga commits och kan användas för visning och export. Regel-ID och födelseunderlag följer sparade bedömningar; katalogen styr trösklarna vid läsning. Bevara därför historiska katalogperioder och trösklar när en ny upplaga läggs till.
+
+Sparade födelseuppgifter från seriens underlag används när de finns; annars används profilen. Åldersavdrag baseras på året före passåret. Utan födelseuppgifter gäller ordinarie gränser. Automatisk märkesbedömning finns för precision och tillämpning; övriga grenar kan registreras. Se [regeltäckningen](RULES.md).
+
+Passet har gemensamt avstånd, måltyp, starttid och skjuttid. En snabbserie kan sparas utan pass och kopplas senare till samma datum och gren. Vapen kan ha en förvald gren för nya pass. Kaliber- och mållistor kommer från JSON-kataloger. Passlistan grupperar serier efter högsta uppnådda valör och visar även antal serier och skott.
+
+## Export och drift
+
+JSON-formatet omfattar profil, vapen, pass, bedömningar, snabbserier och foton. Import är atomär, hoppar över befintliga ID:n och importerar profil endast om profilfil saknas. CSV exporterar passresultat. Git-backup innehåller även säkerhetstillstånd och historik; sessionshemligheten ska roteras efter en återställning.
+
+CI kör tester, typkontroll och produktionsbygge på Ubuntu med Node.js 24. Lokal utveckling använder samma npm-kommandon på Windows, macOS och Linux. GitHub-adaptern behöver ingen Git-binär i driftruntimen, medan Git-adaptern och integrationstesterna behöver Git i PATH.

@@ -1,31 +1,40 @@
 # MyShotLog
 
-Svensk träningsjournal för nationellt pistolskytte, byggd med Next.js. Vapen med förvald gren, pass med gemensamt avstånd och måltyp, resultat, versionsbundna märkesbedömningar och JSON/CSV-export. Födelsedatum kan sparas i profilen. Serier beräknas direkt med regelversionen för passets datum, utan verifiering eller ombedömning. Regelunderlaget kan uppdateras när nya upplagor av Skjuthandboken kommer.
+Svensk träningsjournal för personligt pistolskytte, byggd med Next.js och React. Inloggning sker med GitHub-konton. Journalen lagras i ett **konfigurerbart privat Git-repository**, med en commit per sparad post. GitHub API används på Vercel; en Git-adapter finns för egen server och lokala bare repositories.
 
-Journalen använder ett **konfigurerbart privat Git-repository som databas**. Varje profil, vapen och pass är en JSON-fil; varje sparning skapar en egen commit. Resultat och bedömningar följer passet i samma commit. GitHub API är standard för Vercel; en Git-adapter finns för lokala bare repositories och andra Git-servrar. Supabase behövs inte.
+## Funktioner
 
-## Starta
+- Vapen med tillverkare, modell, kaliber och förvald gren.
+- Pass med platsförslag, starttid och gemensamt avstånd, måltyp och skjuttid för serierna.
+- Resultat med brons-, silver- och guldmarkeringar för precision och tillämpning. Regelversion väljs efter passdatum; övriga grenar kan registreras utan automatisk märkesbedömning.
+- Födelsedatum i profilen för precisionens åldersavdrag. Sparade födelseuppgifter används när de finns i seriens underlag; annars används profilen.
+- Mobilanpassad **Snabbserie** som sparas direkt och senare kan kopplas till ett pass med samma datum och gren. Nätanslutning krävs.
+- Ett valfritt tavelfoto per serie, optimerat till WebP i webbläsaren före uppladdning.
+- JSON-export/import med profil, vapen, pass, bedömningar, okopplade serier och foton. CSV exporterar resultat från pass till kalkylblad.
+- Vercel Web Analytics via rotlayouten; aktiveras för projektet i Vercels dashboard.
 
-Utveckling stöds på **Windows, macOS och Linux**. Installera Node.js 24 (rekommenderad version) och Git och kontrollera att `node`, `npm` och `git` finns i PATH. Följande kommandon fungerar i PowerShell, cmd, bash och zsh; WSL krävs inte på Windows. Node.js 22 eller senare krävs av projektet.
+Appen används för personlig resultatuppföljning. Serier behöver inga signaturer eller verifieringar. Regelunderlag och begränsningar finns i [regeldokumentationen](docs/RULES.md).
+
+## Lokal utveckling
+
+Installera **Node.js 24** och **Git**. Samma npm-kommandon används på Windows, macOS och Linux; WSL krävs inte. Kör från projektets rot:
 
 ```sh
 npm ci
 npm run setup:local
+```
+
+Fyll sedan i `.env.local` enligt [installationsguiden](docs/SETUP.md). Setup-kommandot skapar filen från `.env.example` och bevarar en befintlig fil. Konfigurera Git-lagring, GitHub OAuth, tillåtna numeriska GitHub-ID:n, sessionshemlighet och webbplatsens origin innan du loggar in.
+
+```sh
 npm run dev
 ```
 
-`setup:local` skapar `.env.local` utan att skriva över en befintlig fil. Generera en sessionshemlighet på alla plattformar med `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
+Öppna `http://localhost:3000`. Använd samma adress i `NEXT_PUBLIC_SITE_URL` och OAuth-appens callback. Starta om utvecklingsservern efter ändrade miljövariabler.
 
-Fyll i privat GitHub-repository, repository-begränsad databas-token, GitHub OAuth-appens klientuppgifter, tillåtna GitHub-ID:n och en slumpmässig sessionshemlighet i `.env.local`. Repot måste vara privat och ha en initial commit på vald branch. Läs [installationsguiden](docs/SETUP.md) för exakta steg och Vercel-konfiguration.
+Kopiera inte `node_modules` eller `.next` mellan operativsystem. Kör `npm ci` på varje utvecklingsdator; native beroenden som Sharp väljs för rätt plattform.
 
-Inloggning använder GitHub-konton via OAuth med PKCE och signerade sessionscookies. Instansägaren anger vilka GitHub-konton som får åtkomst. Lösenord och tvåfaktorsautentisering hanteras av GitHub. Radering tar bort uppgifter från aktuell journal; **tidigare versioner finns kvar i Git-historiken och kopior**.
-
-Befintliga Supabase-journaler flyttas genom JSON-export från den gamla installationen och import i den nya. Ingen automatisk migrering eller anslutning till en verklig databas har utförts.
-
-- [Installation och migrering](docs/SETUP.md)
-- [Arkitektur och lagring](docs/ARCHITECTURE.md)
-- [Regelkällor och nya upplagor](docs/RULES.md)
-- [Verifiering](docs/TESTING.md)
+## Kontroller och CI
 
 ```sh
 npm run typecheck
@@ -34,25 +43,22 @@ npm run format:check
 npm run build
 ```
 
-### Snabbserier på banan
+Git måste finnas i PATH för integrationstesterna. Tester och byggen behöver inga riktiga databas- eller OAuth-hemligheter. `npm run start` startar ett färdigt produktionsbygge; produktion kräver en konfigurerad HTTPS-origin.
 
-Öppna **Snabbserie** i menyn för ett mobilanpassat formulär med stora sifferfält. Ange datum, gren, skott och poäng/träffar och tryck **Spara serie & nästa**. Varje serie sparas direkt i Git-journalen med en egen commit; formuläret behåller datum, gren och skottantal för nästa serie. En nätanslutning krävs för att spara. Om sparandet misslyckas behålls uppgifterna i formuläret medan sidan är öppen.
+GitHub-workflowen **Tests** kör installation, samtliga tester, typkontroll och produktionsbygge på **`ubuntu-latest` med Node.js 24**. Den startar vid pull requests, pushar till `main` och manuellt via **Actions → Tests → Run workflow**. Actions är fästa vid commit-SHA:n och uppdateras genom Dependabot.
 
-Under **Okopplade serier** väljer du en eller flera serier från samma datum och gren. Skapa ett nytt pass med dem eller koppla dem till ett befintligt pass. Vapen, plats, avstånd, måltyp och skjuttid anges på passet. Kopplingen sparar passet och tar bort serierna ur inkorgen i en atomisk Git-uppdatering. Valörer beräknas när serierna har ett pass; födelseuppgifter fångas vid snabbregistreringen och regelversion följer registreringsdatumet. Okopplade serier ingår i JSON-export/import och i fullständig radering av journalen.
+## Lagring och foton
 
-### Foto av tavlan
+Profiler, vapen, pass och okopplade serier lagras som JSON. Foton ligger i ett separat användarprefix och publiceras atomiskt med tillhörande poster. Bilden får en egen commit; identiska optimerade bilder återanvänds per användare. Webbläsaren begränsar bilder till **1600 pixlar på längsta sidan och 180 kB**. Ett original får vara högst **25 MB**; högst **tio nya foton** kan skickas i ett anrop. Servern validerar bilden utan att komprimera om den och behåller ingen permanent upload-kopia.
 
-Varje serie kan ha ett valfritt tavelfoto, både i snabbregistreringen och när ett pass skapas eller redigeras. **Ta foto** öppnar mobilens kamera där webbläsaren stödjer det; **Välj bild** öppnar bildvalet. En förhandsvisning visas före sparandet. Bilden sparas först när serien eller passet sparas, och följer med när en snabbserie kopplas till ett pass. På passets sida kan miniatyren öppnas i full storlek. Ett foto kan bytas eller tas bort i redigeringsformuläret.
+Git lagrar även gemensamt säkerhetstillstånd för sessioner, engångsflöden för OAuth och trafikgränser. Det innebär ytterligare Git-läsningar och säkerhetscommits. Utloggning återkallar sessionen på servern innan cookien tas bort.
 
-Webbläsaren orienterar bilden, tar bort metadata och komprimerar den till WebP före uppladdningen med högst **1600 pixlar på längsta sidan och 180 kB bilddata**. Servern validerar format, mått och storlek och sparar de uppladdade bildbyten oförändrade, utan att komprimera om bilden. Identiska optimerade bilder lagras en gång per användare. Foto och serie publiceras atomiskt i Git; fotot får en egen commit. Bilder ligger utanför den vanliga postläsningen och visas endast genom ett inloggat anrop för samma användare. JSON-backup inkluderar bilddata; CSV innehåller enbart resultat. Upp till tio nya foton kan sparas samtidigt, och ett valt original får vara högst 25 MB. Om webbläsaren inte kan öppna ett format, använd JPEG, PNG eller WebP.
+Radering tar bort uppgifter från aktuell journal; **tidigare versioner finns kvar i Git-historiken och dess kopior**. JSON-export är en flyttbar journalbackup, medan Git-backup även bevarar historiken. Import är begränsad till **3 MB per anrop**, inklusive bilddata.
 
-Uppladdade foton behandlas i arbetsminne och skrivs inte till någon upload-katalog på appservern. Sharp-cache är avstängd. GitHub-adaptern skickar bilddata direkt till repositoryt. Git-remote-adaptern använder en tillfällig Git-katalog, som raderas innan anropet avslutas, både efter en lyckad push och vid fel. Bakgrundsunderhåll för den tillfälliga katalogen är avstängt och borttagningen försöks om vid tillfälliga filsystemfel. Efter sparandet hämtas tavelfoton från Git-repositoryt via den privata bildrutten; appservern behåller ingen permanent fotokopia.
+## Dokumentation
 
-### Automatiska tester i GitHub
-
-Workflowen **Tests** kör `npm ci` och hela testsamlingen med `npm test` på Windows, macOS och Linux med Node.js 24; varje miljö kör även typkontroll och produktionsbygge. Den startas vid pull requests och pushar till `main`, inklusive merge-, squash- och rebase-merge. Manuell körning: öppna **Actions → Tests → Run workflow** i GitHub och välj branch. Workflowfilen behöver först finnas på standardbranchen för att den manuella knappen ska visas. Inga apphemligheter eller tillgång till din Git-databas krävs för testerna. `fsevents` är en valfri macOS-beroende modul så installationen även fungerar på Linux.
-
-
-### Plattformsoberoende utveckling
-
-Kör `npm ci` på varje utvecklingsdator; kopiera inte `node_modules` eller `.next` mellan operativsystem eftersom Sharp och andra verktyg har plattformsspecifika binärer. Om du byter operativsystem i samma checkout kan du rensa byggcachen med `node -e "require('node:fs').rmSync('.next', { recursive: true, force: true })"` och sedan köra `npm ci`. Formateringskommandona låter Prettier hantera citerade glob-mönster, och `.gitattributes` håller textfiler på LF även i Windows-checkouts. Git-tester använder systemets temporära katalog och inbyggda Git-inställningar i stället för Unix-shellskript. CI kör hela testsamlingen, typkontroll och bygget på Ubuntu (`ubuntu-latest`).
+- [Installation, GitHub-ID och Vercel](docs/SETUP.md)
+- [Arkitektur och lagring](docs/ARCHITECTURE.md)
+- [Regelkällor och nya upplagor](docs/RULES.md)
+- [Tester och kontroller](docs/TESTING.md)
+- [Säkerhetsgranskning och åtgärder](docs/SECURITY-AUDIT-2026-10-12.md)
