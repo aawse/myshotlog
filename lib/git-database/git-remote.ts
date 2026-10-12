@@ -82,7 +82,7 @@ export class GitRemoteDatabase implements GitDatabase {
     });
   }
   private async temporary<T>(run: (directory: string) => Promise<T>) {
-    const directory = await mkdtemp(join(tmpdir(), "skytte-git-"));
+    const directory = await mkdtemp(join(tmpdir(), "myshotlog-git-"));
     try {
       await this.git(directory, ["init", "--bare"]);
       return await run(directory);

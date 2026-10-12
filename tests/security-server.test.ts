@@ -46,7 +46,7 @@ it("validates signed cookies and logs out without any Git security operations", 
   );
   expect((await currentUser())?.githubId).toBe("12345");
   await endSession();
-  expect(mock.delete).toHaveBeenCalledWith("skytte_session");
+  expect(mock.delete).toHaveBeenCalledWith("myshotlog_session");
   expect(mock.database).not.toHaveBeenCalled();
   expect(mock.securityStore).not.toHaveBeenCalled();
   // Document the selected stateless tradeoff: a copied token survives local logout.
@@ -86,7 +86,7 @@ it("can clear invalid cookies even when authentication configuration is unavaila
     });
   try {
     await endSession();
-    expect(mock.delete).toHaveBeenCalledWith("skytte_session");
+    expect(mock.delete).toHaveBeenCalledWith("myshotlog_session");
     expect(config).not.toHaveBeenCalled();
     expect(mock.securityStore).not.toHaveBeenCalled();
   } finally {

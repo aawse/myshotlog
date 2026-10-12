@@ -7,7 +7,7 @@ import {
   AccessDenied,
   type OAuthConfig,
 } from "@/lib/auth/github";
-import { signSession, sessionSeconds } from "@/lib/auth/session";
+import { signSession, sessionSeconds, sessionCookie } from "@/lib/auth/session";
 import { securityStore, clientAddress } from "@/lib/auth/security";
 import { RateLimited } from "@/lib/auth/security-store";
 export const runtime = "nodejs";
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const now = Date.now(),
       token = signSession(identity, config.secret, config.siteUrl, now);
     response = NextResponse.redirect(config.siteUrl + "/dashboard");
-    response.cookies.set("skytte_session", token, {
+    response.cookies.set(sessionCookie, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

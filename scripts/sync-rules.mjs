@@ -8,7 +8,7 @@ const versions = JSON.parse(
 await writeFile(
   new URL("../public/rule-versions.json", import.meta.url),
   JSON.stringify(
-    { format: "skytte-rules", version: 1, rules: versions },
+    { format: "myshotlog-rules", version: 1, rules: versions },
     null,
     2,
   ) + "\n",

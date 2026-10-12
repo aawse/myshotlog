@@ -29,7 +29,7 @@ const config: OAuthConfig = {
   clientId: "client",
   clientSecret: "private-client-secret",
   secret: "s".repeat(32),
-  siteUrl: "https://skytte.example",
+  siteUrl: "https://myshotlog.example",
   allowed: ["12345"],
   mapping: {},
 };
@@ -176,7 +176,7 @@ it("sets secure HTTP-only cookies, consumes the flow cookie and redirects to a f
   );
   expect(response.headers.get("location")).toBe(config.siteUrl + "/dashboard");
   expect(response.cookies.get(oauthCookie)?.value).toBe("");
-  const session = response.cookies.get("skytte_session")!.value;
+  const session = response.cookies.get("myshotlog_session")!.value;
   expect(
     verifySession(session, config.secret, config.siteUrl, ["12345"])?.githubId,
   ).toBe("12345");
@@ -195,12 +195,12 @@ it("does not create a session on callback failure or reflect provider error text
   expect(response.headers.get("location")).toBe(
     config.siteUrl + "/login?error=oauth",
   );
-  expect(response.cookies.get("skytte_session")).toBeUndefined();
+  expect(response.cookies.get("myshotlog_session")).toBeUndefined();
   expect(response.cookies.get(oauthCookie)?.value).toBe("");
 });
 it("rejects unsafe origins and empty access configuration", () => {
   env();
-  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://user:password@skytte.example");
+  vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://user:password@myshotlog.example");
   expect(() => oauthConfig()).toThrow();
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", config.siteUrl);
   vi.stubEnv("GITHUB_ALLOWED_USER_IDS", "");
@@ -251,7 +251,7 @@ it("issues a signed session after OAuth without registering it in Git", async ()
       headers: { cookie: oauthCookie + "=" + a.cookie },
     }),
   );
-  const token = response.cookies.get("skytte_session")?.value;
+  const token = response.cookies.get("myshotlog_session")?.value;
   expect(
     verifySession(token, config.secret, config.siteUrl, ["12345"])?.githubId,
   ).toBe("12345");
@@ -294,7 +294,7 @@ it("sets secure production cookie flags and the absolute session lifetime", asyn
       headers: { cookie: oauthCookie + "=" + a.cookie },
     }),
   );
-  expect(response.cookies.get("skytte_session")).toMatchObject({
+  expect(response.cookies.get("myshotlog_session")).toMatchObject({
     httpOnly: true,
     secure: true,
     sameSite: "lax",

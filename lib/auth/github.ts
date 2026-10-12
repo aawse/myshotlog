@@ -10,7 +10,7 @@ import {
   identitySchema,
   journalOwner,
 } from "./session";
-export const oauthCookie = "skytte_github_oauth";
+export const oauthCookie = "myshotlog_github_oauth";
 export const oauthSeconds = 600;
 export type OAuthConfig = {
   clientId: string;

@@ -12,7 +12,8 @@ vi.mock("node:fs/promises", async (original) => {
     ...fs,
     mkdtemp: async (prefix: string) => {
       const directory = await fs.mkdtemp(prefix);
-      if (prefix.endsWith("skytte-git-")) temporaryDirectories.push(directory);
+      if (prefix.endsWith("myshotlog-git-"))
+        temporaryDirectories.push(directory);
       return directory;
     },
   };

@@ -8,6 +8,7 @@ import {
   profileSchema,
   quickEntrySchema,
   type Records,
+  profileBirthYear,
 } from "./models";
 export const assessmentSchema = z
   .object({
@@ -24,7 +25,7 @@ export const assessmentSchema = z
     input: z.unknown(),
   })
   .strict();
-export const exportSchema = z
+const legacyExportSchema = z
   .object({
     format: z.literal("skytte"),
     version: z.literal(1),
@@ -83,15 +84,134 @@ export const exportSchema = z
       )
         c.addIssue({ code: "custom", message: swText("import.resultMissing") });
   });
-export function exportRecords(records: Records) {
+// Birth information is raw recording context, not a rule conclusion.
+const recordingContextSchema = z
+  .object({
+    id: z.string(),
+    sessionId: z.uuid(),
+    resultId: z.uuid(),
+    birthDate: z.string().nullable(),
+    birthYear: z.number().int().nullable(),
+  })
+  .strict()
+  .superRefine((context, c) => {
+    if (
+      context.id !== context.sessionId + ":" + context.resultId ||
+      !profileSchema.safeParse({
+        displayName: "",
+        timezone: "Europe/Stockholm",
+        birthDate: context.birthDate,
+        birthYear: context.birthYear,
+      }).success
+    )
+      c.addIssue({ code: "custom", message: swText("import.resultMissing") });
+  });
+export type RecordingContext = z.infer<typeof recordingContextSchema>;
+export function recordingContexts(records: Records): RecordingContext[] {
+  return records.sessions.flatMap((session) =>
+    session.results.map((result) => {
+      const input = records.assessments.find(
+        (a) => a.sessionId === session.id && a.resultId === result.id,
+      )?.input;
+      const captured =
+        input && typeof input === "object" && Object.hasOwn(input, "birthYear")
+          ? profileSchema.safeParse({
+              ...records.profile,
+              birthDate: (input as { birthDate?: unknown }).birthDate ?? null,
+              birthYear: (input as { birthYear: unknown }).birthYear,
+            })
+          : null;
+      const profile = captured?.success ? captured.data : records.profile;
+      return {
+        id: session.id + ":" + result.id,
+        sessionId: session.id,
+        resultId: result.id,
+        birthDate: profile.birthDate ?? null,
+        birthYear: profileBirthYear(profile),
+      };
+    }),
+  );
+}
+export const exportSchema = z
+  .object({
+    format: z.literal("myshotlog"),
+    version: z.literal(2),
+    exportedAt: z.iso.datetime(),
+    profile: profileSchema,
+    firearms: z.array(firearmSchema).max(1000),
+    sessions: z.array(sessionSchema).max(10000),
+    recordingContexts: z.array(recordingContextSchema).max(100000),
+    quickEntries: z.array(quickEntrySchema).max(10000).default([]),
+    photos: z.array(photoAssetSchema).max(10000).default([]),
+  })
+  .strict()
+  .superRefine((data, c) => {
+    // The legacy validator covers all shared references without retaining evaluations.
+    const shared = legacyExportSchema.safeParse({
+      format: "skytte",
+      version: 1,
+      exportedAt: data.exportedAt,
+      profile: data.profile,
+      firearms: data.firearms,
+      sessions: data.sessions,
+      quickEntries: data.quickEntries,
+      photos: data.photos,
+      assessments: [],
+    });
+    if (!shared.success)
+      for (const issue of shared.error.issues)
+        c.addIssue({
+          code: "custom",
+          path: issue.path,
+          message: issue.message,
+        });
+    if (
+      new Set(data.recordingContexts.map((x) => x.id)).size !==
+      data.recordingContexts.length
+    )
+      c.addIssue({ code: "custom", message: swText("import.duplicates") });
+    if (
+      data.recordingContexts.length !==
+      data.sessions.reduce((count, s) => count + s.results.length, 0)
+    )
+      c.addIssue({ code: "custom", message: swText("import.resultMissing") });
+    for (const context of data.recordingContexts)
+      if (
+        !data.sessions.some(
+          (s) =>
+            s.id === context.sessionId &&
+            s.results.some((r) => r.id === context.resultId),
+        )
+      )
+        c.addIssue({ code: "custom", message: swText("import.resultMissing") });
+  });
+export function exportRecords(
+  records: Records,
+  contexts = recordingContexts(records),
+) {
   return {
-    format: "skytte" as const,
-    version: 1 as const,
+    format: "myshotlog" as const,
+    version: 2 as const,
     exportedAt: new Date().toISOString(),
-    ...records,
+    profile: records.profile,
+    firearms: records.firearms,
+    sessions: records.sessions,
+    recordingContexts: contexts,
+    quickEntries: records.quickEntries ?? [],
+    photos: records.photos ?? [],
   };
 }
 export function parseImport(value: unknown) {
+  // Read existing backups, but discard their conclusions and rule snapshots.
+  if (
+    value &&
+    typeof value === "object" &&
+    "format" in value &&
+    value.format === "skytte"
+  ) {
+    const legacy = legacyExportSchema.parse(value);
+    return exportSchema.parse(exportRecords(legacy));
+  }
   return exportSchema.parse(value);
 }
 export function csv(sessions: Records["sessions"], language: Language = "sv") {

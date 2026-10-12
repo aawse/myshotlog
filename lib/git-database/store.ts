@@ -23,6 +23,7 @@ import {
 import { assessmentSchema, parseImport } from "../portability";
 import { sessionSetup } from "../session-setup";
 import { rules } from "../rules/catalog";
+import { evaluate } from "../rules/engine";
 import { recordSeries } from "../rules/recorded";
 import {
   DatabaseConflict,
@@ -91,7 +92,7 @@ export class GitJournalStore {
   constructor(
     private provider: GitDatabase,
     ownerId: string,
-    prefix = "skytte/v1",
+    prefix = "myshotlog/v1",
   ) {
     this.path = validPath(prefix) + "/users/" + z.uuid().parse(ownerId);
     this.photosPath =
@@ -490,9 +491,25 @@ export class GitJournalStore {
               {
                 version: 1,
                 entry,
-                assessments: data.assessments.filter(
-                  (a) => a.sessionId === entry.id,
-                ),
+                assessments: entry.results.flatMap((result) => {
+                  const context = data.recordingContexts.find(
+                    (c) => c.sessionId === entry.id && c.resultId === result.id,
+                  );
+                  const profile = context
+                    ? profileSchema.parse({
+                        ...data.profile,
+                        birthDate: context.birthDate,
+                        birthYear: context.birthYear,
+                      })
+                    : data.profile;
+                  return evaluate(sessionSetup(entry), result, profile).map(
+                    (a) => ({
+                      ...a,
+                      id: crypto.randomUUID(),
+                      createdAt: new Date().toISOString(),
+                    }),
+                  );
+                }),
               },
               "MyShotLog: import session " + entry.id,
             );

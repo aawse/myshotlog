@@ -7,7 +7,7 @@ import {
   DatabaseUnavailable,
 } from "@/lib/git-database/types";
 import { InvalidRecord, RecordNotFound } from "@/lib/git-database/store";
-import { exportRecords, csv } from "@/lib/portability";
+import { exportRecords, recordingContexts, csv } from "@/lib/portability";
 import { z } from "../../../lib/validation";
 import { oauthConfig } from "@/lib/auth/github";
 import { securityStore } from "@/lib/auth/security";
@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
           "firearms",
           "sessions",
           "assessments",
+          "recordingContexts",
           "quickEntries",
           "photos",
         ].includes(part)
@@ -82,15 +83,16 @@ export async function GET(request: NextRequest) {
       if (!Number.isSafeInteger(offset) || offset < 0)
         return response({ error: swText("api.invalidOffset") }, 400);
       return response(
-        (
-          data[
-            part as
-              | "firearms"
-              | "sessions"
-              | "assessments"
-              | "quickEntries"
-              | "photos"
-          ] ?? []
+        (part === "recordingContexts"
+          ? recordingContexts(data)
+          : (data[
+              part as
+                | "firearms"
+                | "sessions"
+                | "assessments"
+                | "quickEntries"
+                | "photos"
+            ] ?? [])
         )
           .slice()
           .sort((a, b) => a.id.localeCompare(b.id))
@@ -108,7 +110,7 @@ export async function GET(request: NextRequest) {
           headers: {
             "Content-Type":
               format === "csv" ? "text/csv; charset=utf-8" : "application/json",
-            "Content-Disposition": `attachment; filename="${format === "csv" ? "MyShotLog.csv" : "MyShotLog-v1.json"}"`,
+            "Content-Disposition": `attachment; filename="${format === "csv" ? "myshotlog.csv" : "myshotlog-v2.json"}"`,
             "Cache-Control": "private, no-store",
           },
         },

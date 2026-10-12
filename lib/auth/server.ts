@@ -1,9 +1,9 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { verifySession } from "./session";
+import { verifySession, sessionCookie } from "./session";
 import { oauthConfig } from "./github";
 import { databaseConfigured } from "../git-database/config";
-export const sessionCookie = "skytte_session";
+export { sessionCookie } from "./session";
 export class AuthenticationRequired extends Error {
   constructor() {
     super("AUTH_REQUIRED");

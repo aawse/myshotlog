@@ -50,12 +50,12 @@ export function SettingsForm({ profile }: { profile: Profile }) {
         }
         return items;
       };
-      const [profile, firearms, sessions, assessments, quickEntries, photos] =
+      const [profile, firearms, sessions, contexts, quickEntries, photos] =
         await Promise.all([
           read("profile"),
           all("firearms"),
           all("sessions"),
-          all("assessments"),
+          format === "json" ? all("recordingContexts") : [],
           all("quickEntries"),
           format === "json" ? all("photos") : [],
         ]);
@@ -63,14 +63,14 @@ export function SettingsForm({ profile }: { profile: Profile }) {
         profile,
         firearms,
         sessions,
-        assessments,
+        assessments: [],
         quickEntries,
         photos,
       };
       const blob = new Blob(
         [
           format === "json"
-            ? JSON.stringify(exportRecords(data), null, 2)
+            ? JSON.stringify(exportRecords(data, contexts), null, 2)
             : csv(sessions, language),
         ],
         {
@@ -81,7 +81,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
       const url = URL.createObjectURL(blob),
         link = document.createElement("a");
       link.href = url;
-      link.download = format === "json" ? "MyShotLog-v1.json" : "MyShotLog.csv";
+      link.download = format === "json" ? "myshotlog-v2.json" : "myshotlog.csv";
       document.body.appendChild(link);
       link.click();
       link.remove();

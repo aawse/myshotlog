@@ -1,3 +1,4 @@
+export const sessionCookie = "myshotlog_session";
 import {
   createHmac,
   createHash,
@@ -35,6 +36,8 @@ export function legacyMapping(value = process.env.GITHUB_USER_ID_MAP ?? "{}") {
     throw new Error("Duplicate journal owner mapping");
   return mapping;
 }
+// Keep the original namespace: changing it would orphan existing journals.
+const journalIdentityNamespace = "skytte:github.com:user:";
 // Names and email addresses can change. Only the verified immutable numeric ID selects a journal.
 export function journalOwner(
   githubId: string,
@@ -43,7 +46,7 @@ export function journalOwner(
   githubIdSchema.parse(githubId);
   if (mapping[githubId]) return z.uuid().parse(mapping[githubId]);
   const hash = createHash("sha256")
-    .update("skytte:github.com:user:" + githubId)
+    .update(journalIdentityNamespace + githubId)
     .digest();
   hash[6] = (hash[6] & 15) | 128;
   hash[8] = (hash[8] & 63) | 128;

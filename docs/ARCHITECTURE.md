@@ -12,6 +12,8 @@ Databasåtkomst använder en separat server-token eller serverns Git-autentiseri
 
 `lib/git-database/types.ts` definierar adaptergränsen: läs ett branch-snapshot och publicera en kedja av postcommits. GitHub-adaptern använder HTTPS API och kräver ett privat repository med en initial commit. Git-adaptern använder objektkommandon i tillfälliga bare repositories, utan checkout, och städar katalogerna efter anropet. Den kan initiera en tom databranch.
 
+Nya standardjournaler använder prefixet `myshotlog/v1`. Uttryckligen konfigurerade prefix och befintliga UUID:n bevaras; utan prefixinställning upptäcks journaler under den äldre standardsökvägen per användare.
+
 Journalposter ligger under `<prefix>/users/<UUID>/`. Profil, vapen, pass och okopplade snabbserier har egna JSON-filer. En sparning skapar en commit per post, med passets resultat och bedömningsunderlag tillsammans. Import och koppling av snabbserier publicerar hela commit-kedjan atomiskt. Föråldrade passrevisioner avvisas, och branchkonflikter bygger om planen med ett begränsat antal försök. Git bevarar historiska filversioner även efter radering.
 
 Foton ligger separat under `<prefix>/photos/users/<UUID>/<bildhash>/image.json`. Webbläsaren rasteriserar och komprimerar före uppladdning. Befintliga WebP-foton förblir läsbara och bevaras i JSON-export/import. Nya uppladdningar lagras som JPEG; äldre foton och deras Git-historik ändras inte. Servern validerar JPEG-byten, dimensioner, storlek, metadata och SHA-256 utan att komprimera om bilden. Identiska bilder återanvänds per användare. Bildändringar och journalposter publiceras atomiskt. Privata bildanrop hämtar samma användares foto från Git; ingen permanent upload-katalog används.
@@ -26,7 +28,7 @@ API-rutter går förbi Next.js Proxy:s body-kloning. Records-API läser högst 3
 
 ## Resultat och regler
 
-Journalen beräknar brons/silver/guld från råresultat med regelkatalogen för passdatumet. Beräkningsfunktionen skapar inga commits och kan användas för visning och export. Regel-ID och födelseunderlag följer sparade bedömningar; katalogen styr trösklarna vid läsning. Bevara därför historiska katalogperioder och trösklar när en ny upplaga läggs till.
+Journalen beräknar brons/silver/guld från råresultat med regelkatalogen för passdatumet. Beräkningsfunktionen skapar inga commits och används för visning. Regel-ID och födelseunderlag följer sparade bedömningar; katalogen styr trösklarna vid läsning. Bevara därför historiska katalogperioder och trösklar när en ny upplaga läggs till.
 
 Sparade födelseuppgifter från seriens underlag används när de finns; annars används profilen. Åldersavdrag baseras på året före passåret. Utan födelseuppgifter gäller ordinarie gränser. Automatisk märkesbedömning finns för precision och tillämpning; övriga grenar kan registreras. Se [regeltäckningen](RULES.md).
 
@@ -34,6 +36,6 @@ Passet har gemensamt avstånd, måltyp, starttid och skjuttid. En snabbserie kan
 
 ## Export och drift
 
-JSON-formatet omfattar profil, vapen, pass, bedömningar, snabbserier och foton. Import är atomär, hoppar över befintliga ID:n och importerar profil endast om profilfil saknas. CSV exporterar passresultat. Git-backup innehåller även säkerhetstillstånd och historik; sessionshemligheten ska roteras efter en återställning.
+JSON version 2 (`myshotlog`) omfattar profil, vapen, passens råresultat, födelseuppgifter fångade per serie, snabbserier och foton. Bedömningar och regelsnapshots ingår inte. Vid import beräknas nya bedömningar med katalogversionen för passdatumet och seriens födelseuppgifter; äldre version 1-backuper kan läsas men deras slutsatser ignoreras. Import är atomär, hoppar över befintliga ID:n och importerar profil endast om profilfil saknas. CSV exporterar passresultat. Git-backup innehåller även säkerhetstillstånd och historik; sessionshemligheten ska roteras efter en återställning.
 
 CI kör tester, typkontroll och produktionsbygge på Ubuntu med Node.js 24. Lokal utveckling använder samma npm-kommandon på Windows, macOS och Linux. GitHub-adaptern behöver ingen Git-binär i driftruntimen, medan Git-adaptern och integrationstesterna behöver Git i PATH.

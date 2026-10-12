@@ -113,3 +113,27 @@ it("uses the configured public origin instead of a reconstructed or spoofed requ
   });
   expect((await POST(good)).status).toBe(200);
 });
+
+it("downloads raw MyShotLog backups and pages birth context without evaluations", async () => {
+  const fixtures = await import("./fixtures");
+  vi.mocked(records).mockResolvedValue({
+    profile: fixtures.profile,
+    firearms: [fixtures.firearm],
+    sessions: [fixtures.session],
+    assessments: [],
+  });
+  vi.mocked(journal).mockResolvedValue({ photos: async () => [] } as never);
+  const response = await GET(
+    new NextRequest("http://localhost/api/records?format=json"),
+  );
+  expect(response.headers.get("Content-Disposition")).toContain(
+    "myshotlog-v2.json",
+  );
+  const data = await response.json();
+  expect(data).toMatchObject({ format: "myshotlog", version: 2 });
+  expect(data).not.toHaveProperty("assessments");
+  const page = await GET(
+    new NextRequest("http://localhost/api/records?part=recordingContexts"),
+  );
+  expect(await page.json()).toEqual(data.recordingContexts);
+});

@@ -1,7 +1,6 @@
 import { evaluate } from "./engine";
 import { rules, type RuleVersion } from "./catalog";
 import {
-  profileBirthYear,
   profileSchema,
   type Assessment,
   type Profile,
@@ -31,9 +30,6 @@ export function recordSeries(
           birthYear: input.birthYear,
         })
       : null;
-  const birthProfile =
-    captured?.success && profileBirthYear(captured.data) !== null
-      ? captured.data
-      : profile;
+  const birthProfile = captured?.success ? captured.data : profile;
   return evaluate(session, result, birthProfile, catalog);
 }

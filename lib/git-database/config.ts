@@ -11,7 +11,7 @@ export function databaseConfigured() {
       );
 }
 export function databasePrefix() {
-  return validPath(process.env.GIT_DATABASE_PREFIX ?? "skytte/v1");
+  return validPath(process.env.GIT_DATABASE_PREFIX ?? "myshotlog/v1");
 }
 export function database(): GitDatabase {
   const branch = process.env.GIT_DATABASE_BRANCH ?? "main";

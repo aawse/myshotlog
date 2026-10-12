@@ -55,9 +55,7 @@ it("creates one commit per save, captures snapshots and preserves revision audit
   expect(after.sessions[0].firearmSnapshot?.model).toBe("Test");
   expect(after.assessments).toHaveLength(3);
   expect(after.assessments[0].revision).toBe(2);
-  expect(parseImport(exportRecords(after)).assessments).toEqual(
-    after.assessments,
-  );
+  expect(parseImport(exportRecords(after))).not.toHaveProperty("assessments");
   await expect(store.mutate("session", session)).rejects.toBeInstanceOf(
     DatabaseConflict,
   );
@@ -65,7 +63,7 @@ it("creates one commit per save, captures snapshots and preserves revision audit
     await git(
       "show",
       saved.head +
-        ":skytte/v1/users/" +
+        ":myshotlog/v1/users/" +
         owner +
         "/sessions/" +
         session.id +
@@ -76,7 +74,7 @@ it("creates one commit per save, captures snapshots and preserves revision audit
     await git(
       "show",
       saved.head +
-        ":skytte/v1/users/" +
+        ":myshotlog/v1/users/" +
         owner +
         "/sessions/" +
         session.id +
@@ -126,7 +124,7 @@ it("isolates users and removes current records while retaining history", async (
     await git(
       "show",
       receipt.head +
-        ":skytte/v1/users/" +
+        ":myshotlog/v1/users/" +
         owner +
         "/sessions/" +
         session.id +
@@ -135,7 +133,7 @@ it("isolates users and removes current records while retaining history", async (
   ).toContain(session.id);
 });
 it("rejects stale branch writes and retries concurrent saves without losing entries", async () => {
-  const snapshot = await db.snapshot("skytte");
+  const snapshot = await db.snapshot("myshotlog");
   await db.publish(snapshot, [
     { message: "first", changes: [{ path: "README.md", content: "Keep me" }] },
   ]);
@@ -154,13 +152,13 @@ it("rejects stale branch writes and retries concurrent saves without losing entr
   expect(await git("show", "main:README.md")).toBe("Keep me");
 });
 it("fails closed on corrupt data and unsafe paths", async () => {
-  const snapshot = await db.snapshot("skytte");
+  const snapshot = await db.snapshot("myshotlog");
   const receipt = await db.publish(snapshot, [
     {
       message: "bad",
       changes: [
         {
-          path: "skytte/v1/users/" + owner + "/profile.json",
+          path: "myshotlog/v1/users/" + owner + "/profile.json",
           content: "invalid",
         },
       ],
@@ -301,7 +299,7 @@ it("stores a language change in profile.json without changing user-entered text"
   });
   expect(
     JSON.parse(
-      await git("show", "main:skytte/v1/users/" + owner + "/profile.json"),
+      await git("show", "main:myshotlog/v1/users/" + owner + "/profile.json"),
     ).entry.language,
   ).toBe("en");
 });

@@ -189,9 +189,17 @@ Vercel använder plattformens `x-vercel-forwarded-for`. På egen server delar kl
 
 Sidornas CSP använder en ny script-nonce och dynamisk rendering. Script får inte använda inline-kod utan nonce eller eval i produktion; dynamiskt laddade script från betrodda script stöds genom `strict-dynamic`. Diagrammens stilattribut och fotoförhandsvisningar stöds. Zod använder `jitless`-läge. Records-API kräver Origin som motsvarar `NEXT_PUBLIC_SITE_URL` och läser högst **3 MB** från originalströmmen; API-rutter går förbi Proxy:s body-buffring.
 
+## Uppgradering av appnamnet
+
+Nya standardlagringar använder `myshotlog/v1`. Ett uttryckligt `GIT_DATABASE_PREFIX` behålls som angivet; ändra inte sökvägen för en befintlig journal utan att flytta data. Om variabeln saknas använder appen en befintlig journal under den äldre standardsökvägen när ingen journal finns under den nya. Journalernas deterministiska UUID:n behålls. Den ursprungliga ID-namnrymden och läsning av äldre backupformat/sökvägar är interna kompatibilitetsundantag, så att befintliga data förblir åtkomliga.
+
+Inloggnings- och OAuth-cookies använder nu MyShotLog-namn. Logga in igen efter uppgraderingen.
+
 ## Export, import och backup
 
-Exportera från **Inställningar**. JSON innehåller profil, vapen, pass, bedömningsunderlag, okopplade serier och foton. CSV innehåller passens resultat och kan inte användas som fullständig import. Välj appens version 1 JSON-format vid flytt mellan installationer och behåll formatfält och ID:n oförändrade.
+Exportera från **Inställningar**. `myshotlog-v2.json` använder `format: "myshotlog"` och `version: 2`. JSON innehåller profil, vapen, passens råresultat, födelseuppgifter fångade per serie (`recordingContexts`), okopplade serier och foton. Bedömningar, regelversioner och regelsnapshots exporteras inte. CSV innehåller passens resultat och kan inte användas som fullständig import.
+
+Vid import skapas nya brons/silver/guld-bedömningar med katalogversionen som gällde på passdatumet. Datum utanför katalogens täckning blir ej bedömda. De exporterade födelseuppgifterna används även om destinationsprofilen har korrigerats; okända födelseuppgifter förblir okända. Behåll formatfält, post-ID:n och seriens födelseuppgifter oförändrade. Äldre version 1-backuper accepteras för kompatibilitet, men deras bedömningar och regelsnapshots återanvänds inte.
 
 Import är atomär och begränsad till **3 MB per anrop**, inklusive bilddata. Befintliga poster med samma ID hoppas över; de skrivs inte över. Profilen importeras endast om ingen profilfil redan finns. Importera därför innan du sparar en ny profil om den exporterade profilen ska användas. En stor fullständig export kan vara för stor för återimport och kräver en mindre, giltig export eller separat repository-hantering.
 

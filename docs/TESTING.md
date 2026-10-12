@@ -16,7 +16,8 @@ Kontrollerna täcker bland annat:
 - Språkval från profilen, svensk standard, identiska översättningsnycklar och oförändrade användarinmatade värden.
 - Postcommits, atomiska importer, samtidiga skrivningar, revisionskonflikter och användarisolering.
 - GitHub API, OAuth-state/PKCE, engångsflöden, stateless sessionskontroller utan Git, origin/version/utgång och gemensamma trafikgränser.
-- JSON/CSV, fotovalidering, bildreferenser, deduplicering och städning av tillfälliga Git-repositories.
+- Rå JSON/CSV-export utan bedömningar, import med daterade regler och fångade födelseuppgifter, äldre backupkompatibilitet, stabila journal-ID:n och prefixval.
+- Fotovalidering, bildreferenser, deduplicering och städning av tillfälliga Git-repositories.
 - Brons/silver/guld för A/B/C, åldersgränser, passdatum och regelversioner.
 - Gemensamma passvillkor, vapenpreferenser, medaljräknare, platsförslag och snabbserier.
 - Storleksbegränsad läsning av request-body och CSP, inklusive API-rutter som går förbi Proxy:s body-kloning.
