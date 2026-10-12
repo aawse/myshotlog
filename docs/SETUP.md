@@ -211,13 +211,15 @@ Varje serie kan ha ett tavelfoto. Val av bild startar automatiskt en separat fö
 
 ## Kalibrar, mål och regelupplagor
 
-`lib/data/calibers.json` är en JSON-array med unika `value` och visningsnamn i `label`. Lägg till exempelvis:
+`lib/data/calibers.json` är en JSON-array med unika `value` (lagringsvärden) och `labelKey` (översättningsnycklar). Lägg till exempelvis:
 
 ```json
-{ "value": ".41 Magnum", "label": ".41 Magnum" }
+{ "value": ".41 Magnum", "labelKey": "caliber.magnum41" }
 ```
 
-Måltyper ligger i `lib/data/targets.json`. Behåll koderna `precision25`, `B100`, `C30` och `sixth`, eftersom regelmotorn använder dem. Nya listalternativ lägger inte automatiskt till beräkningsregler. Befintliga sparade värden kan visas även om de saknas i katalogen. Starta om utvecklingsservern eller bygg/publicera om efter ändringar.
+Lägg samma nyckel `caliber.magnum41` med visningstexten i både `lib/locales/sv.json` och `lib/locales/en.json`. Namn som `.41 Magnum` kan vara identiska i båda språken. Återanvänd befintliga nycklar när visningstexten redan finns. Appen validerar nycklarna vid inläsning, så ett nytt alternativ måste ha text i båda språkfilerna.
+
+Måltyper ligger i `lib/data/targets.json` och använder samma `value`/`labelKey`-format. Behåll koderna `precision25`, `B100`, `C30` och `sixth`, eftersom regelmotorn använder dem. Nya listalternativ lägger inte automatiskt till beräkningsregler. Ändra inte befintliga `value` när du översätter etiketter; de finns i lagrade vapen, historiska ögonblicksbilder och pass. Okända eller egna värden visas oförändrade även om de saknas i katalogen. Starta om utvecklingsservern eller bygg/publicera om efter ändringar.
 
 Regelkatalogen är `lib/rules/versions.json`. Automatisk märkesbedömning finns för precision och tillämpning; andra grenar eller datum utan katalogversion kan visas som ej bedömda. Den nuvarande katalogperioden är `2026-01-01` till före `2028-01-01`. Detta är appens konfigurerade täckning, inte en garanti att alla efterföljande regeländringar är införda. Se [regelkällor och täckning](RULES.md).
 

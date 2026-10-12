@@ -1,7 +1,7 @@
 import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
 import { Target } from "lucide-react";
-import { disciplineName } from "@/lib/i18n-domain";
+import { disciplineName, caliberName } from "@/lib/i18n-domain";
 import { records } from "@/lib/data";
 export default async function Page() {
   const { tr, language } = await getI18n();
@@ -33,7 +33,7 @@ export default async function Page() {
             </span>
             <h2>{f.nickname || f.make + " " + f.model}</h2>
             <p>
-              {f.make} {f.model} · {f.caliber}
+              {f.make} {f.model} · {caliberName(language, f.caliber)}
             </p>
             {f.defaultDiscipline && (
               <p className="muted">

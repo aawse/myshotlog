@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Medal } from "lucide-react";
 import { notFound } from "next/navigation";
 import { records } from "@/lib/data";
-import { disciplineName, targetName } from "@/lib/i18n-domain";
+import { disciplineName, targetName, caliberName } from "@/lib/i18n-domain";
 import { summarize } from "@/lib/rules/engine";
 import { SessionActions } from "@/components/session-actions";
 export default async function Page({
@@ -55,7 +55,9 @@ export default async function Page({
             ? s.firearmSnapshot.nickname ||
               s.firearmSnapshot.make + " " + s.firearmSnapshot.model
             : tr("common.borrowedFirearm")}
-          {s.firearmSnapshot && <> · {s.firearmSnapshot.caliber}</>}
+          {s.firearmSnapshot && (
+            <> · {caliberName(language, s.firearmSnapshot.caliber)}</>
+          )}
         </h2>
         <p>
           {tr("sessions.groupPrefix")} {s.group} · {total.shots}{" "}

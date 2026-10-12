@@ -426,5 +426,16 @@
   "common.seriesLabel": "Serie",
   "common.seriesCount": "{count} serier",
   "photo.jpegUnavailable": "Webbläsaren kan inte skapa JPEG-bilder. Prova en nyare webbläsare.",
-  "photo.requiresJpeg": "Bilden måste vara optimerad JPEG."
+  "photo.requiresJpeg": "Bilden måste vara optimerad JPEG.",
+  "caliber.lr22": ".22 LR",
+  "caliber.luger9": "9 × 19 mm (9 mm Luger / Parabellum)",
+  "caliber.sw32long": ".32 S&W Long",
+  "caliber.special38": ".38 Special",
+  "caliber.magnum357": ".357 Magnum",
+  "caliber.acp45": ".45 ACP",
+  "caliber.sw40": ".40 S&W",
+  "caliber.super38": ".38 Super",
+  "caliber.magnum44": ".44 Magnum",
+  "caliber.special44": ".44 Special",
+  "caliber.colt45": ".45 Colt"
 }

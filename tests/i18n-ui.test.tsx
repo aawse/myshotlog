@@ -61,9 +61,7 @@ it("translates new form defaults and built-in caliber captions without changing 
   );
   expect(html).toContain('value="5-shot series"');
   expect(html).toContain('value="Series 1"');
-  expect(
-    caliberName("en", { value: "4.5 mm", label: "4,5 mm (.177, luftpistol)" }),
-  ).toBe("4.5 mm (.177, air pistol)");
+  expect(caliberName("en", "4.5 mm")).toBe("4.5 mm (.177, air pistol)");
   expect(
     changeDiscipline({ ...session, program: "5-shot series" }, "field", "en")
       .program,
@@ -72,4 +70,71 @@ it("translates new form defaults and built-in caliber captions without changing 
     changeDiscipline({ ...session, program: "Översikt" }, "field", "en")
       .program,
   ).toBe("Översikt");
+});
+
+it("has localized labels for every built-in caliber and target and renders them in both languages", async () => {
+  const { calibers, targets } = await import("../lib/options");
+  const { messages } = await import("../lib/i18n");
+  const { caliberName } = await import("../lib/i18n-domain");
+  const { FirearmForm } = await import("../components/firearm-form");
+  const { SessionForm } = await import("../components/session-form");
+  const escape = (text: string) =>
+    text
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#x27;");
+  for (const language of ["sv", "en"] as const) {
+    const firearms = renderToStaticMarkup(
+      <LanguageProvider language={language}>
+        <FirearmForm />
+      </LanguageProvider>,
+    );
+    const sessions = renderToStaticMarkup(
+      <LanguageProvider language={language}>
+        <SessionForm firearms={[]} />
+      </LanguageProvider>,
+    );
+    for (const option of calibers) {
+      expect(messages[language][option.labelKey]).toBeTruthy();
+      expect(caliberName(language, option.value)).toBe(
+        messages[language][option.labelKey],
+      );
+      expect(firearms).toContain(`value="${escape(option.value)}"`);
+      expect(firearms).toContain(
+        `>${escape(messages[language][option.labelKey])}</option>`,
+      );
+    }
+    for (const option of targets) {
+      expect(messages[language][option.labelKey]).toBeTruthy();
+      expect(targetName(language, option.value)).toBe(
+        messages[language][option.labelKey],
+      );
+      expect(sessions).toContain(`value="${escape(option.value)}"`);
+      expect(sessions).toContain(
+        `>${escape(messages[language][option.labelKey])}</option>`,
+      );
+    }
+  }
+  expect(caliberName("sv", "4.5 mm")).toBe("4,5 mm (.177, luftpistol)");
+  expect(caliberName("en", "4.5 mm")).toBe("4.5 mm (.177, air pistol)");
+  expect(caliberName("en", "Översikt")).toBe("Översikt");
+  expect(targetName("en", "Spara profil")).toBe("Spara profil");
+});
+
+it("localizes new JSON option IDs using labelKey without hard-coded mappings", async () => {
+  const { calibers, targets } = await import("../lib/options");
+  const { caliberName } = await import("../lib/i18n-domain");
+  calibers.push({ value: "new-air-caliber", labelKey: "caliber.air" });
+  targets.push({ value: "new-field-target", labelKey: "target.field" });
+  try {
+    expect(caliberName("en", "new-air-caliber")).toBe(
+      "4.5 mm (.177, air pistol)",
+    );
+    expect(targetName("en", "new-field-target")).toBe("Field shooting target");
+  } finally {
+    calibers.pop();
+    targets.pop();
+  }
 });

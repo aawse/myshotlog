@@ -5,6 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { profile, firearm, session } from "./fixtures";
 vi.mock("server-only", () => ({}));
+vi.mock("next/navigation", async (original) => ({
+  ...(await original<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
 vi.mock("../lib/data", () => ({ records: vi.fn() }));
 vi.mock("../lib/auth/server", () => ({
   configured: () => true,
@@ -62,4 +66,36 @@ it("renders English server navigation and dashboard without translating the user
   expect(html).toContain("Hello, Översikt.");
   expect(html).toContain("My firearms");
   expect(html).toContain("Recent sessions");
+});
+
+it("localizes built-in calibers on firearm and historical session pages without changing stored values", async () => {
+  const { LanguageProvider } = await import("../components/language-provider");
+  const { default: Firearms } = await import("../app/(private)/firearms/page");
+  const { default: Details } =
+    await import("../app/(private)/sessions/[id]/page");
+  const data = {
+    profile: { ...profile, language: "en" as const },
+    firearms: [{ ...firearm, caliber: "4.5 mm" }],
+    sessions: [
+      {
+        ...session,
+        target: "precision25",
+        firearmSnapshot: { ...session.firearmSnapshot!, caliber: "4.5 mm" },
+      },
+    ],
+    assessments: [],
+  };
+  vi.mocked(records).mockResolvedValue(data);
+  expect(renderToStaticMarkup(await Firearms())).toContain(
+    "4.5 mm (.177, air pistol)",
+  );
+  const html = renderToStaticMarkup(
+    <LanguageProvider language="en">
+      {await Details({ params: Promise.resolve({ id: session.id }) })}
+    </LanguageProvider>,
+  );
+  expect(html).toContain("4.5 mm (.177, air pistol)");
+  expect(html).toContain("25 m precision pistol target");
+  expect(data.firearms[0].caliber).toBe("4.5 mm");
+  expect(data.sessions[0].firearmSnapshot.caliber).toBe("4.5 mm");
 });

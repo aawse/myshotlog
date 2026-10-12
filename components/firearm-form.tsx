@@ -80,7 +80,7 @@ export function FirearmForm({ initial }: { initial?: Firearm }) {
             )}
             {calibers.map((c) => (
               <option key={c.value} value={c.value}>
-                {caliberName(language, c)}
+                {caliberName(language, c.value)}
               </option>
             ))}
           </select>
