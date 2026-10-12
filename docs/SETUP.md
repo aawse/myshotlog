@@ -1,14 +1,18 @@
 # Installation
 
+## Lokal utveckling på Windows, macOS och Linux
+
+Installera Node.js 24 och Git. Kontrollera `node --version`, `npm --version` och `git --version` i en ny terminal. På Windows kan du använda PowerShell eller cmd med Git for Windows i PATH; bash/WSL och OpenSSL behövs inte. Kör `npm ci`, `npm run setup:local` och därefter `npm run dev`. Setup-kommandot bevarar en befintlig `.env.local`. Tester och byggen behöver inga riktiga databas- eller OAuth-hemligheter; för inloggning i utvecklingsservern fyller du i `.env.local` enligt nedan.
+
 ## GitHub och Vercel
 
 1. Skapa ett separat **privat** GitHub-repository för journaldata. Lägg till README så att `main` har en första commit. Databasrepot ska inte vara appens kodrepo eller utlösa nya Vercel-deployments vid journaländringar.
 2. Skapa en fine-grained personal access token begränsad till databasrepot, med **Contents: read and write**. Organisationer kan behöva godkänna token. Branchregler måste tillåta appens direkta commits. Ge inte token åtkomst till fler repositories än nödvändigt.
-3. Kopiera `.env.example` till `.env.local`. Ange `GIT_DATABASE_PROVIDER=github`, `GIT_DATABASE_REPOSITORY=owner/repo`, `GIT_DATABASE_BRANCH=main`, `GIT_DATABASE_TOKEN` och `GIT_DATABASE_PREFIX=myshotlog/v1`. API-adressen är normalt `https://api.github.com`.
+3. Kör `npm run setup:local` för att skapa `.env.local` från `.env.example` utan att skriva över befintliga inställningar. Ange `GIT_DATABASE_PROVIDER=github`, `GIT_DATABASE_REPOSITORY=owner/repo`, `GIT_DATABASE_BRANCH=main`, `GIT_DATABASE_TOKEN` och `GIT_DATABASE_PREFIX=myshotlog/v1`. API-adressen är normalt `https://api.github.com`.
 4. Registrera en **GitHub OAuth App** via GitHub → Settings → Developer settings → OAuth Apps. Ange installationens origin som Homepage URL och exakt `https://YOUR_SITE/auth/github/callback` som Authorization callback URL. För lokal utveckling används `http://localhost:3000/auth/github/callback`; skapa en separat OAuth-app för utveckling och produktion. Generera en klienthemlighet. Se [GitHubs OAuth-guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
 5. Ange `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` och `GITHUB_ALLOWED_USER_IDS` (kommaseparerade numeriska GitHub-ID:n). Följ avsnittet [Hitta användarens numeriska GitHub-ID](#hitta-användarens-numeriska-github-id) nedan. Använd det numeriska ID:t, inte användarnamnet. Endast listade konton får logga in; en tom lista stoppar inloggning. Varje konto får sin egen journal.
-6. Generera en hemlighet med `openssl rand -hex 32` och ange `AUTH_SESSION_SECRET`. Ange `NEXT_PUBLIC_SITE_URL` till exakt samma origin som OAuth-appens callback, utan subpath, query eller fragment. Produktionsdomänen måste använda HTTPS. Hemligheter får aldrig ha `NEXT_PUBLIC_`-prefix, läggas i koden eller databasrepot.
-7. Kör `npm install`, `npm run typecheck`, `npm test`, `npm run build` och `npm run dev`. Välj ”Logga in med GitHub” och slutför GitHubs inloggning. Utan fullständig konfiguration visas installationssidan.
+6. Generera en hemlighet med `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` och ange `AUTH_SESSION_SECRET`. Ange `NEXT_PUBLIC_SITE_URL` till exakt samma origin som OAuth-appens callback, utan subpath, query eller fragment. Produktionsdomänen måste använda HTTPS. Hemligheter får aldrig ha `NEXT_PUBLIC_`-prefix, läggas i koden eller databasrepot.
+7. Kör `npm ci`, `npm run typecheck`, `npm test`, `npm run build` och `npm run dev`. Välj ”Logga in med GitHub” och slutför GitHubs inloggning. Utan fullständig konfiguration visas installationssidan.
 8. För Vercel: importera **kodrepot**, välj Next.js och ange samma miljövariabler i rätt miljö. Ange inte `.env.local`-filens omgivande shell-citat i Vercels fält. Publicera om efter ändrade miljövariabler. Använd en stabil produktionsdomän i OAuth-appens callback och `NEXT_PUBLIC_SITE_URL`; preview-deployments behöver separat OAuth-konfiguration. Aktivera plattformens trafikskydd vid publik exponering.
 
 GitHub-konfigurationen behöver ingen Git-binär eller beständig serverdisk. Databas-token, OAuth-klienthemlighet och sessionshemlighet är endast tillgängliga på servern. OAuth-inloggningen begär inga repository-scopes. Databasåtkomst använder den separata server-tokenen; användarnas GitHub-konton behöver inte ha repository-åtkomst. Repository-åtkomst ger möjlighet att läsa hela journalhistoriken: begränsa även medlemmar och integrationer.
@@ -41,12 +45,10 @@ GITHUB_ALLOWED_USER_IDS=123456,789012
 
 ### I terminalen
 
-Hämta samma offentliga JSON-svar med curl och läs fältet `id`:
+Hämta användarnamn, numeriskt ID och kontotyp med Node.js, som redan behövs för appen. Kommandot fungerar i PowerShell, cmd, bash och zsh:
 
 ```sh
-curl --fail --silent --show-error \
-  -H 'Accept: application/vnd.github+json' \
-  'https://api.github.com/users/YOUR_LOGIN'
+node -e "fetch('https://api.github.com/users/YOUR_LOGIN').then(r=>{if(r.ok)return r.json();throw new Error('HTTP '+r.status)}).then(({login,id,type})=>console.log({login,id,type})).catch(e=>{console.error(e.message);process.exitCode=1})"
 ```
 
 Om GitHub CLI är installerat och du redan har loggat in kan du visa det egna kontots ID tillsammans med användarnamnet:
@@ -66,6 +68,8 @@ Ange `GIT_DATABASE_PROVIDER=git` och `GIT_DATABASE_REMOTE` till ett SSH-/HTTPS-r
 ```sh
 git init --bare /ABSOLUTE/PERSISTENT/PATH/myshotlog-data.git
 ```
+
+På Windows kan du till exempel använda `git init --bare "C:/Users/YOUR_NAME/myshotlog-data.git"` och ange samma absoluta sökväg med snedstreck i `GIT_DATABASE_REMOTE`. Sökvägar med mellanslag stöds; omge miljövärdet med citattecken i `.env.local`.
 
 Ett tomt bare repo får sin första commit vid första sparningen. Lagra det utanför appens källkod på beständig disk. En lokal sökväg i Vercels temporära filsystem är inte en beständig databas. Använd GitHub-adaptern på Vercel.
 

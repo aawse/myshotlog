@@ -1,6 +1,8 @@
 import { it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { profile, firearm, session } from "./fixtures";
 vi.mock("../lib/data", () => ({ records: vi.fn() }));
 vi.mock("../lib/auth/server", () => ({
@@ -39,9 +41,10 @@ it("renders private dashboard without leaking serial or birth information", asyn
   expect(content).toContain("Precisionsskjutning");
   expect(content).not.toContain(firearm.serial);
   expect(content).not.toContain("1990");
-  await mkdir("/tmp/skytte-preview", { recursive: true });
+  const previewDirectory = join(tmpdir(), "myshotlog-preview");
+  await mkdir(previewDirectory, { recursive: true });
   await writeFile(
-    "/tmp/skytte-preview/index.html",
+    join(previewDirectory, "index.html"),
     `<!doctype html><html lang="sv"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MyShotLog · UI-test med fiktiva data</title><style>${await readFile("app/globals.css", "utf8")}</style><body>${content}</body></html>`,
   );
 });

@@ -13,8 +13,9 @@
     "test": "vitest run",
     "rules:check": "vitest run tests/catalog.test.ts tests/rules.test.ts",
     "rules:sync": "npm run rules:check && node scripts/sync-rules.mjs",
-    "format": "prettier --write app components lib tests scripts *.ts *.json",
-    "format:check": "prettier --check app components lib tests scripts *.ts *.json"
+    "format": "prettier --write app components lib tests scripts \"*.ts\" \"*.json\"",
+    "format:check": "prettier --check app components lib tests scripts \"*.ts\" \"*.json\"",
+    "setup:local": "node scripts/setup-local.mjs"
   },
   "dependencies": {
     "approve": "^0.0.12",

@@ -18,13 +18,18 @@ const exec = promisify(execFile),
   other = "20000000-0000-4000-8000-000000000002";
 let dir: string, db: GitRemoteDatabase, store: GitJournalStore;
 beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), "skytte-test-"));
+  dir = await mkdtemp(join(tmpdir(), "myshotlog test-"));
   await exec("git", ["init", "--bare", dir]);
   db = new GitRemoteDatabase({ remote: dir, branch: "main" });
   store = new GitJournalStore(db, owner);
 });
 afterEach(async () => {
-  await rm(dir, { recursive: true, force: true });
+  await rm(dir, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  });
 });
 const git = async (...args: string[]) =>
   (await exec("git", ["-C", dir, ...args])).stdout.trim();
@@ -172,10 +177,11 @@ it("rejects removed reassessment actions and leaves the branch unchanged when pu
   await store.mutate("session", session);
   await expect(store.mutate("reassess", { id: session.id })).rejects.toThrow();
   const receipt = { head: await git("rev-parse", "main") };
-  const { writeFile, chmod } = await import("node:fs/promises");
-  const hook = join(dir, "hooks", "pre-receive");
-  await writeFile(hook, "#!/bin/sh\nexit 1\n");
-  await chmod(hook, 0o700);
+  // Native Git rejection works on Windows, macOS and Linux without shell hooks.
+  await git("config", "--local", "receive.maxInputSize", "1");
+  expect(await git("config", "--local", "--get", "receive.maxInputSize")).toBe(
+    "1",
+  );
   await expect(
     store.mutate(
       "import",
@@ -268,4 +274,17 @@ it("calculates legacy sessions on read without commits or reassessment", async (
   expect(records.assessments[1].status).toBe("met");
   await store.records();
   expect(await git("rev-parse", "main")).toBe(head);
+});
+
+it("preserves multibyte UTF-8 journal data across Git output chunks", async () => {
+  const content = "ÅÄÖ 🎯".repeat(20_000);
+  await db.publish(await db.snapshot("journal"), [
+    {
+      message: "UTF-8 fixture",
+      changes: [{ path: "journal/utf8.txt", content }],
+    },
+  ]);
+  expect((await db.snapshot("journal")).files.get("journal/utf8.txt")).toBe(
+    content,
+  );
 });

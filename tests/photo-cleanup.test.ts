@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { mkdtemp, rm, access, writeFile, chmod, mkdir } from "node:fs/promises";
+import { mkdtemp, rm, access } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
@@ -76,11 +76,7 @@ it("removes the temporary photo-containing Git repository after a successful pus
   expect(sharp.cache().items.max).toBe(0);
 });
 it("removes temporary photo objects when the remote rejects the push", async () => {
-  const hooks = join(remote, "hooks");
-  await mkdir(hooks, { recursive: true });
-  const hook = join(hooks, "pre-receive");
-  await writeFile(hook, "#!/bin/sh\nexit 1\n");
-  await chmod(hook, 0o700);
+  await exec("git", ["-C", remote, "config", "receive.maxInputSize", "1"]);
   await expect(
     db.publish(await db.snapshot("journal"), [await photoEntry()]),
   ).rejects.toBeInstanceOf(DatabaseUnavailable);

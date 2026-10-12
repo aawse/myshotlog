@@ -6,11 +6,15 @@ Journalen använder ett **konfigurerbart privat Git-repository som databas**. Va
 
 ## Starta
 
+Utveckling stöds på **Windows, macOS och Linux**. Installera Node.js 24 (rekommenderad version) och Git och kontrollera att `node`, `npm` och `git` finns i PATH. Följande kommandon fungerar i PowerShell, cmd, bash och zsh; WSL krävs inte på Windows. Node.js 22 eller senare krävs av projektet.
+
 ```sh
-npm install
-cp .env.example .env.local
+npm ci
+npm run setup:local
 npm run dev
 ```
+
+`setup:local` skapar `.env.local` utan att skriva över en befintlig fil. Generera en sessionshemlighet på alla plattformar med `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
 
 Fyll i privat GitHub-repository, repository-begränsad databas-token, GitHub OAuth-appens klientuppgifter, tillåtna GitHub-ID:n och en slumpmässig sessionshemlighet i `.env.local`. Repot måste vara privat och ha en initial commit på vald branch. Läs [installationsguiden](docs/SETUP.md) för exakta steg och Vercel-konfiguration.
 
@@ -46,4 +50,9 @@ Uppladdade foton behandlas i arbetsminne och skrivs inte till någon upload-kata
 
 ### Automatiska tester i GitHub
 
-Workflowen **Tests** kör `npm ci` och hela testsamlingen med `npm test` på Ubuntu och Node.js 24. Den startas vid pull requests och pushar till `main`, inklusive merge-, squash- och rebase-merge. Manuell körning: öppna **Actions → Tests → Run workflow** i GitHub och välj branch. Workflowfilen behöver först finnas på standardbranchen för att den manuella knappen ska visas. Inga apphemligheter eller tillgång till din Git-databas krävs för testerna. `fsevents` är en valfri macOS-beroende modul så installationen även fungerar på Linux.
+Workflowen **Tests** kör `npm ci` och hela testsamlingen med `npm test` på Windows, macOS och Linux med Node.js 24; varje miljö kör även typkontroll och produktionsbygge. Den startas vid pull requests och pushar till `main`, inklusive merge-, squash- och rebase-merge. Manuell körning: öppna **Actions → Tests → Run workflow** i GitHub och välj branch. Workflowfilen behöver först finnas på standardbranchen för att den manuella knappen ska visas. Inga apphemligheter eller tillgång till din Git-databas krävs för testerna. `fsevents` är en valfri macOS-beroende modul så installationen även fungerar på Linux.
+
+
+### Plattformsoberoende utveckling
+
+Kör `npm ci` på varje utvecklingsdator; kopiera inte `node_modules` eller `.next` mellan operativsystem eftersom Sharp och andra verktyg har plattformsspecifika binärer. Om du byter operativsystem i samma checkout kan du rensa byggcachen med `node -e "require('node:fs').rmSync('.next', { recursive: true, force: true })"` och sedan köra `npm ci`. Formateringskommandona låter Prettier hantera citerade glob-mönster, och `.gitattributes` håller textfiler på LF även i Windows-checkouts. Git-tester använder systemets temporära katalog och inbyggda Git-inställningar i stället för Unix-shellskript. CI kör hela testsamlingen, typkontroll och bygget på alla tre plattformar.

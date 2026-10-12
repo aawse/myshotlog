@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { StringDecoder } from "node:string_decoder";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -56,13 +57,14 @@ export class GitRemoteDatabase implements GitDatabase {
           stdio: ["pipe", "pipe", "pipe"],
         },
       );
+      const decoder = new StringDecoder("utf8");
       let output = "",
         size = 0;
       const timer = setTimeout(() => child.kill("SIGKILL"), 30000);
       child.stdout.on("data", (chunk) => {
         size += chunk.length;
         if (size > 32_000_000) child.kill("SIGKILL");
-        else output += chunk.toString();
+        else output += decoder.write(chunk);
       });
       child.stderr.resume(); // Upstream errors can contain credentials; do not retain or log them.
       child.once("error", () => {
@@ -71,7 +73,7 @@ export class GitRemoteDatabase implements GitDatabase {
       });
       child.once("close", (code) => {
         clearTimeout(timer);
-        if (code === 0) resolve(output);
+        if (code === 0) resolve(output + decoder.end());
         else reject(new DatabaseUnavailable());
       });
       child.stdin.on("error", () => {});
