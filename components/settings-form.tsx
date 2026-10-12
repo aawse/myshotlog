@@ -1,11 +1,12 @@
 "use client";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "./language-provider";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { todayInTimezone, type Profile } from "@/lib/models";
 import { csv, exportRecords } from "@/lib/portability";
 import type { Records } from "@/lib/models";
+import { ImportData } from "./import-data";
 import { mutate } from "./mutate";
 export function SettingsForm({ profile }: { profile: Profile }) {
   const { tr, language, setLanguage } = useI18n();
@@ -14,17 +15,14 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     [busy, setBusy] = useState(false),
     [confirm, setConfirm] = useState("");
   const router = useRouter();
+  useEffect(() => setP(profile), [profile]);
   async function act(action: string, payload: unknown) {
     setBusy(true);
     setMessage("");
     try {
-      const result = await mutate(action, payload);
+      await mutate(action, payload);
       if (action === "profile") setLanguage(p.language);
-      setMessage(
-        action === "import"
-          ? tr("profile.imported", { p0: result.imported })
-          : tr("profile.saved"),
-      );
+      setMessage(tr("profile.saved"));
       router.refresh();
     } catch (e) {
       setMessage((e as Error).message);
@@ -188,29 +186,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
             {tr("profile.exportCsv")}
           </button>
         </div>
-        <label>
-          {tr("profile.importJson")}
-          <input
-            type="file"
-            accept="application/json,.json"
-            disabled={busy}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              if (file.size > 3000000) {
-                setMessage(tr("profile.fileTooLarge"));
-                return;
-              }
-              try {
-                await act("import", JSON.parse(await file.text()));
-              } catch {
-                setMessage(tr("profile.invalidJson"));
-              }
-              e.target.value = "";
-            }}
-          />
-        </label>
-        <p className="muted">{tr("profile.importHelp")}</p>
+        <ImportData disabled={busy} onBusyChange={setBusy} />
       </section>
       <section className="card">
         <h2>{tr("profile.deleteHeading")}</h2>

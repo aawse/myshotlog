@@ -115,3 +115,118 @@ it("never publishes a partially failed chain and sanitizes upstream errors", asy
     ]),
   ).rejects.toBeInstanceOf(DatabaseConflict);
 });
+
+it.each([404, 409])(
+  "reads a confirmed empty repository without creating files (%s)",
+  async (status) => {
+    const { db, request } = provider([
+      { private: true },
+      new Response(null, { status }),
+      [],
+    ]);
+    expect(await db.snapshot("users/a")).toEqual({
+      head: null,
+      files: new Map(),
+    });
+    expect(request.mock.calls.at(-1)?.[0]).toContain("/branches?per_page=1");
+    expect(
+      request.mock.calls.every(([, options]) => options.method === "GET"),
+    ).toBe(true);
+  },
+);
+it("does not mistake a wrong branch, inaccessible repo or public repo for an empty journal", async () => {
+  for (const responses of [
+    [
+      { private: true },
+      new Response(null, { status: 404 }),
+      [{ name: "existing" }],
+    ],
+    [new Response(null, { status: 403 })],
+    [{ private: false }],
+    [
+      { private: true },
+      new Response(null, { status: 404 }),
+      new Response(null, { status: 403 }),
+    ],
+  ]) {
+    const { db, request } = provider(responses);
+    await expect(db.snapshot("users/a")).rejects.toBeInstanceOf(
+      DatabaseUnavailable,
+    );
+    expect(
+      request.mock.calls.every(([, options]) => options.method === "GET"),
+    ).toBe(true);
+  }
+});
+it("bootstraps only metadata before atomically publishing a first transaction", async () => {
+  const { db, request } = provider([
+    { private: true },
+    new Response(null, { status: 409 }),
+    [],
+    { commit: { sha: a } },
+    { sha: a, tree: { sha: b } },
+    { sha: c },
+    { sha: d },
+    { sha: b },
+    { sha: c },
+    { object: { sha: c } },
+  ]);
+  const receipt = await db.publish({ head: null, files: new Map() }, [
+    {
+      message: "profile",
+      changes: [{ path: "users/a/profile.json", content: "{}" }],
+    },
+    {
+      message: "session",
+      changes: [{ path: "users/a/session.json", content: "{}" }],
+    },
+  ]);
+  expect(receipt.commits).toEqual([d, c]);
+  const calls = request.mock.calls;
+  expect(calls[3][0]).toContain("/contents/.myshotlog.json");
+  const bootstrap = JSON.parse(calls[3][1].body as string);
+  expect(bootstrap.branch).toBe("main");
+  expect(
+    JSON.parse(Buffer.from(bootstrap.content, "base64").toString()),
+  ).toEqual({ app: "myshotlog", version: 1 });
+  expect(JSON.parse(calls[6][1].body as string).parents).toEqual([a]);
+  expect(
+    calls.filter(([, options]) => options.method === "PATCH"),
+  ).toHaveLength(1);
+  expect(JSON.parse(calls.at(-1)![1].body as string)).toEqual({
+    sha: c,
+    force: false,
+  });
+});
+it("retries concurrent initialization and does not hide bootstrap permission failures", async () => {
+  for (const status of [409, 422, 403]) {
+    const { db, request } = provider([
+      { private: true },
+      new Response(null, { status: 404 }),
+      [],
+      new Response(null, { status }),
+    ]);
+    await expect(
+      db.publish({ head: null, files: new Map() }, [
+        {
+          message: "profile",
+          changes: [{ path: "users/a/profile.json", content: "{}" }],
+        },
+      ]),
+    ).rejects.toBeInstanceOf(
+      status === 403 ? DatabaseUnavailable : DatabaseConflict,
+    );
+    expect(
+      request.mock.calls.some(([, options]) => options.method === "PATCH"),
+    ).toBe(false);
+  }
+  const { db, request } = provider([{ private: true }, { object: { sha: a } }]);
+  await expect(
+    db.publish({ head: null, files: new Map() }, [
+      { message: "profile", changes: [] },
+    ]),
+  ).rejects.toBeInstanceOf(DatabaseConflict);
+  expect(
+    request.mock.calls.some(([, options]) => options.method === "PUT"),
+  ).toBe(false);
+});

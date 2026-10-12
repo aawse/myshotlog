@@ -15,7 +15,7 @@ npm run setup:local
 
 ## GitHub som databas
 
-1. Skapa ett separat **privat GitHub-repository** för journaldata. Lägg till en README så att vald branch, normalt `main`, har en första commit. Datarepot ska inte vara kodrepot eller utlösa nya app-deployments vid journaländringar.
+1. Skapa ett separat **privat GitHub-repository** för journaldata. Repositoryt kan vara tomt. MyShotLog skapar en första metadatacommit vid första skrivningen, normalt när inloggningen startas. Om repositoryt redan har commits måste vald branch finnas. Datarepot ska inte vara kodrepot eller utlösa nya app-deployments vid journaländringar.
 2. Skapa en fine-grained personal access token begränsad till datarepot med **Contents: read and write**. Organisationer kan behöva godkänna token. Branchregler måste tillåta appens direkta commits.
 3. Ange lagringsvariablerna i `.env.local`:
 
@@ -212,6 +212,12 @@ Sidornas CSP använder en ny script-nonce och dynamisk rendering. Script får in
 Nya standardlagringar använder `myshotlog/v1`. Ett uttryckligt `GIT_DATABASE_PREFIX` behålls som angivet; ändra inte sökvägen för en befintlig journal utan att flytta data. Om variabeln saknas använder appen en befintlig journal under den äldre standardsökvägen när ingen journal finns under den nya. Journalernas deterministiska UUID:n behålls. Den ursprungliga ID-namnrymden och läsning av äldre backupformat/sökvägar är interna kompatibilitetsundantag, så att befintliga data förblir åtkomliga.
 
 Inloggnings- och OAuth-cookies använder nu MyShotLog-namn. Logga in igen efter uppgraderingen.
+
+## Tom journal och första import
+
+Efter inloggning visar en journal utan vapen, pass eller snabbserier en importpanel på **Översikt**. Välj en MyShotLog JSON-backup för att återställa data, eller registrera ett första pass. Profilen behöver inte sparas först; då kan importen använda backupens profil. Import finns också under **Inställningar** och använder samma validering, storleksgräns och daterade regelbedömning.
+
+Ett helt tomt privat GitHub-repository stöds. Första skrivningen skapar `.myshotlog.json` via [GitHubs Contents API](https://docs.github.com/en/rest/guides/using-the-rest-api-to-interact-with-your-git-database), därefter publiceras postcommits atomiskt. Inga journalposter finns i metadatacommitten. En felaktig branch i ett befintligt repo, saknad behörighet och anslutningsfel visas fortfarande som fel; de behandlas inte som en tom journal.
 
 ## Export, import och backup
 

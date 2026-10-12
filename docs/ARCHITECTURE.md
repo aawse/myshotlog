@@ -10,7 +10,7 @@ Databasåtkomst använder en separat server-token eller serverns Git-autentiseri
 
 ## Git-lagring
 
-`lib/git-database/types.ts` definierar adaptergränsen: läs ett branch-snapshot och publicera en kedja av postcommits. GitHub-adaptern använder HTTPS API och kräver ett privat repository med en initial commit. Git-adaptern använder objektkommandon i tillfälliga bare repositories, utan checkout, och städar katalogerna efter anropet. Den kan initiera en tom databranch.
+`lib/git-database/types.ts` definierar adaptergränsen: läs ett branch-snapshot och publicera en kedja av postcommits. GitHub-adaptern använder HTTPS API och kräver ett privat repository. Saknad branch ger ett tomt snapshot endast när branchlistan bekräftar att hela repositoryt är tomt. Första skrivningen initierar då en metadatacommit via Contents API innan den ordinarie atomiska postkedjan publiceras. Konkurrerande initiering ger en konflikt och läses om. Git-adaptern använder objektkommandon i tillfälliga bare repositories, utan checkout, och städar katalogerna efter anropet. Den kan initiera en tom databranch.
 
 Nya standardjournaler använder prefixet `myshotlog/v1`. Uttryckligen konfigurerade prefix och befintliga UUID:n bevaras; utan prefixinställning upptäcks journaler under den äldre standardsökvägen per användare.
 
@@ -41,6 +41,8 @@ Sparade födelseuppgifter från seriens underlag används när de finns; annars 
 Passet har gemensamt avstånd, måltyp, starttid och skjuttid. En snabbserie kan sparas utan pass och kopplas senare till samma datum och gren. Vapen kan ha en förvald gren för nya pass. Kaliber- och mållistor kommer från JSON-kataloger. Passlistan grupperar serier efter högsta uppnådda valör och visar även antal serier och skott.
 
 ## Export och drift
+
+En journal utan vapen, pass eller snabbserier erbjuder import direkt på översikten. Samma importkomponent används i inställningar.
 
 JSON version 2 (`myshotlog`) omfattar profil, vapen, passens råresultat, födelseuppgifter fångade per serie, snabbserier och foton. Bedömningar och regelsnapshots ingår inte. Vid import beräknas nya bedömningar med katalogversionen för passdatumet och seriens födelseuppgifter; äldre version 1-backuper kan läsas men deras slutsatser ignoreras. Import är atomär, hoppar över befintliga ID:n och importerar profil endast om profilfil saknas. CSV exporterar passresultat. Git-backup innehåller även säkerhetstillstånd och historik; sessionshemligheten ska roteras efter en återställning.
 

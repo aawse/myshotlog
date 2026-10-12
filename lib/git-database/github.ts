@@ -76,6 +76,18 @@ export class GitHubDatabase implements GitDatabase {
         path.startsWith("/git/refs/")
       )
         throw new DatabaseConflict();
+      if (
+        response.status === 409 &&
+        method === "GET" &&
+        path.startsWith("/git/ref/heads/")
+      )
+        throw new EmptyRepository();
+      if (
+        (response.status === 409 || response.status === 422) &&
+        method === "PUT" &&
+        path === "/contents/.myshotlog.json"
+      )
+        throw new DatabaseConflict();
       if (response.status === 404) throw new MissingReference();
       throw new DatabaseUnavailable(
         response.status === 403 || response.status === 429
@@ -89,22 +101,33 @@ export class GitHubDatabase implements GitDatabase {
     const data = z.object({ private: z.boolean() }).parse(await this.api(""));
     if (!data.private) throw new DatabaseUnavailable(swText("store.private"));
   }
-  async snapshot(prefix: string): Promise<GitSnapshot> {
-    validPath(prefix);
-    await this.checkPrivate();
-    let head: string;
+  private async head(): Promise<string | null> {
     try {
-      head = refSchema.parse(
+      return refSchema.parse(
         await this.api(
           "/git/ref/heads/" +
             this.branch.split("/").map(encodeURIComponent).join("/"),
         ),
       ).object.sha;
-    } catch (e) {
-      if (e instanceof MissingReference)
+    } catch (error) {
+      if (
+        !(error instanceof MissingReference || error instanceof EmptyRepository)
+      )
+        throw error;
+      // A missing configured branch in an existing repo is not an empty journal.
+      const branches = z
+        .array(z.object({ name: z.string() }))
+        .parse(await this.api("/branches?per_page=1"));
+      if (branches.length)
         throw new DatabaseUnavailable(swText("store.branch"));
-      throw e;
+      return null;
     }
+  }
+  async snapshot(prefix: string): Promise<GitSnapshot> {
+    validPath(prefix);
+    await this.checkPrivate();
+    const head = await this.head();
+    if (!head) return { head: null, files: new Map() };
     const commit = commitSchema.parse(await this.api("/git/commits/" + head));
     const tree = treeSchema.parse(
       await this.api("/git/trees/" + commit.tree.sha + "?recursive=1"),
@@ -134,9 +157,22 @@ export class GitHubDatabase implements GitDatabase {
   }
   async publish(snapshot: GitSnapshot, entries: EntryCommit[]) {
     if (!entries.length) return { head: snapshot.head, commits: [] };
-    if (!snapshot.head)
-      throw new DatabaseUnavailable(swText("store.firstCommit"));
     let parent = snapshot.head;
+    if (!parent) {
+      await this.checkPrivate();
+      if (await this.head()) throw new DatabaseConflict();
+      // Git object APIs require a first commit. Bootstrap only metadata, then
+      // publish the requested post chain atomically as on an initialized repo.
+      parent = z.object({ commit: z.object({ sha }) }).parse(
+        await this.api("/contents/.myshotlog.json", "PUT", {
+          message: "MyShotLog: initialize data repository",
+          content: Buffer.from(
+            JSON.stringify({ app: "myshotlog", version: 1 }) + "\n",
+          ).toString("base64"),
+          branch: this.branch,
+        }),
+      ).commit.sha;
+    }
     const commits: string[] = [];
     let baseTree = commitSchema.parse(await this.api("/git/commits/" + parent))
       .tree.sha;
@@ -186,3 +222,5 @@ export class GitHubDatabase implements GitDatabase {
   }
 }
 class MissingReference extends Error {}
+
+class EmptyRepository extends Error {}

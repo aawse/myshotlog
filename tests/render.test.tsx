@@ -99,3 +99,21 @@ it("localizes built-in calibers on firearm and historical session pages without 
   expect(data.firearms[0].caliber).toBe("4.5 mm");
   expect(data.sessions[0].firearmSnapshot.caliber).toBe("4.5 mm");
 });
+
+it("offers direct JSON import on an empty dashboard and hides it when journal entries exist", async () => {
+  const empty = {
+    profile,
+    firearms: [],
+    sessions: [],
+    assessments: [],
+    quickEntries: [],
+  };
+  vi.mocked(records).mockResolvedValue(empty);
+  const html = renderToStaticMarkup(await Dashboard());
+  expect(html).toContain("Välkommen till din journal");
+  expect(html).toContain('type="file"');
+  expect(html).toContain('accept="application/json,.json"');
+  vi.mocked(records).mockResolvedValue({ ...empty, firearms: [firearm] });
+  const populated = renderToStaticMarkup(await Dashboard());
+  expect(populated).not.toContain('type="file"');
+});

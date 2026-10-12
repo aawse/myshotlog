@@ -16,6 +16,7 @@ Kontrollerna täcker bland annat:
 - Språkval från profilen, svensk standard, identiska översättningsnycklar och oförändrade användarinmatade värden.
 - Läscachens användar-/konfigurationsisolering, utgång, samordnade läsningar, minnesgränser och invalidering vid samtidiga skrivningar. Transaktioner använder färska snapshots även med varm läscache.
 - Postcommits, atomiska importer, samtidiga skrivningar, revisionskonflikter och användarisolering.
+- Tomma GitHub-repositories, första metadatacommit, initieringskonflikter, verkliga branch-/behörighetsfel och importpanel på tom översikt.
 - GitHub API, OAuth-state/PKCE, engångsflöden, stateless sessionskontroller utan Git, origin/version/utgång och gemensamma trafikgränser.
 - Rå JSON/CSV-export utan bedömningar, import med daterade regler och fångade födelseuppgifter, äldre backupkompatibilitet, stabila journal-ID:n och prefixval.
 - Fotovalidering, bildreferenser, deduplicering och städning av tillfälliga Git-repositories.

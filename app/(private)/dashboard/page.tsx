@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { records } from "@/lib/data";
 import { SessionList } from "@/components/session-list";
+import { ImportData } from "@/components/import-data";
 import { ProgressChart } from "@/components/progress-chart";
 export default async function Dashboard() {
   const { tr, locale } = await getI18n();
@@ -27,6 +28,15 @@ export default async function Dashboard() {
   );
   return (
     <>
+      {data.sessions.length === 0 &&
+        data.firearms.length === 0 &&
+        !data.quickEntries?.length && (
+          <section className="card form">
+            <h2>{tr("journal.emptyHeading")}</h2>
+            <p>{tr("journal.emptyHelp")}</p>
+            <ImportData returnToDashboard />
+          </section>
+        )}
       <div className="page-heading">
         <div>
           <span className="eyebrow">{tr("dashboard.eyebrow")}</span>
