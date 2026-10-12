@@ -2,7 +2,7 @@
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
 import { useId, useRef, useState, useEffect } from "react";
-import Image from "next/image";
+import { PhotoViewer } from "./photo-viewer";
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import { prepareTargetPhoto } from "@/lib/photos/client";
 import type { PhotoDraft } from "@/lib/photos/schema";
@@ -62,14 +62,7 @@ export function TargetPhotoInput({
         {tr("photo.heading")}
       </span>
       {source && (
-        <Image
-          className="target-photo-preview"
-          src={source}
-          alt={tr("photo.alt")}
-          width={320}
-          height={240}
-          unoptimized
-        />
+        <PhotoViewer src={source} label={tr("common.seriesLabel")} preview />
       )}
       <div className="photo-actions">
         <button

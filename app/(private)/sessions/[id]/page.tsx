@@ -1,7 +1,7 @@
 import { localizeMessage } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
-import Image from "next/image";
+import { PhotoViewer } from "@/components/photo-viewer";
 import { Medal } from "lucide-react";
 import { notFound } from "next/navigation";
 import { records } from "@/lib/data";
@@ -142,21 +142,10 @@ export default async function Page({
                           ?.ruleVersion ?? tr("details.notRecorded")}
                       </span>
                       {r.photoId && (
-                        <a
-                          href={"/api/photos/" + r.photoId + "/"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={tr("details.openPhotoPrefix") + r.label}
-                        >
-                          <Image
-                            className="series-target-photo"
-                            src={"/api/photos/" + r.photoId + "/"}
-                            alt={tr("details.photoAlt")}
-                            width={120}
-                            height={90}
-                            unoptimized
-                          />
-                        </a>
+                        <PhotoViewer
+                          src={"/api/photos/" + r.photoId + "/"}
+                          label={r.label}
+                        />
                       )}
                     </td>
                     <td>{r.points ?? "–"}</td>

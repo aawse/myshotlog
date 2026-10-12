@@ -3,7 +3,7 @@ import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
 import { useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { PhotoViewer } from "./photo-viewer";
 import { TargetPhotoInput } from "./target-photo-input";
 import type { PhotoDraft } from "@/lib/photos/schema";
 import { useRouter } from "next/navigation";
@@ -300,36 +300,34 @@ export function QuickSeries({
         <div className="quick-series-list">
           {entries.map((q) => (
             <div className="quick-series-row" key={q.id}>
-              <label className="quick-series-choice">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(q.id)}
-                  onChange={() => select(q.id)}
-                  disabled={busy}
-                />
-                <span>
-                  <strong>
-                    {q.result.points !== undefined
-                      ? tr("quick.points", { p0: q.result.points })
-                      : tr("quick.hits", { p0: q.result.hits ?? 0 })}
-                  </strong>
-                  <small>
-                    {q.result.shots} {tr("details.shotsSeparator")} {q.date} ·{" "}
-                    {disciplineName(language, q.discipline)}
-                  </small>
-                  {q.notes && <small>{q.notes}</small>}
-                  {q.result.photoId && (
-                    <Image
-                      className="series-target-photo"
-                      src={"/api/photos/" + q.result.photoId + "/"}
-                      alt={tr("details.photoAlt")}
-                      width={120}
-                      height={90}
-                      unoptimized
-                    />
-                  )}
-                </span>
-              </label>
+              <div>
+                <label className="quick-series-choice">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(q.id)}
+                    onChange={() => select(q.id)}
+                    disabled={busy}
+                  />
+                  <span>
+                    <strong>
+                      {q.result.points !== undefined
+                        ? tr("quick.points", { p0: q.result.points })
+                        : tr("quick.hits", { p0: q.result.hits ?? 0 })}
+                    </strong>
+                    <small>
+                      {q.result.shots} {tr("details.shotsSeparator")} {q.date} ·{" "}
+                      {disciplineName(language, q.discipline)}
+                    </small>
+                    {q.notes && <small>{q.notes}</small>}
+                  </span>
+                </label>
+                {q.result.photoId && (
+                  <PhotoViewer
+                    src={"/api/photos/" + q.result.photoId + "/"}
+                    label={q.result.label}
+                  />
+                )}
+              </div>
               <button
                 type="button"
                 className="text-button danger quick-remove"
