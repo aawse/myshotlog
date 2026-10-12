@@ -32,6 +32,18 @@ Ersätt platshållarna. Ange prefixet uttryckligen; behåll det befintliga värd
 
 GitHub-adaptern behöver ingen Git-binär eller beständig serverdisk när appen körs. Git behövs fortfarande lokalt för utveckling och integrationstester. Repository-åtkomst ger tillgång till hela datahistoriken; begränsa även medlemmar, integrationer och backups.
 
+## Läscache
+
+Journal- och fotoläsningar använder en minnescache per serverinstans. Standardlivslängden är **15 sekunder**, med högst **64 snapshots och 32 MiB filinnehåll/sökvägar**. Samtidiga läsningar av samma prefix delar en hämtning. Cachen kräver ingen extra tjänst och skriver ingen journal- eller bilddata till serverdisk.
+
+```dotenv
+GIT_DATABASE_READ_CACHE_SECONDS=15
+```
+
+Ange ett heltal mellan **0 och 300**; `0` stänger av läscachen. Appens skrivningar tömmer berörda cacheposter före och efter publicering, inklusive profil, pass, vapen, snabbserier, importer och foton. Transaktioner, OAuth-engångsflöden och trafikräknare läser alltid ett färskt Git-snapshot. Privata HTTP-svar behåller `no-store` och autentisering görs för varje begäran.
+
+Minnet delas inte mellan Vercel-instanser. Ändringar från en annan instans eller direkt i Git blir synliga när den lokala cacheposten löper ut; en kallstart börjar med tom cache. Ändrad token, repository, branch, API-host eller Git-remote ger en separat cache. Efter utgång används ingen gammal post som reserv vid lagringsfel. API:s trafikbegränsning kan fortfarande kräva Git-anrop även när journal- eller fotoläsningen träffar cachen.
+
 ## GitHub-inloggning
 
 1. Registrera en **GitHub OAuth App** via GitHub → Settings → Developer settings → OAuth Apps. Detta är separat från datarepo-tokenen.

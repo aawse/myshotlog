@@ -11,6 +11,7 @@ Svensk träningsjournal för personligt pistolskytte, byggd med Next.js och Reac
 - Födelsedatum i profilen för precisionens åldersavdrag. Sparade födelseuppgifter används när de finns i seriens underlag; annars används profilen.
 - Mobilanpassad **Snabbserie** som sparas direkt och senare kan kopplas till ett pass med samma datum och gren. Nätanslutning krävs.
 - Ett valfritt tavelfoto per serie. Välj en bild; formatet avgör automatiskt om den kan användas direkt eller behöver konverteras och optimeras i webbläsaren före uppladdning.
+- Konfigurerbar läscache i serverminnet för snabbare journal- och fotohämtning; skrivningar tömmer berörda poster.
 - JSON-export/import med profil, vapen, råresultat, seriens födelseuppgifter, okopplade serier och foton. Bedömningar exporteras inte; vid import beräknas de med reglerna för passdatumet. CSV exporterar resultat från pass till kalkylblad.
 - Vercel Web Analytics via rotlayouten; aktiveras för projektet i Vercels dashboard.
 

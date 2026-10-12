@@ -98,6 +98,11 @@ export class GitJournalStore {
     this.photosPath =
       validPath(prefix) + "/photos/users/" + z.uuid().parse(ownerId);
   }
+  private readSnapshot(prefix: string) {
+    return this.provider.readSnapshot
+      ? this.provider.readSnapshot(prefix)
+      : this.provider.snapshot(prefix);
+  }
   private profilePath() {
     return this.path + "/profile.json";
   }
@@ -112,7 +117,7 @@ export class GitJournalStore {
   }
   async photo(id: string): Promise<PhotoAsset> {
     const path = this.photoPath(id);
-    const snapshot = await this.provider.snapshot(this.photosPath + "/" + id);
+    const snapshot = await this.readSnapshot(this.photosPath + "/" + id);
     const content = snapshot.files.get(path);
     if (!content) throw new RecordNotFound();
     const photo = photoFile.parse(JSON.parse(content)).entry;
@@ -120,7 +125,7 @@ export class GitJournalStore {
     return photo;
   }
   async photos(): Promise<PhotoAsset[]> {
-    const snapshot = await this.provider.snapshot(this.photosPath);
+    const snapshot = await this.readSnapshot(this.photosPath);
     return [...snapshot.files]
       .filter(
         ([path]) =>
@@ -173,7 +178,7 @@ export class GitJournalStore {
     return records;
   }
   async records() {
-    const records = this.decode(await this.provider.snapshot(this.path));
+    const records = this.decode(await this.readSnapshot(this.path));
     records.sessions = records.sessions.map(sessionSetup);
     const history = records.assessments;
     records.assessments = records.sessions.flatMap((session) =>

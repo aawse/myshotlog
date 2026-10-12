@@ -18,6 +18,12 @@ Journalposter ligger under `<prefix>/users/<UUID>/`. Profil, vapen, pass och oko
 
 Foton ligger separat under `<prefix>/photos/users/<UUID>/<bildhash>/image.json`. Webbläsaren rasteriserar och komprimerar före uppladdning. Befintliga WebP-foton förblir läsbara och bevaras i JSON-export/import. Nya uppladdningar lagras som JPEG; äldre foton och deras Git-historik ändras inte. Servern validerar JPEG-byten, dimensioner, storlek, metadata och SHA-256 utan att komprimera om bilden. Identiska bilder återanvänds per användare. Bildändringar och journalposter publiceras atomiskt. Privata bildanrop hämtar samma användares foto från Git; ingen permanent upload-katalog används.
 
+## Läscache
+
+`ReadCachedDatabase` återanvänds per serverkonfiguration och erbjuder en separat `readSnapshot` för visning, export och fotohämtning. Prefixet innehåller ägarens UUID; cacheinstansen är isolerad efter provider, repo/remote, branch, API-host och token. Den har konfigurerbar livslängd (15 sekunder som standard), LRU-utkastning, gränser på 64 poster/32 MiB och samordning av samtidiga läsningar. Returnerade maps är kopior. Fel cachelagras inte och utgångna poster används inte vid fel.
+
+`snapshot` för transaktioner och säkerhetstillstånd går alltid till Git. `publish` invaliderar endast prefix som berörs av ändringarna, både före och efter publicering även vid konflikt/fel. Läsningar som startade före eller under skrivningen kan inte återfylla cachen efteråt. Säkerhetscommits tömmer inte oförändrade journalposter. Minnescachen är lokal för processen; ändringar på andra instanser eller utanför appen kan dröja upp till cachelivslängden. Privata HTTP-svar har fortsatt `no-store`. Se [konfigurationen](SETUP.md#läscache).
+
 ## Säkerhetstillstånd och trafik
 
 `lib/auth/security-store.ts` lagrar engångsflöden och HMAC-baserade trafikräknare under ett separat installationsprefix i samma repo. Origin och sessionshemlighet bestämmer installationshashen. Uppdateringar använder icke-forcerad Git-publicering och läses om vid konflikter. Lagringsfel stoppar åtgärden. Minnescachen innehåller endast nekade trafikbeslut, aldrig beviljade sessioner.

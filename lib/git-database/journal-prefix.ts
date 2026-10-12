@@ -8,8 +8,10 @@ export async function journalPrefix(
   explicitlyConfigured: boolean,
 ) {
   if (explicitlyConfigured) return prefix;
-  const current = await provider.snapshot(prefix + "/users/" + owner);
+  const read =
+    provider.readSnapshot?.bind(provider) ?? provider.snapshot.bind(provider);
+  const current = await read(prefix + "/users/" + owner);
   if (current.files.size) return prefix;
-  const legacy = await provider.snapshot(legacyPrefix + "/users/" + owner);
+  const legacy = await read(legacyPrefix + "/users/" + owner);
   return legacy.files.size ? legacyPrefix : prefix;
 }
