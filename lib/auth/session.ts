@@ -1,5 +1,10 @@
-import { createHmac, createHash, timingSafeEqual } from "node:crypto";
-import { z } from "zod";
+import {
+  createHmac,
+  createHash,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
+import { z } from "../validation";
 export const githubIdSchema = z
   .string()
   .regex(/^[1-9][0-9]*$/)
@@ -69,7 +74,11 @@ export function unseal(value: string | undefined, secret: string): unknown {
   }
 }
 const tokenSchema = identitySchema
-  .extend({ purpose: z.literal("github-session"), exp: z.number().int() })
+  .extend({
+    purpose: z.literal("github-session"),
+    exp: z.number().int(),
+    sid: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  })
   .strict();
 export function signSession(
   identity: Identity,
@@ -80,6 +89,7 @@ export function signSession(
     {
       ...identitySchema.parse(identity),
       purpose: "github-session",
+      sid: randomBytes(32).toString("base64url"),
       exp: Math.floor(now / 1000) + sessionSeconds,
     },
     secret,

@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { verifySession } from "./session";
+import { securityStore } from "./security";
 import { oauthConfig } from "./github";
 import { databaseConfigured } from "../git-database/config";
 export const sessionCookie = "skytte_session";
@@ -20,12 +21,16 @@ export function configured() {
 export async function currentUser() {
   if (!configured()) return null;
   const config = oauthConfig();
-  return verifySession(
-    (await cookies()).get(sessionCookie)?.value,
+  const token = (await cookies()).get(sessionCookie)?.value;
+  const user = verifySession(
+    token,
     config.secret,
     config.allowed,
     config.mapping,
   );
+  return user && token && (await securityStore().activeSession(token))
+    ? user
+    : null;
 }
 export async function authenticated() {
   const user = await currentUser();
@@ -33,5 +38,12 @@ export async function authenticated() {
   return { user };
 }
 export async function endSession() {
-  (await cookies()).delete(sessionCookie);
+  const jar = await cookies(),
+    token = jar.get(sessionCookie)?.value;
+  if (token) {
+    const config = oauthConfig();
+    if (verifySession(token, config.secret, config.allowed, config.mapping))
+      await securityStore().revokeSession(token);
+  }
+  jar.delete(sessionCookie);
 }

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "./validation";
 import { photoIdSchema, type PhotoAsset } from "./photos/schema";
 import { discipline, disciplineIds } from "./disciplines";
 const text = (max = 1000) => z.string().trim().max(max);

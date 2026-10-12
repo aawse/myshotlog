@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import type { Metadata } from "next";
 import "./globals.css";
 export const metadata: Metadata = {
@@ -9,7 +10,12 @@ export const metadata: Metadata = {
     apple: "/brand/MyShotLog-icon.png",
   },
 };
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  await connection();
   return (
     <html lang="sv">
       <body>{children}</body>

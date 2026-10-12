@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../validation";
 import { dateSchema } from "../models";
 import data from "./versions.json";
 const thresholds = z.tuple([

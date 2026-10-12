@@ -66,3 +66,10 @@ it("keeps ownership stable after username changes and applies updated mappings t
     old,
   );
 });
+
+it("uses a distinct session ID even for the same user in the same second", () => {
+  const now = Date.now();
+  expect(signSession(identity, secret, now)).not.toBe(
+    signSession(identity, secret, now),
+  );
+});

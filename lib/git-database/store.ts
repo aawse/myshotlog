@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { z } from "zod";
+import { z } from "../validation";
 import {
   photoDraftSchema,
   photoIdSchema,

@@ -21,6 +21,10 @@ import { session } from "./fixtures";
 vi.mock("../lib/data", () => ({ journal: vi.fn() }));
 vi.mock("../lib/auth/server", () => ({
   AuthenticationRequired: class extends Error {},
+  authenticated: async () => ({ user: { id: "owner" } }),
+}));
+vi.mock("../lib/auth/security", () => ({
+  securityStore: () => ({ limitApi: async () => undefined }),
 }));
 import { journal } from "../lib/data";
 import { GET } from "../app/api/photos/[id]/route";

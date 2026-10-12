@@ -81,7 +81,30 @@ Journalens UUID härleds deterministiskt från kontots numeriska GitHub-ID. Byte
 
 Gamla lokala sessionscookies godtas inte längre. Ta bort `AUTH_USERS_JSON`; kommandot `account:create` har avvecklats. För nya journaler behövs ingen mapping.
 
-Sessioner gäller högst åtta timmar. Utloggning tar bort aktuell lokal cookie. Återkallad OAuth-auktorisering eller ändrat GitHub-lösenord upptäcks vid nästa GitHub-inloggning, men återkallar inte omedelbart en redan signerad lokal session. För omedelbar avstängning, ta bort kontot ur tillåtelselistan och publicera om. OAuth-tokenen används endast för att hämta identiteten vid inloggning; den sparas inte i cookies eller databas.
+Sessioner gäller högst åtta timmar. Utloggning återkallar den sparade sessionen i Git innan aktuell lokal cookie tas bort. En kopia av cookien godtas därefter inte. Om Git inte kan bekräfta återkallelsen misslyckas utloggningen i stället för att visa en falsk bekräftelse. Äldre signerade cookies utan registrerad session godtas inte; efter denna uppdatering behöver befintliga användare logga in igen. Återkallad OAuth-auktorisering eller ändrat GitHub-lösenord upptäcks vid nästa GitHub-inloggning, men återkallar inte omedelbart en redan signerad lokal session. För omedelbar avstängning, ta bort kontot ur tillåtelselistan och publicera om. OAuth-tokenen används endast för att hämta identiteten vid inloggning; den sparas inte i cookies eller databas.
+
+## Säkerhetstillstånd och trafikgränser
+
+Appen sparar sessionernas cookie-hashar, engångsflöden för OAuth och trafikräknare under `GIT_DATABASE_PREFIX/security/<installationshash>/state.json`. Inga sessionscookies, OAuth-koder, PKCE-hemligheter eller IP-adresser sparas där. IP-baserade räknarnycklar använder HMAC. Installationshashen beror på `NEXT_PUBLIC_SITE_URL` och sessionshemligheten: använd samma origin, hemlighet, databasbranch och prefix på alla instanser som ska dela säkerhetstillstånd. Git bevarar även denna filhistorik. Utgångna poster rensas vid nästa säkerhetsskrivning.
+
+Inloggning, utloggning och API-anrop som passerar trafikgränserna skapar säkerhetscommits. Sessionskontroller läser Git utan positiv cache, så återkallelse fungerar även mellan instanser. Engångsflöden förbrukas med en atomisk Git-uppdatering **före** kontakt med GitHub, även om GitHub avvisar koden. Konflikter läses om med ett begränsat antal försök. Lagringsfel stoppar åtgärden; appen faller inte tillbaka till oskyddade lokala sessioner. Ingen extra databastjänst behöver konfigureras.
+
+Följande fasta fönster gäller från första godkända anropet:
+
+| Åtgärd                     | Per klient/användare | Hela installationen |
+| -------------------------- | -------------------- | ------------------- |
+| Starta OAuth               | 5 per 10 minuter     | 20 per 10 minuter   |
+| Förbruka OAuth-flöde       | 10 per 10 minuter    | 40 per 10 minuter   |
+| Läsa via records/photo-API | 60 per minut         | 300 per minut       |
+| Skriva via records-API     | 30 per minut         | 120 per minut       |
+
+För många anrop ger HTTP 429 och `Retry-After`. Gränserna finns i `lib/auth/security-store.ts`. De avser en liten privat installation. Alla direktanrop till en egen server delar klientgräns tills en säker proxy är konfigurerad. På Vercel används plattformens `x-vercel-forwarded-for`. På egen server kan `AUTH_TRUSTED_IP_HEADER=x-real-ip` användas **endast** om proxyn ersätter inkommande värden och direktåtkomst till servern är blockerad. Godtycklig `X-Forwarded-For` från webbläsaren godtas inte. Se [Vercels dokumentation om klient-IP](https://vercel.com/docs/headers/request-headers#x-vercel-forwarded-for).
+
+Git-lagringen innebär extra API-anrop och commits, och även avvisad trafik kan kräva en läsning. Använd värdtjänstens brandvägg/trafikgränser för att stoppa stora attacker innan de når appen; applikationsgränserna är inget skydd mot all nätverksöverbelastning. En återställning eller force-push av säkerhetshistoriken kan återaktivera äldre sessioner: rotera `AUTH_SESSION_SECRET` efter återställning av backup eller databasbranch. Gör inte manuella ändringar i säkerhetsfilen.
+
+Appen skickar en Content Security Policy med en ny script-nonce för varje svar. Sidor renderas dynamiskt så att Next.js kan applicera rätt nonce. Målfoton kan visas från appens egna URL:er samt `blob:`/`data:`-förhandsvisningar. Endast stilattribut för diagram tillåts inline; scripts använder nonce. Utvecklingsläget tillåter dessutom verktygens eval/stiltaggar, men produktionsläget gör inte det. Schema-valideringen använder Zods `jitless`-läge för att undvika dess eval-probe och dynamiska kodgenerering. Se [Next.js CSP-guide](https://nextjs.org/docs/app/guides/content-security-policy).
+
+POST-anrop måste ha samma Origin som `NEXT_PUBLIC_SITE_URL`; använd installationens kanoniska URL i webbläsaren. API-rutter går förbi Next.js Proxy för att undvika dess separata buffring och trunkering av request-body. Records-API läser högst 3 MB från strömmen, oavsett saknad eller felaktig Content-Length. En större deklarerad storlek avvisas innan läsning. CI-actions är fästa vid fullständiga commit-SHA:n; Dependabot öppnar uppdateringar varje vecka.
 
 ## Flytta från Supabase
 

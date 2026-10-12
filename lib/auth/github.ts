@@ -1,5 +1,6 @@
 import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
-import { z } from "zod";
+import { z } from "../validation";
+import { InvalidOAuthFlow } from "./security-store";
 import {
   seal,
   unseal,
@@ -80,6 +81,8 @@ export function beginOAuth(config: OAuthConfig, now = Date.now()) {
     prompt: "select_account",
   }).toString();
   return {
+    state,
+    exp: Math.floor(now / 1000) + oauthSeconds,
     url: url.toString(),
     cookie: seal(
       {
@@ -109,7 +112,8 @@ export async function completeOAuth(
   params: URLSearchParams,
   cookie: string | undefined,
   request: typeof fetch = fetch,
-  now = Date.now(),
+  now: number,
+  consume: (state: string, exp: number) => Promise<void>,
 ) {
   const parsed = flowSchema.safeParse(unseal(cookie, config.secret)),
     state = params.get("state"),
@@ -132,6 +136,13 @@ export async function completeOAuth(
     !timingSafeEqual(actual, expected)
   )
     throw new OAuthFailure();
+  // Atomically consume before contacting GitHub, including provider failures.
+  try {
+    await consume(flow.state, flow.exp);
+  } catch (error) {
+    if (error instanceof InvalidOAuthFlow) throw new OAuthFailure();
+    throw error;
+  }
   try {
     const tokenResponse = await request(
       "https://github.com/login/oauth/access_token",

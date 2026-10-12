@@ -1,6 +1,6 @@
 # MyShotLog security audit — 2026-10-12
 
-Audited application commit: `e4779ba`. This is a repository audit with local tests, not a penetration test of a deployed installation. Application behavior was not changed. Findings remain open.
+Audited application commit: `e4779ba`. This is a repository audit with local tests, not a penetration test of a deployed installation. The findings below describe that original commit. Subsequent remediation addresses S1–S6; see the remediation section and updated setup guide.
 
 ## Scope and result
 
@@ -76,3 +76,20 @@ Recommended change: pin reviewed full commit SHAs and use an update mechanism to
 A tracked-file scan across eight reachable commits found no matches for GitHub token patterns, AWS access-key IDs or private-key headers. Only `.env.example` is tracked among environment files; no tracked ZIP or history for `.env`/`.env.local` was found. Secret values were not printed or read from `.env.local`. This limited pattern scan does not cover arbitrary credentials, unreachable commits, external clones, deployment logs or the separate data repository.
 
 Not inspected: deployed TLS/security headers, Vercel firewall and body limits, actual GitHub token permissions, OAuth app settings, branch protection, remote data-repository access, backups, or operating-system/native-code vulnerabilities. The review and tests do not constitute a complete independent security certification.
+
+## Remediation — 2026-10-12
+
+All six recorded findings have been addressed in source:
+
+- **S1:** Random session IDs and a shared Git-backed active-session registry. Logout removes the cookie hash atomically before deleting the local cookie. Unregistered legacy cookies are rejected.
+- **S2:** OAuth flow hashes are registered and consumed atomically before the provider request, including failed exchanges. Shared fixed-window limits protect flow creation/consumption and authenticated records/photo APIs. Replays cannot exchange another code. Limits and proxy trust settings are documented in [SETUP.md](SETUP.md#säkerhetstillstånd-och-trafikgränser).
+- **S3:** Content-Length preflight and bounded byte-stream reading stop oversized bodies without first buffering the entire request. Authentication/origin checks remain before body reading.
+- **S4:** Enforced nonce-based CSP via Proxy and dynamic root rendering; production scripts exclude unsafe-inline/eval. Photo previews and computed chart style attributes remain supported. Zod runs with `jitless: true` to avoid dynamic Function compilation and eval probing.
+- **S5:** Both CI actions are pinned to verified commits from their official repositories; weekly Dependabot updates track newer versions.
+- **S6:** Removed `approve` and the redundant direct `fsevents` declaration. Vite retains its own optional macOS dependency. Remaining direct dependencies serve application, native photo validation, framework, types, tests or formatting.
+
+Regression tests cover post-logout cookie replay, concurrent one-time flow consumption, provider-failure replay, durable registration failures, shared budgets, expiry, malformed state, request-stream cancellation and CSP headers. Real temporary Git integration verifies that security commits preserve unrelated journal data and that independent instances observe revocation. No live repository or deployment was modified during validation.
+
+Git-backed limits add repository traffic; upstream firewall protection remains appropriate for volumetric attacks. Restoring old security state can undo revocation, so rotate the signing secret after a repository restore. Deployment configuration and external controls retain the original audit's unverified scope.
+
+Final verification: all **225 tests passed**, production build/type checking passed, formatting/whitespace checks passed, and `npm audit` returned zero known advisories. An isolated headless Chrome test of the production server verified nonce-bearing scripts, hydrated chart rendering, browser photo optimization/previews, authenticated API access, HTTP 413 for an oversized body, and HTTP 401 when replaying a copied cookie after logout. It reported zero browser errors or CSP violations. Temporary test repositories and scripts were removed.

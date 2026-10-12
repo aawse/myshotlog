@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "./validation";
 import caliberData from "./data/calibers.json";
 import targetData from "./data/targets.json";
 const optionSchema = z

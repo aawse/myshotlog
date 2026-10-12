@@ -1,13 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { records, journal } from "@/lib/data";
-import { AuthenticationRequired } from "@/lib/auth/server";
+import { AuthenticationRequired, authenticated } from "@/lib/auth/server";
 import {
   DatabaseConflict,
   DatabaseUnavailable,
 } from "@/lib/git-database/types";
 import { InvalidRecord, RecordNotFound } from "@/lib/git-database/store";
 import { exportRecords, csv } from "@/lib/portability";
-import { z } from "zod";
+import { z } from "../../../lib/validation";
+import { oauthConfig } from "@/lib/auth/github";
+import { securityStore } from "@/lib/auth/security";
+import { RateLimited } from "@/lib/auth/security-store";
+import { boundedBody, BodyTooLarge } from "@/lib/request-body";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,6 +21,13 @@ const response = (value: unknown, status = 200) =>
     headers: { "Cache-Control": "private, no-store" },
   });
 function failure(error: unknown) {
+  if (error instanceof RateLimited) {
+    const result = response({ error: error.message }, 429);
+    result.headers.set("Retry-After", String(error.retryAfter));
+    return result;
+  }
+  if (error instanceof BodyTooLarge)
+    return response({ error: "Filen är för stor (max 3 MB)." }, 413);
   if (
     error instanceof AuthenticationRequired ||
     (error instanceof Error && error.message === "AUTH_REQUIRED")
@@ -50,6 +61,8 @@ function failure(error: unknown) {
 }
 export async function GET(request: NextRequest) {
   try {
+    const { user } = await authenticated();
+    await securityStore().limitApi(user.id, false);
     const data = await records();
     const part = request.nextUrl.searchParams.get("part");
     if (part) {
@@ -107,13 +120,15 @@ export async function GET(request: NextRequest) {
   }
 }
 export async function POST(request: NextRequest) {
-  if (request.headers.get("origin") !== new URL(request.url).origin)
-    return response({ error: "Ogiltigt ursprung." }, 403);
   try {
+    // Next.js can reconstruct request.url using an internal hostname without Proxy.
+    // Compare with the configured public origin, never a client-controlled Host header.
+    if (request.headers.get("origin") !== oauthConfig().siteUrl)
+      return response({ error: "Ogiltigt ursprung." }, 403);
+    const { user } = await authenticated();
+    await securityStore().limitApi(user.id, true);
+    const body = await boundedBody(request);
     const store = await journal();
-    const body = await request.text();
-    if (Buffer.byteLength(body) > 3_000_000)
-      return response({ error: "Filen är för stor (max 3 MB)." }, 413);
     const { action, payload, photos } = z
       .object({
         action: z.string(),

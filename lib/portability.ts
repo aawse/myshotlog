@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "./validation";
 import { photoAssetSchema } from "./photos/schema";
 import {
   seriesConditions,

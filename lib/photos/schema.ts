@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "../validation";
 export const PHOTO_MAX_EDGE = 1600;
 export const PHOTO_MAX_BYTES = 180_000;
 export const photoIdSchema = z.string().regex(/^[a-f0-9]{64}$/);

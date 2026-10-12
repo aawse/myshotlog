@@ -1,7 +1,9 @@
 import { journal } from "@/lib/data";
-import { AuthenticationRequired } from "@/lib/auth/server";
+import { AuthenticationRequired, authenticated } from "@/lib/auth/server";
 import { RecordNotFound } from "@/lib/git-database/store";
 import { photoIdSchema } from "@/lib/photos/schema";
+import { securityStore } from "@/lib/auth/security";
+import { RateLimited } from "@/lib/auth/security-store";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export async function GET(
@@ -9,6 +11,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { user } = await authenticated();
+    await securityStore().limitApi(user.id, false);
     const store = await journal();
     const { id } = await params;
     if (!photoIdSchema.safeParse(id).success)
@@ -22,6 +26,14 @@ export async function GET(
       },
     });
   } catch (error) {
+    if (error instanceof RateLimited)
+      return new Response(null, {
+        status: 429,
+        headers: {
+          "Retry-After": String(error.retryAfter),
+          "Cache-Control": "private, no-store",
+        },
+      });
     const status =
       error instanceof AuthenticationRequired ||
       (error instanceof Error && error.message === "AUTH_REQUIRED")

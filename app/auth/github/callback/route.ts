@@ -7,6 +7,8 @@ import {
   type OAuthConfig,
 } from "@/lib/auth/github";
 import { signSession, sessionSeconds } from "@/lib/auth/session";
+import { securityStore, clientAddress } from "@/lib/auth/security";
+import { RateLimited } from "@/lib/auth/security-store";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
@@ -25,25 +27,37 @@ export async function GET(request: NextRequest) {
       config,
       request.nextUrl.searchParams,
       request.cookies.get(oauthCookie)?.value,
+      fetch,
+      Date.now(),
+      (state, exp) =>
+        securityStore().consumeFlow(state, exp, clientAddress(request)),
+    );
+    const now = Date.now(),
+      token = signSession(identity, config.secret, now);
+    await securityStore().addSession(
+      token,
+      Math.floor(now / 1000) + sessionSeconds,
     );
     response = NextResponse.redirect(config.siteUrl + "/dashboard");
-    response.cookies.set(
-      "skytte_session",
-      signSession(identity, config.secret),
-      {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: sessionSeconds,
-      },
-    );
+    response.cookies.set("skytte_session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: sessionSeconds,
+    });
   } catch (error) {
-    response = NextResponse.redirect(
-      config.siteUrl +
-        "/login?error=" +
-        (error instanceof AccessDenied ? "access" : "oauth"),
-    );
+    response =
+      error instanceof RateLimited
+        ? new NextResponse(error.message, {
+            status: 429,
+            headers: { "Retry-After": String(error.retryAfter) },
+          })
+        : NextResponse.redirect(
+            config.siteUrl +
+              "/login?error=" +
+              (error instanceof AccessDenied ? "access" : "oauth"),
+          );
   }
   response.cookies.set(oauthCookie, "", {
     httpOnly: true,

@@ -1,4 +1,4 @@
-import { it, expect, vi, afterEach } from "vitest";
+import { it, expect, vi, afterEach, beforeEach } from "vitest";
 import { createHash } from "node:crypto";
 import { NextRequest } from "next/server";
 import {
@@ -11,6 +11,18 @@ import {
   type OAuthConfig,
   oauthConfig,
 } from "../lib/auth/github";
+const controls = vi.hoisted(() => ({
+  registerFlow: vi.fn(),
+  consumeFlow: vi.fn(),
+  addSession: vi.fn(),
+}));
+vi.mock("../lib/auth/security", () => ({
+  securityStore: () => controls,
+  clientAddress: () => "client",
+}));
+import { InvalidOAuthFlow, RateLimited } from "../lib/auth/security-store";
+const consume = async () => undefined;
+beforeEach(() => vi.resetAllMocks());
 import { unseal, verifySession } from "../lib/auth/session";
 import { GET as start } from "../app/auth/github/route";
 import { GET as callback } from "../app/auth/github/callback/route";
@@ -78,6 +90,7 @@ it("verifies identity server-side and keeps OAuth tokens out of the identity", a
     a.cookie,
     request,
     a.now,
+    consume,
   );
   expect(identity).toEqual({ githubId: "12345", login: "user" });
   const options = request.mock.calls[0][1]!;
@@ -106,7 +119,7 @@ it("rejects missing, mismatched, tampered, expired or cancelled state before any
     ],
   ] as const) {
     await expect(
-      completeOAuth(config, params, cookie, request, time),
+      completeOAuth(config, params, cookie, request, time, consume),
     ).rejects.toBeInstanceOf(OAuthFailure);
   }
   expect(request).not.toHaveBeenCalled();
@@ -120,6 +133,7 @@ it("denies unlisted GitHub accounts and sanitizes provider failures", async () =
       a.cookie,
       api(),
       a.now,
+      consume,
     ),
   ).rejects.toBeInstanceOf(AccessDenied);
   await expect(
@@ -129,6 +143,7 @@ it("denies unlisted GitHub accounts and sanitizes provider failures", async () =
       a.cookie,
       vi.fn().mockRejectedValue(new Error("private-client-secret")),
       a.now,
+      consume,
     ),
   ).rejects.toThrow("GitHub-inloggningen kunde inte genomföras");
 });
@@ -143,7 +158,9 @@ function env() {
 it("sets secure HTTP-only cookies, consumes the flow cookie and redirects to a fixed origin", async () => {
   env();
   vi.stubEnv("NODE_ENV", "production");
-  const beginning = await start();
+  const beginning = await start(
+    new NextRequest(config.siteUrl + "/auth/github"),
+  );
   expect(beginning.status).toBe(307);
   expect(beginning.headers.get("set-cookie")).toContain("HttpOnly");
   expect(beginning.headers.get("set-cookie")).toContain("Secure");
@@ -189,4 +206,79 @@ it("rejects unsafe origins and empty access configuration", () => {
   vi.stubEnv("NEXT_PUBLIC_SITE_URL", config.siteUrl);
   vi.stubEnv("GITHUB_ALLOWED_USER_IDS", "");
   expect(() => oauthConfig()).toThrow();
+});
+
+it("does not exchange codes after flow consumption is rejected or rate limited", async () => {
+  const a = flow(),
+    request = api();
+  await expect(
+    completeOAuth(config, a.params, a.cookie, request, a.now, async () => {
+      throw new InvalidOAuthFlow();
+    }),
+  ).rejects.toBeInstanceOf(OAuthFailure);
+  await expect(
+    completeOAuth(config, a.params, a.cookie, request, a.now, async () => {
+      throw new RateLimited(60);
+    }),
+  ).rejects.toBeInstanceOf(RateLimited);
+  expect(request).not.toHaveBeenCalled();
+});
+it("returns rate limits without issuing OAuth cookies or calling GitHub", async () => {
+  env();
+  controls.registerFlow.mockRejectedValue(new RateLimited(120));
+  const result = await start(new NextRequest(config.siteUrl + "/auth/github"));
+  expect(result.status).toBe(429);
+  expect(result.headers.get("Retry-After")).toBe("120");
+  expect(result.cookies.get(oauthCookie)).toBeUndefined();
+  const a = flow(),
+    request = api();
+  vi.stubGlobal("fetch", request);
+  controls.consumeFlow.mockRejectedValue(new RateLimited(60));
+  const response = await callback(
+    new NextRequest(config.siteUrl + "/auth/github/callback?" + a.params, {
+      headers: { cookie: oauthCookie + "=" + a.cookie },
+    }),
+  );
+  expect(response.status).toBe(429);
+  expect(response.headers.get("Retry-After")).toBe("60");
+  expect(request).not.toHaveBeenCalled();
+});
+it("does not issue a session if durable registration fails", async () => {
+  env();
+  const a = flow();
+  vi.stubGlobal("fetch", api());
+  controls.addSession.mockRejectedValue(new Error("storage unavailable"));
+  const response = await callback(
+    new NextRequest(config.siteUrl + "/auth/github/callback?" + a.params, {
+      headers: { cookie: oauthCookie + "=" + a.cookie },
+    }),
+  );
+  expect(response.cookies.get("skytte_session")).toBeUndefined();
+  expect(response.headers.get("location")).toBe(
+    config.siteUrl + "/login?error=oauth",
+  );
+});
+it("makes exactly one provider request when a saved flow is replayed after provider rejection", async () => {
+  const { securityFixture } = await import("./security-fixture");
+  const a = flow(),
+    store = securityFixture(() => Math.floor(a.now / 1000));
+  const exp = Math.floor(a.now / 1000) + oauthSeconds;
+  await store.registerFlow(a.params.get("state")!, exp, "client");
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json({ error: "bad_verification_code" }, { status: 400 }),
+    );
+  for (let i = 0; i < 3; i++)
+    await expect(
+      completeOAuth(
+        config,
+        a.params,
+        a.cookie,
+        request,
+        a.now,
+        (state, expiry) => store.consumeFlow(state, expiry, "client"),
+      ),
+    ).rejects.toBeInstanceOf(OAuthFailure);
+  expect(request).toHaveBeenCalledOnce();
 });
