@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "approve": "^0.0.12",
-    "fsevents": "^2.3.3",
     "lucide-react": "0.468.0",
     "next": "16.4.0",
     "react": "19.3.0",
@@ -37,5 +36,8 @@
   "type": "module",
   "allowScripts": {
     "fsevents@2.3.3": true
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.3"
   }
 }
