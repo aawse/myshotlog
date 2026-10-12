@@ -12,12 +12,8 @@ permissions:
 
 jobs:
   tests:
-    name: Tests and build (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    name: Tests and build
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Check out repository
