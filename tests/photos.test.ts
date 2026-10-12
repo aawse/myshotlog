@@ -1,6 +1,9 @@
 import { expect, it, vi } from "vitest";
 import sharp from "sharp";
-import { optimizeTargetPhoto, validatePhotoAsset } from "../lib/photos/server";
+import {
+  validateUploadedPhoto,
+  validatePhotoAsset,
+} from "../lib/photos/server";
 import { PHOTO_MAX_BYTES, PHOTO_MAX_EDGE } from "../lib/photos/schema";
 import {
   GitJournalStore,
@@ -60,46 +63,46 @@ function setup() {
 }
 async function draft() {
   const data = await sharp({
-    create: { width: 2000, height: 1200, channels: 3, background: "#f7f2da" },
+    create: { width: 1600, height: 960, channels: 3, background: "#f7f2da" },
   })
-    .jpeg()
+    .webp({ quality: 80 })
     .toBuffer();
   return { id: crypto.randomUUID(), data: data.toString("base64") };
 }
 const pass = { ...session, firearmId: null, firearmSnapshot: null };
-it("optimizes large images, auto-rotates, removes metadata and enforces the byte cap", async () => {
-  const input = await sharp({
-    create: { width: 2400, height: 1200, channels: 3, background: "#eee" },
-  })
-    .withMetadata({ orientation: 6 })
-    .jpeg()
-    .toBuffer();
-  const photo = await optimizeTargetPhoto(input),
-    metadata = await sharp(Buffer.from(photo.data, "base64")).metadata();
-  expect(photo.height).toBe(PHOTO_MAX_EDGE);
-  expect(photo.width).toBe(800);
-  expect(photo.bytes).toBeLessThanOrEqual(PHOTO_MAX_BYTES);
-  expect(metadata.format).toBe("webp");
-  expect(metadata.exif).toBeUndefined();
-  expect(metadata.orientation).toBeUndefined();
-  expect(metadata.icc).toBeUndefined();
+it("stores the browser's optimized WebP bytes exactly without re-encoding", async () => {
+  const image = await draft(),
+    input = Buffer.from(image.data, "base64"),
+    photo = await validateUploadedPhoto(input);
+  expect(photo.width).toBe(PHOTO_MAX_EDGE);
+  expect(photo.height).toBe(960);
+  expect(photo.bytes).toBe(input.length);
+  expect(Buffer.from(photo.data, "base64")).toEqual(input);
   expect(await validatePhotoAsset(photo)).toEqual(photo);
 });
-it("reduces high-detail photos below the size limit", async () => {
-  const bytes = Buffer.alloc(1600 * 1600 * 3);
-  let seed = 12345;
-  for (let i = 0; i < bytes.length; i++) {
-    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-    bytes[i] = seed >>> 24;
-  }
-  const input = await sharp(bytes, {
-    raw: { width: 1600, height: 1600, channels: 3 },
+it("rejects oversized or unoptimized uploads instead of resizing or compressing them on the server", async () => {
+  await expect(
+    validateUploadedPhoto(Buffer.alloc(PHOTO_MAX_BYTES + 1)),
+  ).rejects.toThrow();
+  const large = await sharp({
+    create: { width: 2000, height: 800, channels: 3, background: "#eee" },
   })
-    .jpeg({ quality: 5 })
+    .webp()
     .toBuffer();
-  const photo = await optimizeTargetPhoto(input);
-  expect(photo.bytes).toBeLessThanOrEqual(PHOTO_MAX_BYTES);
-  expect(photo.width).toBeLessThanOrEqual(PHOTO_MAX_EDGE);
+  await expect(validateUploadedPhoto(large)).rejects.toThrow();
+  const jpeg = await sharp({
+    create: { width: 800, height: 800, channels: 3, background: "#eee" },
+  })
+    .jpeg()
+    .toBuffer();
+  await expect(validateUploadedPhoto(jpeg)).rejects.toThrow();
+  const metadata = await sharp({
+    create: { width: 800, height: 800, channels: 3, background: "#eee" },
+  })
+    .withMetadata({ orientation: 6 })
+    .webp()
+    .toBuffer();
+  await expect(validateUploadedPhoto(metadata)).rejects.toThrow();
 });
 it("commits a photo and its series atomically, preserving it on quick-entry linking", async () => {
   const { db, store } = setup(),
@@ -132,6 +135,7 @@ it("commits a photo and its series atomically, preserving it on quick-entry link
   expect(before.photos).toBeUndefined(); // Ordinary page reads never load base64 image payloads.
   const photo = await store.photo(photoId);
   expect(photo.bytes).toBeLessThanOrEqual(PHOTO_MAX_BYTES);
+  expect(photo.data).toBe(image.data);
   await store.mutate("quick-entry", q, [image]);
   expect(db.commits).toHaveLength(2);
   await store.mutate("session-with-quick", {

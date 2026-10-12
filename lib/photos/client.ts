@@ -25,10 +25,30 @@ export async function prepareTargetPhoto(file: File): Promise<PhotoDraft> {
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
       for (const quality of [0.85, 0.7, 0.55]) {
-        const dataUrl = canvas.toDataURL("image/jpeg", quality),
-          data = dataUrl.split(",")[1];
-        if (Math.ceil((data.length * 3) / 4) <= PHOTO_MAX_BYTES)
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob(
+            (result) =>
+              result
+                ? resolve(result)
+                : reject(new Error("Bilden kunde inte komprimeras.")),
+            "image/webp",
+            quality,
+          );
+        });
+        if (blob.type !== "image/webp")
+          throw new Error(
+            "Webbläsaren kan inte skapa WebP-bilder. Prova en nyare webbläsare.",
+          );
+        if (blob.size <= PHOTO_MAX_BYTES) {
+          const data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(",")[1]);
+            reader.onerror = () =>
+              reject(new Error("Bilden kunde inte läsas."));
+            reader.readAsDataURL(blob);
+          });
           return { id: crypto.randomUUID(), data };
+        }
       }
     }
     throw new Error("Bilden kunde inte komprimeras tillräckligt.");

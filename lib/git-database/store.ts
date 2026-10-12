@@ -6,7 +6,7 @@ import {
   photoAssetSchema,
   type PhotoAsset,
 } from "../photos/schema";
-import { optimizeTargetPhoto, validatePhotoAsset } from "../photos/server";
+import { validateUploadedPhoto, validatePhotoAsset } from "../photos/server";
 import {
   firearmSchema,
   sessionSchema,
@@ -203,7 +203,7 @@ export class GitJournalStore {
     const replacements = new Map<string, string>();
     try {
       for (const draft of drafts) {
-        const photo = await optimizeTargetPhoto(
+        const photo = await validateUploadedPhoto(
           Buffer.from(draft.data, "base64"),
         );
         prepared.set(photo.id, photo);
@@ -211,7 +211,7 @@ export class GitJournalStore {
       }
     } catch {
       throw new InvalidRecord(
-        "Fotot kunde inte öppnas eller optimeras. Välj en annan bild.",
+        "Fotot måste vara optimerad WebP på högst 1600 px och 180 kB. Välj bilden igen.",
       );
     }
     const patchResult = (result: unknown) => {

@@ -48,7 +48,7 @@ export function TargetPhotoInput({
     }
   }
   const source = draft
-    ? "data:image/jpeg;base64," + draft.data
+    ? "data:image/webp;base64," + draft.data
     : photoId
       ? "/api/photos/" + photoId
       : null;

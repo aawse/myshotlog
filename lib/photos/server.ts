@@ -9,46 +9,26 @@ import {
 // Uploads are processed with buffers only. Do not retain photo operations between
 // requests in libvips' process-wide cache or create upload files on the server.
 sharp.cache(false);
-export async function optimizeTargetPhoto(input: Buffer): Promise<PhotoAsset> {
-  if (!input.length || input.length > 260_000)
+// Validate the browser's final WebP without changing a single uploaded byte.
+export async function validateUploadedPhoto(
+  input: Buffer,
+): Promise<PhotoAsset> {
+  if (!input.length || input.length > PHOTO_MAX_BYTES)
     throw new Error("Bilden är för stor eller tom.");
-  const image = sharp(input, {
-    limitInputPixels: 40_000_000,
-    animated: false,
+  const metadata = await sharp(input, {
+    limitInputPixels: PHOTO_MAX_EDGE ** 2,
     failOn: "error",
+  }).metadata();
+  if (metadata.format !== "webp")
+    throw new Error("Bilden måste vara optimerad WebP.");
+  return validatePhotoAsset({
+    id: createHash("sha256").update(input).digest("hex"),
+    mediaType: "image/webp",
+    width: metadata.width,
+    height: metadata.height,
+    bytes: input.length,
+    data: input.toString("base64"),
   });
-  const metadata = await image.metadata();
-  if (
-    !["jpeg", "png", "webp", "avif", "heif"].includes(metadata.format ?? "") ||
-    (metadata.pages ?? 1) > 1
-  )
-    throw new Error("Välj ett stillbildsfoto.");
-  for (const edge of [PHOTO_MAX_EDGE, 1280, 1024, 800]) {
-    for (const quality of [80, 65, 50]) {
-      const { data, info } = await image
-        .clone()
-        .rotate()
-        .resize({
-          width: edge,
-          height: edge,
-          fit: "inside",
-          withoutEnlargement: true,
-        })
-        .flatten({ background: "#ffffff" })
-        .webp({ quality, effort: 4 })
-        .toBuffer({ resolveWithObject: true });
-      if (data.length <= PHOTO_MAX_BYTES)
-        return photoAssetSchema.parse({
-          id: createHash("sha256").update(data).digest("hex"),
-          mediaType: "image/webp",
-          width: info.width,
-          height: info.height,
-          bytes: data.length,
-          data: data.toString("base64"),
-        });
-    }
-  }
-  throw new Error("Bilden kunde inte komprimeras tillräckligt.");
 }
 export async function validatePhotoAsset(value: unknown): Promise<PhotoAsset> {
   const photo = photoAssetSchema.parse(value),

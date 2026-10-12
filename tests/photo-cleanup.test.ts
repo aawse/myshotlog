@@ -19,7 +19,7 @@ vi.mock("node:fs/promises", async (original) => {
 });
 import { GitRemoteDatabase } from "../lib/git-database/git-remote";
 import { DatabaseUnavailable } from "../lib/git-database/types";
-import { optimizeTargetPhoto } from "../lib/photos/server";
+import { validateUploadedPhoto } from "../lib/photos/server";
 const exec = promisify(execFile);
 let remote: string, db: GitRemoteDatabase;
 beforeEach(async () => {
@@ -52,9 +52,9 @@ async function photoEntry() {
   const input = await sharp({
     create: { width: 1600, height: 1000, channels: 3, background: "#eee" },
   })
-    .jpeg()
+    .webp()
     .toBuffer();
-  const photo = await optimizeTargetPhoto(input);
+  const photo = await validateUploadedPhoto(input);
   return {
     message: "Save test target photo",
     changes: [
