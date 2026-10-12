@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import { connection } from "next/server";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -18,7 +19,10 @@ export default async function Layout({
   await connection();
   return (
     <html lang="sv">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }

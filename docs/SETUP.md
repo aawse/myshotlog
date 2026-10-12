@@ -17,6 +17,10 @@ Installera Node.js 24 och Git. Kontrollera `node --version`, `npm --version` och
 
 GitHub-konfigurationen behöver ingen Git-binär eller beständig serverdisk. Databas-token, OAuth-klienthemlighet och sessionshemlighet är endast tillgängliga på servern. OAuth-inloggningen begär inga repository-scopes. Databasåtkomst använder den separata server-tokenen; användarnas GitHub-konton behöver inte ha repository-åtkomst. Repository-åtkomst ger möjlighet att läsa hela journalhistoriken: begränsa även medlemmar och integrationer.
 
+## Vercel Web Analytics
+
+`@vercel/analytics/next` är integrerat i rotlayouten och registrerar sidvisningar och navigering. Aktivera **Web Analytics** för kodprojektet i Vercels dashboard och publicera sedan en ny deployment. Se [Vercels snabbstart](https://vercel.com/docs/analytics/quickstart). Inga nya miljövariabler behövs för standardintegrationen. Lokal utveckling använder SDK:ns utvecklingsläge; datainsamlingen verifieras på Vercel efter aktivering. Den befintliga CSP:n använder `strict-dynamic` för SDK:ns dynamiskt laddade script och tillåter insamling via samma origin.
+
 ## Hitta användarens numeriska GitHub-ID
 
 ### I webbläsaren
