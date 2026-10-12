@@ -69,12 +69,12 @@ async function draft() {
   const data = await sharp({
     create: { width: 1600, height: 960, channels: 3, background: "#f7f2da" },
   })
-    .webp({ quality: 80 })
+    .jpeg({ quality: 80 })
     .toBuffer();
   return { id: crypto.randomUUID(), data: data.toString("base64") };
 }
 const pass = { ...session, firearmId: null, firearmSnapshot: null };
-it("stores the browser's optimized WebP bytes exactly without re-encoding", async () => {
+it("stores the browser's optimized JPEG bytes exactly without re-encoding", async () => {
   const image = await draft(),
     input = Buffer.from(image.data, "base64"),
     photo = await validateUploadedPhoto(input);
@@ -91,20 +91,20 @@ it("rejects oversized or unoptimized uploads instead of resizing or compressing 
   const large = await sharp({
     create: { width: 2000, height: 800, channels: 3, background: "#eee" },
   })
-    .webp()
-    .toBuffer();
-  await expect(validateUploadedPhoto(large)).rejects.toThrow();
-  const jpeg = await sharp({
-    create: { width: 800, height: 800, channels: 3, background: "#eee" },
-  })
     .jpeg()
     .toBuffer();
-  await expect(validateUploadedPhoto(jpeg)).rejects.toThrow();
+  await expect(validateUploadedPhoto(large)).rejects.toThrow();
+  const png = await sharp({
+    create: { width: 800, height: 800, channels: 3, background: "#eee" },
+  })
+    .png()
+    .toBuffer();
+  await expect(validateUploadedPhoto(png)).rejects.toThrow();
   const metadata = await sharp({
     create: { width: 800, height: 800, channels: 3, background: "#eee" },
   })
     .withMetadata({ orientation: 6 })
-    .webp()
+    .jpeg()
     .toBuffer();
   await expect(validateUploadedPhoto(metadata)).rejects.toThrow();
 });
@@ -217,7 +217,7 @@ it("rejects invalid images and orphan uploads without publishing a commit", asyn
   ).rejects.toBeInstanceOf(InvalidRecord);
   expect(db.commits).toEqual([]);
 });
-it("requires authentication to read a photo and serves only the owner's optimized WebP", async () => {
+it("requires authentication to read a photo and serves only the owner's optimized JPEG", async () => {
   vi.mocked(journal).mockRejectedValueOnce(new Error("AUTH_REQUIRED"));
   expect(
     (
@@ -238,9 +238,64 @@ it("requires authentication to read a photo and serves only the owner's optimize
     response = await GET(new Request("http://localhost"), {
       params: Promise.resolve({ id: photo.id }),
     });
-  expect(response.headers.get("Content-Type")).toBe("image/webp");
+  expect(response.headers.get("Content-Type")).toBe("image/jpeg");
   expect(response.headers.get("Cache-Control")).toBe("private, no-store");
   expect(Buffer.from(await response.arrayBuffer())).toEqual(
     Buffer.from(photo.data, "base64"),
   );
+});
+
+it("preserves legacy WebP photos through import, export, and private reads", async () => {
+  const { createHash } = await import("node:crypto");
+  const input = await sharp({
+    create: { width: 800, height: 600, channels: 3, background: "#eee" },
+  })
+    .webp()
+    .toBuffer();
+  const photo = await validatePhotoAsset({
+    id: createHash("sha256").update(input).digest("hex"),
+    mediaType: "image/webp",
+    width: 800,
+    height: 600,
+    bytes: input.length,
+    data: input.toString("base64"),
+  });
+  const { store } = setup();
+  await store.mutate(
+    "import",
+    exportRecords({
+      profile: {
+        displayName: "Test",
+        birthDate: null,
+        birthYear: null,
+        language: "sv",
+        timezone: "Europe/Stockholm",
+      },
+      firearms: [],
+      sessions: [
+        { ...pass, results: [{ ...pass.results[0], photoId: photo.id }] },
+      ],
+      assessments: [],
+      photos: [photo],
+    }),
+  );
+  expect(await store.photos()).toEqual([photo]);
+  expect(
+    parseImport(
+      exportRecords({
+        ...(await store.records()),
+        photos: await store.photos(),
+      }),
+    ).photos,
+  ).toEqual([photo]);
+  vi.mocked(journal).mockResolvedValue(store);
+  const response = await GET(new Request("http://localhost"), {
+    params: Promise.resolve({ id: photo.id }),
+  });
+  expect(response.headers.get("Content-Type")).toBe("image/webp");
+  expect(Buffer.from(await response.arrayBuffer())).toEqual(input);
+  await expect(validateUploadedPhoto(input)).rejects.toThrow();
+  await expect(
+    validatePhotoAsset({ ...photo, mediaType: "image/jpeg" }),
+  ).rejects.toThrow();
 });

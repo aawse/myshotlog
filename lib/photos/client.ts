@@ -1,4 +1,4 @@
-import { reusableWebp, stripWebpMetadata } from "./webp";
+import { reusableJpeg, stripJpegMetadata } from "./jpeg";
 import { swText } from "@/lib/i18n";
 import { PHOTO_MAX_BYTES, PHOTO_MAX_EDGE, type PhotoDraft } from "./schema";
 export async function prepareTargetPhoto(file: File): Promise<PhotoDraft> {
@@ -22,7 +22,7 @@ export async function prepareTargetPhoto(file: File): Promise<PhotoDraft> {
     }
     if (
       file.size <= PHOTO_MAX_BYTES &&
-      reusableWebp(
+      reusableJpeg(
         new Uint8Array(await file.arrayBuffer()),
         image.naturalWidth,
         image.naturalHeight,
@@ -50,15 +50,15 @@ export async function prepareTargetPhoto(file: File): Promise<PhotoDraft> {
               result
                 ? resolve(result)
                 : reject(new Error(swText("photo.compressFailed"))),
-            "image/webp",
+            "image/jpeg",
             quality,
           );
         });
-        if (blob.type !== "image/webp")
-          throw new Error(swText("photo.webpUnavailable"));
+        if (blob.type !== "image/jpeg")
+          throw new Error(swText("photo.jpegUnavailable"));
         const clean = new Blob(
-          [stripWebpMetadata(new Uint8Array(await blob.arrayBuffer()))],
-          { type: "image/webp" },
+          [stripJpegMetadata(new Uint8Array(await blob.arrayBuffer()))],
+          { type: "image/jpeg" },
         );
         if (clean.size <= PHOTO_MAX_BYTES) {
           const data = await dataUrl(clean);

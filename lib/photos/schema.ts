@@ -15,7 +15,7 @@ export type PhotoDraft = z.infer<typeof photoDraftSchema>;
 export const photoAssetSchema = z
   .object({
     id: photoIdSchema,
-    mediaType: z.literal("image/webp"),
+    mediaType: z.enum(["image/jpeg", "image/webp"]),
     width: z.number().int().min(1).max(PHOTO_MAX_EDGE),
     height: z.number().int().min(1).max(PHOTO_MAX_EDGE),
     bytes: z.number().int().min(1).max(PHOTO_MAX_BYTES),

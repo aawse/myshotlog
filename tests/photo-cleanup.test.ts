@@ -52,7 +52,7 @@ async function photoEntry() {
   const input = await sharp({
     create: { width: 1600, height: 1000, channels: 3, background: "#eee" },
   })
-    .webp()
+    .jpeg()
     .toBuffer();
   const photo = await validateUploadedPhoto(input);
   return {

@@ -10,7 +10,7 @@ import {
 // Uploads are processed with buffers only. Do not retain photo operations between
 // requests in libvips' process-wide cache or create upload files on the server.
 sharp.cache(false);
-// Validate the browser's final WebP without changing a single uploaded byte.
+// Validate the browser's final JPEG without changing a single uploaded byte.
 export async function validateUploadedPhoto(
   input: Buffer,
 ): Promise<PhotoAsset> {
@@ -20,10 +20,10 @@ export async function validateUploadedPhoto(
     limitInputPixels: PHOTO_MAX_EDGE ** 2,
     failOn: "error",
   }).metadata();
-  if (metadata.format !== "webp") throw new Error(swText("photo.requiresWebp"));
+  if (metadata.format !== "jpeg") throw new Error(swText("photo.requiresJpeg"));
   return validatePhotoAsset({
     id: createHash("sha256").update(input).digest("hex"),
-    mediaType: "image/webp",
+    mediaType: "image/jpeg",
     width: metadata.width,
     height: metadata.height,
     bytes: input.length,
@@ -44,7 +44,7 @@ export async function validatePhotoAsset(value: unknown): Promise<PhotoAsset> {
     failOn: "error",
   }).metadata();
   if (
-    metadata.format !== "webp" ||
+    metadata.format !== (photo.mediaType === "image/jpeg" ? "jpeg" : "webp") ||
     metadata.width !== photo.width ||
     metadata.height !== photo.height ||
     (metadata.pages ?? 1) !== 1 ||

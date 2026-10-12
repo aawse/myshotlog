@@ -14,7 +14,7 @@ Databasåtkomst använder en separat server-token eller serverns Git-autentiseri
 
 Journalposter ligger under `<prefix>/users/<UUID>/`. Profil, vapen, pass och okopplade snabbserier har egna JSON-filer. En sparning skapar en commit per post, med passets resultat och bedömningsunderlag tillsammans. Import och koppling av snabbserier publicerar hela commit-kedjan atomiskt. Föråldrade passrevisioner avvisas, och branchkonflikter bygger om planen med ett begränsat antal försök. Git bevarar historiska filversioner även efter radering.
 
-Foton ligger separat under `<prefix>/photos/users/<UUID>/<bildhash>/image.json`. Webbläsaren rasteriserar och komprimerar före uppladdning. Servern validerar WebP-byten, dimensioner, storlek, metadata och SHA-256 utan att komprimera om bilden. Identiska bilder återanvänds per användare. Bildändringar och journalposter publiceras atomiskt. Privata bildanrop hämtar samma användares foto från Git; ingen permanent upload-katalog används.
+Foton ligger separat under `<prefix>/photos/users/<UUID>/<bildhash>/image.json`. Webbläsaren rasteriserar och komprimerar före uppladdning. Befintliga WebP-foton förblir läsbara och bevaras i JSON-export/import. Nya uppladdningar lagras som JPEG; äldre foton och deras Git-historik ändras inte. Servern validerar JPEG-byten, dimensioner, storlek, metadata och SHA-256 utan att komprimera om bilden. Identiska bilder återanvänds per användare. Bildändringar och journalposter publiceras atomiskt. Privata bildanrop hämtar samma användares foto från Git; ingen permanent upload-katalog används.
 
 ## Säkerhetstillstånd och trafik
 

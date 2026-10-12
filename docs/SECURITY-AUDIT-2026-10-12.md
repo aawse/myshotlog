@@ -62,7 +62,7 @@ Recommended change: pin reviewed full commit SHAs and use an update mechanism to
 - Signed cookies use purpose separation, bounded parsing, expiry checks and timing-safe signature comparison. Production cookies use Secure, HttpOnly and SameSite=Lax. Allowlist membership is checked on authenticated requests.
 - OAuth uses random state, PKCE S256 and a configured callback URL. Identity tokens remain server-side; login does not request repository scopes.
 - Writes validate Origin. Record ownership comes from the authenticated identity, with validated owner IDs and paths. Photo reads are scoped to that owner and marked private/no-store.
-- Uploaded photos are limited by size and dimensions, checked as canonical WebP with full decoding and SHA-256 verification, and reject retained EXIF/XMP/ICC metadata. Browser optimization precedes upload.
+- Uploaded photos are limited by size and dimensions, checked as canonical JPEG (with legacy WebP backup support) with full decoding and SHA-256 verification, and reject retained EXIF/XMP/ICC metadata. Browser optimization precedes upload.
 - GitHub storage requires a private repository and publishes atomic, non-forced updates. Native Git uses argument arrays, avoids checkout and cleans temporary repositories after success and failures.
 - React renders user data without raw HTML sinks in the reviewed paths. CSV exports neutralize formula-leading values.
 - Git history intentionally retains prior records and photos. Removing current records is not historical erasure; the setup documentation explains this retention model.

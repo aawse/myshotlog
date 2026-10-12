@@ -174,7 +174,7 @@
   "photo.takeLabel": "Ta foto av tavlan",
   "photo.optimizing": "Optimerar bild…",
   "photo.saveHelp": "Bilden sparas med serien. Högst 1600 px och 180 kB i Git.",
-  "photo.prepareHelp": "Välj en bild. WebP som redan uppfyller kraven används direkt; andra bilder konverteras och optimeras automatiskt före uppladdning.",
+  "photo.prepareHelp": "Välj en bild. JPEG som redan uppfyller kraven används direkt; andra bilder konverteras och optimeras automatiskt före uppladdning.",
   "session.linkQuickHelp": "snabbserier kopplas när du sparar passet. Datum och gren behålls.",
   "session.about": "Om passet",
   "session.startTime": "Starttid (valfritt)",
@@ -347,11 +347,9 @@
   "photo.openFailed": "Webbläsaren kunde inte öppna bildformatet. Välj en bild som den kan läsa, eller exportera originalet till exempelvis JPEG eller PNG.",
   "photo.processingUnavailable": "Bildbehandling saknas i webbläsaren.",
   "photo.compressFailed": "Bilden kunde inte komprimeras.",
-  "photo.webpUnavailable": "Webbläsaren kan inte skapa WebP-bilder. Prova en nyare webbläsare.",
   "photo.readFailed": "Bilden kunde inte läsas.",
   "photo.tooLarge": "Bilden kunde inte komprimeras tillräckligt.",
   "photo.emptyOrLarge": "Bilden är för stor eller tom.",
-  "photo.requiresWebp": "Bilden måste vara optimerad WebP.",
   "photo.invalidData": "Ogiltig bilddata.",
   "photo.invalidAsset": "Ogiltigt eller ooptimerat foto.",
   "validation.date": "Ogiltigt datum",
@@ -382,7 +380,7 @@
   "store.photoFile": "Ogiltig fotofil.",
   "store.duplicatePhotos": "Dubbla foto-ID.",
   "store.photoSeries": "Foto kräver en serie.",
-  "store.photoOptimized": "Fotot måste vara optimerad WebP på högst 1600 px och 180 kB. Välj bilden igen.",
+  "store.photoOptimized": "Fotot måste vara optimerad JPEG på högst 1600 px och 180 kB. Välj bilden igen.",
   "store.importPhoto": "Importen innehåller ett ogiltigt foto.",
   "store.duplicateSeries": "Dubbla serie-ID.",
   "store.seriesMissing": "En snabbserie saknas i passet.",
@@ -426,5 +424,7 @@
   "common.archivedSuffix": " (arkiverat)",
   "rules.source21": "{url} — Bilaga 1 §5.1.1–5.1.1.1, tryckta s. 452–453 (PDF s. 454–455)",
   "common.seriesLabel": "Serie",
-  "common.seriesCount": "{count} serier"
+  "common.seriesCount": "{count} serier",
+  "photo.jpegUnavailable": "Webbläsaren kan inte skapa JPEG-bilder. Prova en nyare webbläsare.",
+  "photo.requiresJpeg": "Bilden måste vara optimerad JPEG."
 }

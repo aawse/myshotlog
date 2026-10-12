@@ -174,7 +174,7 @@
   "photo.takeLabel": "Take a target photo",
   "photo.optimizing": "Optimizing image…",
   "photo.saveHelp": "The image is saved with the series. Up to 1600 px and 180 kB in Git.",
-  "photo.prepareHelp": "Choose an image. WebP that already meets the requirements is used directly; other images are converted and optimized automatically before upload.",
+  "photo.prepareHelp": "Choose an image. JPEG that already meets the requirements is used directly; other images are converted and optimized automatically before upload.",
   "session.linkQuickHelp": "quick series will be linked when you save the session. Their date and discipline are kept.",
   "session.about": "About the session",
   "session.startTime": "Start time (optional)",
@@ -347,11 +347,9 @@
   "photo.openFailed": "The browser could not open this image format. Choose an image it can read, or export the original to a format such as JPEG or PNG.",
   "photo.processingUnavailable": "Image processing is unavailable in this browser.",
   "photo.compressFailed": "The image could not be compressed.",
-  "photo.webpUnavailable": "This browser cannot create WebP images. Try a newer browser.",
   "photo.readFailed": "The image could not be read.",
   "photo.tooLarge": "The image could not be compressed enough.",
   "photo.emptyOrLarge": "The image is too large or empty.",
-  "photo.requiresWebp": "The image must be an optimized WebP.",
   "photo.invalidData": "Invalid image data.",
   "photo.invalidAsset": "Invalid or unoptimized photo.",
   "validation.date": "Invalid date",
@@ -382,7 +380,7 @@
   "store.photoFile": "Invalid photo file.",
   "store.duplicatePhotos": "Duplicate photo IDs.",
   "store.photoSeries": "A photo requires a series.",
-  "store.photoOptimized": "The photo must be optimized WebP, no larger than 1600 px and 180 kB. Select the image again.",
+  "store.photoOptimized": "The photo must be optimized JPEG, no larger than 1600 px and 180 kB. Select the image again.",
   "store.importPhoto": "The import contains an invalid photo.",
   "store.duplicateSeries": "Duplicate series IDs.",
   "store.seriesMissing": "A quick series is missing from the session.",
@@ -426,5 +424,7 @@
   "common.archivedSuffix": " (archived)",
   "rules.source21": "{url} — Appendix 1 §5.1.1–5.1.1.1, printed pp. 452–453 (PDF pp. 454–455)",
   "common.seriesLabel": "Series",
-  "common.seriesCount": "{count} series"
+  "common.seriesCount": "{count} series",
+  "photo.jpegUnavailable": "This browser cannot create JPEG images. Try a newer browser.",
+  "photo.requiresJpeg": "The image must be an optimized JPEG."
 }

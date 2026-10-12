@@ -20,7 +20,7 @@ export async function GET(
     const photo = await store.photo(id);
     return new Response(new Uint8Array(Buffer.from(photo.data, "base64")), {
       headers: {
-        "Content-Type": "image/webp",
+        "Content-Type": photo.mediaType,
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
       },
