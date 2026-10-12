@@ -1,4 +1,6 @@
 "use client";
+import { localizeMessage } from "@/lib/i18n";
+import { useI18n } from "./language-provider";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { todayInTimezone, type Profile } from "@/lib/models";
@@ -6,6 +8,7 @@ import { csv, exportRecords } from "@/lib/portability";
 import type { Records } from "@/lib/models";
 import { mutate } from "./mutate";
 export function SettingsForm({ profile }: { profile: Profile }) {
+  const { tr, language, setLanguage } = useI18n();
   const [p, setP] = useState(profile),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
@@ -16,10 +19,11 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     setMessage("");
     try {
       const result = await mutate(action, payload);
+      if (action === "profile") setLanguage(p.language);
       setMessage(
         action === "import"
-          ? `${result.imported} pass importerade. Dubbletter hoppades över.`
-          : "Sparat.",
+          ? tr("profile.imported", { p0: result.imported })
+          : tr("profile.saved"),
       );
       router.refresh();
     } catch (e) {
@@ -30,11 +34,11 @@ export function SettingsForm({ profile }: { profile: Profile }) {
   }
   async function download(format: "json" | "csv") {
     setBusy(true);
-    setMessage("Förbereder export…");
+    setMessage(tr("profile.preparingExport"));
     try {
       const read = async (part: string, offset = 0) => {
         const res = await fetch(`/api/records?part=${part}&offset=${offset}`);
-        if (!res.ok) throw new Error("Exporten kunde inte hämtas.");
+        if (!res.ok) throw new Error(tr("profile.exportFailed"));
         return res.json();
       };
       const all = async (part: string) => {
@@ -67,7 +71,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
         [
           format === "json"
             ? JSON.stringify(exportRecords(data), null, 2)
-            : csv(sessions),
+            : csv(sessions, language),
         ],
         {
           type:
@@ -82,14 +86,13 @@ export function SettingsForm({ profile }: { profile: Profile }) {
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setMessage("Exporten är klar.");
+      setMessage(tr("profile.exportReady"));
     } catch (e) {
       setMessage((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
-
   return (
     <div className="form">
       <form
@@ -99,10 +102,10 @@ export function SettingsForm({ profile }: { profile: Profile }) {
           act("profile", p);
         }}
       >
-        <h2>Din profil</h2>
+        <h2>{tr("profile.heading")}</h2>
         <div className="form-grid">
           <label>
-            Visningsnamn
+            {tr("profile.displayName")}
             <input
               value={p.displayName}
               maxLength={100}
@@ -110,7 +113,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
             />
           </label>
           <label>
-            Födelsedatum (valfritt)
+            {tr("profile.birthDate")}
             <input
               type="date"
               min="1900-01-01"
@@ -128,76 +131,65 @@ export function SettingsForm({ profile }: { profile: Profile }) {
             />
           </label>
           <label>
-            Språk
+            {tr("profile.language")}
             <select
               value={p.language}
               onChange={(e) =>
                 setP({ ...p, language: e.target.value as "sv" | "en" })
               }
             >
-              <option value="sv">Svenska</option>
-              <option value="en">English (gränssnitt kommer senare)</option>
+              <option value="sv">{tr("profile.swedish")}</option>
+              <option value="en">{tr("profile.english")}</option>
             </select>
           </label>
           <label>
-            Tidszon
+            {tr("profile.timezone")}
             <input
               value={p.timezone}
               onChange={(e) => setP({ ...p, timezone: e.target.value })}
             />
           </label>
         </div>
-        <p className="muted">
-          Födelsedatum används för åldersregeln vid brons-, silver- och
-          guldserier. Precisionens poängkrav sänks med 1 poäng från 55 år och 2
-          poäng från 65 år, räknat vid slutet av föregående kalenderår.
-          Tillämpningskraven ändras inte. Regler väljs efter passets datum.
-          Tidigare sparade födelseuppgifter används när de finns; äldre serier
-          utan sådant underlag använder profilen. Utan födelseuppgifter används
-          ordinarie poänggränser utan åldersavdrag.
-        </p>
+        <p className="muted">{tr("profile.ageHelp")}</p>
         {!p.birthDate && p.birthYear !== null && (
           <p className="muted">
-            Tidigare sparat födelseår: {p.birthYear}. Det används tills du anger
-            ett födelsedatum.
+            {tr("profile.previousBirthYear")} {p.birthYear}
+            {tr("profile.birthYearHelp")}
           </p>
         )}
         <div className="actions">
-          <button disabled={busy}>Spara profil</button>
+          <button disabled={busy}>{tr("profile.save")}</button>
           <button
             type="button"
             className="secondary"
             disabled={busy || (!p.birthDate && p.birthYear === null)}
             onClick={() => setP({ ...p, birthDate: null, birthYear: null })}
           >
-            Rensa födelseuppgifter
+            {tr("profile.clearBirth")}
           </button>
         </div>
       </form>
       <section className="card">
-        <h2>Din data, med dig</h2>
-        <p>
-          JSON innehåller vapen, profil, råresultat och bedömningshistorik. CSV
-          innehåller resultat för kalkylblad.
-        </p>
+        <h2>{tr("profile.dataHeading")}</h2>
+        <p>{tr("profile.exportHelp")}</p>
         <div className="actions">
           <button
             className="secondary"
             disabled={busy}
             onClick={() => download("json")}
           >
-            Exportera JSON
+            {tr("profile.exportJson")}
           </button>
           <button
             className="secondary"
             disabled={busy}
             onClick={() => download("csv")}
           >
-            Exportera CSV
+            {tr("profile.exportCsv")}
           </button>
         </div>
         <label>
-          Importera version 1 JSON (max 3 MB)
+          {tr("profile.importJson")}
           <input
             type="file"
             accept="application/json,.json"
@@ -205,34 +197,26 @@ export function SettingsForm({ profile }: { profile: Profile }) {
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
-              if (file.size > 3_000_000) {
-                setMessage("Maximal filstorlek är 3 MB.");
+              if (file.size > 3000000) {
+                setMessage(tr("profile.fileTooLarge"));
                 return;
               }
               try {
                 await act("import", JSON.parse(await file.text()));
               } catch {
-                setMessage("Filen är inte giltig JSON.");
+                setMessage(tr("profile.invalidJson"));
               }
               e.target.value = "";
             }}
           />
         </label>
-        <p className="muted">
-          Samma ID hoppas över. Importen är atomär och påverkar endast ditt
-          konto. Befintlig profil behålls. Importerade bedömningar är personligt
-          historikunderlag, inte verifierade intyg.
-        </p>
+        <p className="muted">{tr("profile.importHelp")}</p>
       </section>
       <section className="card">
-        <h2>Radera journalen</h2>
-        <p>
-          Detta tar bort dina pass, vapen, profil och bedömningar från aktuell
-          journal. Tidigare versioner finns kvar i Git-historiken. Exportera
-          först om du vill spara en kopia.
-        </p>
+        <h2>{tr("profile.deleteHeading")}</h2>
+        <p>{tr("profile.deleteHelp")}</p>
         <label>
-          Skriv RADERA
+          {tr("profile.confirmDelete")}
           <input value={confirm} onChange={(e) => setConfirm(e.target.value)} />
         </label>
         <button
@@ -240,17 +224,13 @@ export function SettingsForm({ profile }: { profile: Profile }) {
           disabled={busy || confirm !== "RADERA"}
           onClick={() => act("delete-records", { confirm })}
         >
-          Radera mina uppgifter
+          {tr("profile.delete")}
         </button>
-        <p className="muted">
-          För att även stänga kontot: kontakta instansägaren. Ägaren tar bort
-          ditt GitHub-ID ur serverns lista över tillåtna konton. För fullständig
-          radering behövs även hantering av Git-historik, kloner och backuper.
-        </p>
+        <p className="muted">{tr("profile.closeHelp")}</p>
       </section>
       {message && (
         <p className="notice" role="status">
-          {message}
+          {localizeMessage(language, message)}
         </p>
       )}
     </div>

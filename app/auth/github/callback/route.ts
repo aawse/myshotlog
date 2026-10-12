@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   completeOAuth,
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
   try {
     config = oauthConfig();
   } catch {
-    return new NextResponse("GitHub-inloggningen är inte konfigurerad.", {
+    return new NextResponse(swText("auth.notConfigured"), {
       status: 503,
       headers: { "Cache-Control": "no-store" },
     });

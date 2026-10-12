@@ -1,3 +1,4 @@
+import { swText, t, type Language } from "@/lib/i18n";
 import { z } from "./validation";
 import { photoAssetSchema } from "./photos/schema";
 import {
@@ -44,7 +45,7 @@ export const exportSchema = z
       new Set(d.sessions.map((s) => s.id)).size !== d.sessions.length ||
       new Set(d.assessments.map((a) => a.id)).size !== d.assessments.length
     )
-      c.addIssue({ code: "custom", message: "Dubbla ID i import" });
+      c.addIssue({ code: "custom", message: swText("import.duplicates") });
     if (
       d.quickEntries.some((q) =>
         d.sessions.some((s) => s.results.some((r) => r.id === q.id)),
@@ -52,7 +53,7 @@ export const exportSchema = z
     )
       c.addIssue({
         code: "custom",
-        message: "En snabbserie är redan kopplad till ett pass",
+        message: swText("import.attachedQuick"),
       });
     const ids = new Set(d.photos.map((p) => p.id));
     for (const r of [
@@ -62,11 +63,14 @@ export const exportSchema = z
       if (r.photoId && !ids.has(r.photoId))
         c.addIssue({
           code: "custom",
-          message: "Fotoreferens saknas i importen",
+          message: swText("import.photoMissing"),
         });
     for (const s of d.sessions)
       if (s.firearmId && !d.firearms.some((f) => f.id === s.firearmId))
-        c.addIssue({ code: "custom", message: "Vapenreferens saknas" });
+        c.addIssue({
+          code: "custom",
+          message: swText("import.firearmMissing"),
+        });
     for (const a of d.assessments)
       if (
         !d.sessions.some(
@@ -77,7 +81,7 @@ export const exportSchema = z
               s.results.some((r) => r.id === a.resultId)),
         )
       )
-        c.addIssue({ code: "custom", message: "Bedömning saknar resultat" });
+        c.addIssue({ code: "custom", message: swText("import.resultMissing") });
   });
 export function exportRecords(records: Records) {
   return {
@@ -90,7 +94,7 @@ export function exportRecords(records: Records) {
 export function parseImport(value: unknown) {
   return exportSchema.parse(value);
 }
-export function csv(sessions: Records["sessions"]) {
+export function csv(sessions: Records["sessions"], language: Language = "sv") {
   const quote = (v: unknown) => {
     let s = String(v ?? "");
     if (/^[=+@\-\t\r]/.test(s.trimStart())) s = "'" + s;
@@ -98,19 +102,19 @@ export function csv(sessions: Records["sessions"]) {
   };
   const rows = [
     [
-      "Datum",
-      "Gren",
-      "Program",
-      "Vapengrupp",
-      "Plats",
-      "Serie",
-      "Skott",
-      "Poäng",
-      "Träffar",
-      "Figurer",
-      "Sekunder",
-      "Poängavdrag",
-      "Straffsekunder",
+      t(language, "common.date"),
+      t(language, "session.sport"),
+      t(language, "csv.program"),
+      t(language, "sessions.groupPrefix"),
+      t(language, "csv.location"),
+      t(language, "common.seriesLabel"),
+      t(language, "session.shots"),
+      t(language, "session.points"),
+      t(language, "session.hits"),
+      t(language, "session.figures"),
+      t(language, "csv.seconds"),
+      t(language, "session.penaltyPoints"),
+      t(language, "csv.penaltySeconds"),
     ],
   ];
   for (const s of sessions)

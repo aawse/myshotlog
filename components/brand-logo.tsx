@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import Image from "next/image";
 
 export function BrandLogo() {
@@ -5,7 +6,7 @@ export function BrandLogo() {
     <Image
       className="brand-logo"
       src="/brand/MyShotLog-logo.svg"
-      alt="MyShotLog"
+      alt={swText("brand.name")}
       width={678}
       height={256}
       unoptimized

@@ -1,3 +1,4 @@
+import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
 import { sessionMedalCounts } from "@/lib/session-medals";
 import {
@@ -11,6 +12,8 @@ import { records } from "@/lib/data";
 import { SessionList } from "@/components/session-list";
 import { ProgressChart } from "@/components/progress-chart";
 export default async function Dashboard() {
+  const { tr, locale } = await getI18n();
+
   const data = await records();
   const now = new Intl.DateTimeFormat("sv-SE", {
     timeZone: data.profile.timezone,
@@ -26,33 +29,33 @@ export default async function Dashboard() {
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">DIN TRÄNING, SAMLAD</span>
+          <span className="eyebrow">{tr("dashboard.eyebrow")}</span>
           <h1>
             {data.profile.displayName
-              ? "Hej, " + data.profile.displayName + "."
-              : "Välkommen till din journal."}
+              ? tr("dashboard.hello") + data.profile.displayName + "."
+              : tr("dashboard.welcome")}
           </h1>
-          <p>Ett pass i taget. Följ din utveckling på banan.</p>
+          <p>{tr("dashboard.intro")}</p>
         </div>
         <Link className="button" href="/sessions/new">
-          <Plus size={18} /> Registrera pass
+          <Plus size={18} /> {tr("session.register")}
         </Link>
       </div>
       <section className="hero-panel">
         <div>
-          <span className="eyebrow">FOKUS PÅ UTVECKLING</span>
+          <span className="eyebrow">{tr("dashboard.focus")}</span>
           <h2>
-            Gör varje pass
+            {tr("dashboard.heroFirst")}
             <br />
-            till en erfarenhet.
+            {tr("dashboard.heroSecond")}
           </h2>
           <p>
-            Samla dina resultat, hitta mönstren och
+            {tr("dashboard.heroIntroFirst")}
             <br />
-            ta med lärdomarna till nästa träning.
+            {tr("dashboard.heroIntroSecond")}
           </p>
           <Link href="/sessions/new">
-            Börja registrera <ArrowRight size={17} />
+            {tr("dashboard.start")} <ArrowRight size={17} />
           </Link>
         </div>
         <div className="target-art" aria-hidden="true">
@@ -62,60 +65,57 @@ export default async function Dashboard() {
           <i />
           <span>+</span>
         </div>
-        <span className="hero-mark">25 m / NATIONELLT PISTOLSKYTTE</span>
+        <span className="hero-mark">{tr("dashboard.heroMark")}</span>
       </section>
       <div className="stats">
         <section className="card stat">
           <CalendarDays />
-          <span>Träningspass</span>
+          <span>{tr("nav.sessions")}</span>
           <strong>{data.sessions.length}</strong>
-          <small>{monthly.length} denna månad</small>
+          <small>
+            {monthly.length} {tr("dashboard.thisMonth")}
+          </small>
         </section>
         <section className="card stat">
           <Crosshair />
-          <span>Registrerade skott</span>
-          <strong>{shots.toLocaleString("sv")}</strong>
-          <small>Alla dina pass</small>
+          <span>{tr("dashboard.shots")}</span>
+          <strong>{shots.toLocaleString(locale)}</strong>
+          <small>{tr("dashboard.allSessions")}</small>
         </section>
         <section className="card stat">
           <Target />
-          <span>Aktiva vapen</span>
+          <span>{tr("dashboard.activeFirearms")}</span>
           <strong>{data.firearms.filter((f) => !f.archived).length}</strong>
-          <small>Historiken bevaras vid arkivering</small>
+          <small>{tr("dashboard.archiveHelp")}</small>
         </section>
       </div>
       <div className="dashboard-grid">
         <ProgressChart sessions={data.sessions} />
         <section className="card qualification-teaser">
-          <span className="eyebrow">MÄRKESPROGRESS</span>
+          <span className="eyebrow">{tr("nav.qualifications")}</span>
           <div className="medal-art" aria-hidden="true">
             ◎
           </div>
           <h2>
-            Dina delprestationer,
+            {tr("dashboard.badgeFirst")}
             <br />
-            tydligt förklarade.
+            {tr("dashboard.badgeSecond")}
           </h2>
-          <p>
-            Se verifierade provkrav och vad som återstår. Varje bedömning visar
-            sin regelkälla.
-          </p>
+          <p>{tr("dashboard.badgeHelp")}</p>
           <Link href="/qualifications">
-            Visa märkesprogress <ArrowRight size={17} />
+            {tr("dashboard.viewBadges")} <ArrowRight size={17} />
           </Link>
-          <span className="muted">
-            Personligt underlag · inget officiellt intyg
-          </span>
+          <span className="muted">{tr("dashboard.personal")}</span>
         </section>
       </div>
       <section className="card">
         <div className="section-heading">
           <div>
-            <span className="eyebrow">PÅ BANAN</span>
-            <h2>Senaste träningspassen</h2>
+            <span className="eyebrow">{tr("quick.atRange")}</span>
+            <h2>{tr("dashboard.recent")}</h2>
           </div>
           <Link className="inline-link" href="/sessions">
-            Alla pass <ArrowRight size={16} />
+            {tr("dashboard.viewAll")} <ArrowRight size={16} />
           </Link>
         </div>
         <SessionList

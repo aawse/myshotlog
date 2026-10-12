@@ -1,4 +1,6 @@
 "use client";
+import { localizeMessage } from "@/lib/i18n";
+import { useI18n } from "@/components/language-provider";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -6,6 +8,7 @@ import { TargetPhotoInput } from "./target-photo-input";
 import type { PhotoDraft } from "@/lib/photos/schema";
 import { useRouter } from "next/navigation";
 import { Plus, Zap, Check, Trash2 } from "lucide-react";
+import { disciplineName } from "@/lib/i18n-domain";
 import { disciplines, discipline } from "@/lib/disciplines";
 import type { QuickEntry, Session, Result } from "@/lib/models";
 import { mutate } from "./mutate";
@@ -25,6 +28,8 @@ export function QuickSeries({
   >[];
   today: string;
 }) {
+  const { tr, language } = useI18n();
+
   const router = useRouter();
   const [date, setDate] = useState(today);
   const [sport, setSport] = useState<Session["discipline"]>("precision");
@@ -42,7 +47,10 @@ export function QuickSeries({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   // Reuse the same ID after an uncertain network response so retry cannot duplicate a series.
-  const pending = useRef<{ key: string; id: string } | null>(null);
+  const pending = useRef<{
+    key: string;
+    id: string;
+  } | null>(null);
   const scoreInput = useRef<HTMLInputElement>(null);
   const kind = discipline(sport).kind;
   const chosen = entries.filter((q) => selected.includes(q.id));
@@ -96,7 +104,7 @@ export function QuickSeries({
     const id = pending.current.id;
     const result: Result = {
       id,
-      label: "Serie",
+      label: tr("common.seriesLabel"),
       ...(photo ? { photoId: photo.id } : {}),
       type: sport === "application" ? "application" : "score",
       shots: Number(shots),
@@ -113,7 +121,7 @@ export function QuickSeries({
       await run(
         "quick-entry",
         { id, date, discipline: sport, result, notes },
-        "Serien är sparad. Klar för nästa!",
+        tr("quick.saved"),
         photo ? [photo] : [],
       )
     ) {
@@ -138,14 +146,14 @@ export function QuickSeries({
       <form className="card quick-form" onSubmit={save}>
         <div className="section-heading">
           <h2>
-            <Zap size={20} /> Nästa serie
+            <Zap size={20} /> {tr("quick.next")}
           </h2>
-          <span className="pill">På banan</span>
+          <span className="pill">{tr("quick.atRange")}</span>
         </div>
         <fieldset disabled={busy} className="quick-controls">
           <div className="quick-context">
             <label>
-              Datum
+              {tr("common.date")}
               <input
                 type="date"
                 required
@@ -154,7 +162,7 @@ export function QuickSeries({
               />
             </label>
             <label>
-              Gren
+              {tr("session.sport")}
               <select
                 value={sport}
                 onChange={(e) => {
@@ -169,7 +177,7 @@ export function QuickSeries({
               >
                 {disciplines.map((d) => (
                   <option key={d.id} value={d.id}>
-                    {d.name}
+                    {disciplineName(language, d.id)}
                   </option>
                 ))}
               </select>
@@ -177,7 +185,7 @@ export function QuickSeries({
           </div>
           <div className="quick-score-grid">
             <label>
-              Antal skott
+              {tr("quick.shots")}
               <input
                 type="number"
                 inputMode="numeric"
@@ -191,7 +199,7 @@ export function QuickSeries({
             </label>
             {["points", "dynamic"].includes(kind) && (
               <label className="quick-score">
-                Poäng
+                {tr("session.points")}
                 <input
                   ref={scoreInput}
                   type="number"
@@ -208,7 +216,7 @@ export function QuickSeries({
             )}
             {kind !== "points" && (
               <label className="quick-score">
-                Träffar
+                {tr("session.hits")}
                 <input
                   ref={kind === "dynamic" ? undefined : scoreInput}
                   type="number"
@@ -231,11 +239,11 @@ export function QuickSeries({
             disabled={busy}
           />
           <details className="quick-details">
-            <summary>Fler uppgifter</summary>
+            <summary>{tr("quick.more")}</summary>
             <div className="form-grid">
               {kind === "points" && (
                 <label>
-                  Innertior
+                  {tr("quick.innerTens")}
                   <input
                     type="number"
                     inputMode="numeric"
@@ -249,7 +257,7 @@ export function QuickSeries({
               )}
               {kind === "field" && (
                 <label>
-                  Träffade figurer
+                  {tr("quick.figures")}
                   <input
                     type="number"
                     inputMode="numeric"
@@ -262,7 +270,7 @@ export function QuickSeries({
                 </label>
               )}
               <label>
-                Anteckning
+                {tr("quick.note")}
                 <textarea
                   maxLength={1000}
                   value={notes}
@@ -271,31 +279,24 @@ export function QuickSeries({
               </label>
             </div>
           </details>
-          <p className="muted">
-            Vapen, plats, avstånd, måltyp och skjuttid väljer du när serien
-            kopplas till ett pass. Valör visas därefter.
-          </p>
+          <p className="muted">{tr("quick.sessionHelp")}</p>
           <button className="quick-save" disabled={busy || photoBusy}>
             <Plus size={20} />{" "}
             {photoBusy
-              ? "Optimerar foto…"
+              ? tr("quick.optimizing")
               : busy
-                ? "Sparar…"
-                : "Spara serie & nästa"}
+                ? tr("common.saving")
+                : tr("quick.saveNext")}
           </button>
         </fieldset>
       </form>
       <section className="card quick-inbox">
         <div className="section-heading">
-          <h2>Okopplade serier</h2>
+          <h2>{tr("quick.inbox")}</h2>
           <span className="pill">{entries.length}</span>
         </div>
-        <p className="muted">
-          Välj serier från samma datum och gren för att samla dem i ett pass.
-        </p>
-        {entries.length === 0 && (
-          <p>Här visas dina snabbregistrerade serier.</p>
-        )}
+        <p className="muted">{tr("quick.inboxHelp")}</p>
+        {entries.length === 0 && <p>{tr("quick.empty")}</p>}
         <div className="quick-series-list">
           {entries.map((q) => (
             <div className="quick-series-row" key={q.id}>
@@ -309,19 +310,19 @@ export function QuickSeries({
                 <span>
                   <strong>
                     {q.result.points !== undefined
-                      ? `${q.result.points} poäng`
-                      : `${q.result.hits ?? 0} träffar`}
+                      ? tr("quick.points", { p0: q.result.points })
+                      : tr("quick.hits", { p0: q.result.hits ?? 0 })}
                   </strong>
                   <small>
-                    {q.result.shots} skott · {q.date} ·{" "}
-                    {discipline(q.discipline).name}
+                    {q.result.shots} {tr("details.shotsSeparator")} {q.date} ·{" "}
+                    {disciplineName(language, q.discipline)}
                   </small>
                   {q.notes && <small>{q.notes}</small>}
                   {q.result.photoId && (
                     <Image
                       className="series-target-photo"
                       src={"/api/photos/" + q.result.photoId}
-                      alt="Foto av tavlan"
+                      alt={tr("details.photoAlt")}
                       width={120}
                       height={90}
                       unoptimized
@@ -332,14 +333,17 @@ export function QuickSeries({
               <button
                 type="button"
                 className="text-button danger quick-remove"
-                aria-label={`Ta bort serie ${q.date}, ${q.result.points ?? q.result.hits ?? 0}`}
+                aria-label={tr("quick.removeLabel", {
+                  p0: q.date,
+                  p1: q.result.points ?? q.result.hits ?? 0,
+                })}
                 disabled={busy}
                 onClick={async () => {
                   if (
                     await run(
                       "delete-quick-entry",
                       { id: q.id },
-                      "Serien är borttagen.",
+                      tr("quick.removed"),
                     )
                   )
                     setSelected((ids) => ids.filter((id) => id !== q.id));
@@ -352,20 +356,22 @@ export function QuickSeries({
         </div>
         {chosen.length > 0 && (
           <div className="quick-link-actions">
-            <strong>{chosen.length} serier valda</strong>
+            <strong>
+              {chosen.length} {tr("quick.selected")}
+            </strong>
             {!compatible && (
-              <p className="notice">Välj serier med samma datum och gren.</p>
+              <p className="notice">{tr("quick.compatibleHelp")}</p>
             )}
             {compatible && (
               <Link
                 className="button secondary"
                 href={`/sessions/new?quick=${chosen.map((q) => q.id).join(",")}`}
               >
-                Skapa pass med serierna →
+                {tr("quick.createSession")}
               </Link>
             )}
             <label>
-              Koppla till befintligt pass
+              {tr("quick.linkExisting")}
               <select
                 value={targetSession}
                 onChange={(e) => setTargetSession(e.target.value)}
@@ -373,13 +379,13 @@ export function QuickSeries({
               >
                 <option value="">
                   {matching.length
-                    ? "Välj pass"
-                    : "Inget pass med samma datum och gren"}
+                    ? tr("quick.selectSession")
+                    : tr("quick.noSession")}
                 </option>
                 {matching.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.date} · {s.location || "Plats ej angiven"} ·{" "}
-                    {discipline(s.discipline).name}
+                    {s.date} · {s.location || tr("quick.noLocation")} ·{" "}
+                    {disciplineName(language, s.discipline)}
                   </option>
                 ))}
               </select>
@@ -398,7 +404,7 @@ export function QuickSeries({
                       sessionId: s.id,
                       revision: s.revision,
                     },
-                    "Serierna är kopplade till passet.",
+                    tr("quick.linked"),
                   ))
                 ) {
                   setSelected([]);
@@ -406,16 +412,18 @@ export function QuickSeries({
                 }
               }}
             >
-              <Check size={18} /> Koppla valda serier
+              <Check size={18} /> {tr("quick.linkSelected")}
             </button>
           </div>
         )}
       </section>
       <div className="quick-feedback" aria-live="polite">
-        {message && <p className="notice">{message}</p>}
+        {message && (
+          <p className="notice">{localizeMessage(language, message)}</p>
+        )}
         {error && (
           <p className="notice" role="alert">
-            {error} Uppgifterna behålls. Försök igen.
+            {localizeMessage(language, error)} {tr("quick.retry")}
           </p>
         )}
       </div>

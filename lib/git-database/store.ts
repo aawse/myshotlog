@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { createHash } from "node:crypto";
 import { z } from "../validation";
 import {
@@ -114,7 +115,7 @@ export class GitJournalStore {
     const content = snapshot.files.get(path);
     if (!content) throw new RecordNotFound();
     const photo = photoFile.parse(JSON.parse(content)).entry;
-    if (photo.id !== id) throw new InvalidRecord("Ogiltigt foto-ID.");
+    if (photo.id !== id) throw new InvalidRecord(swText("store.photoId"));
     return photo;
   }
   async photos(): Promise<PhotoAsset[]> {
@@ -128,7 +129,7 @@ export class GitJournalStore {
       .map(([path, content]) => {
         const photo = photoFile.parse(JSON.parse(content)).entry;
         if (path !== this.photoPath(photo.id))
-          throw new InvalidRecord("Ogiltig fotofil.");
+          throw new InvalidRecord(swText("store.photoFile"));
         return photo;
       });
   }
@@ -193,12 +194,12 @@ export class GitJournalStore {
   async mutate(action: string, payload: unknown, photoDrafts: unknown[] = []) {
     const drafts = z.array(photoDraftSchema).max(10).parse(photoDrafts);
     if (new Set(drafts.map((p) => p.id)).size !== drafts.length)
-      throw new InvalidRecord("Dubbla foto-ID.");
+      throw new InvalidRecord(swText("store.duplicatePhotos"));
     if (
       drafts.length &&
       !["session", "session-with-quick", "quick-entry"].includes(action)
     )
-      throw new InvalidRecord("Foto kräver en serie.");
+      throw new InvalidRecord(swText("store.photoSeries"));
     const prepared = new Map<string, PhotoAsset>();
     const replacements = new Map<string, string>();
     try {
@@ -210,9 +211,7 @@ export class GitJournalStore {
         replacements.set(draft.id, photo.id);
       }
     } catch {
-      throw new InvalidRecord(
-        "Fotot måste vara optimerad WebP på högst 1600 px och 180 kB. Välj bilden igen.",
-      );
+      throw new InvalidRecord(swText("store.photoOptimized"));
     }
     const patchResult = (result: unknown) => {
       if (!result || typeof result !== "object") return result;
@@ -249,7 +248,7 @@ export class GitJournalStore {
         for (const photo of data.photos)
           importedPhotos.set(photo.id, await validatePhotoAsset(photo));
       } catch {
-        throw new InvalidRecord("Importen innehåller ett ogiltigt foto.");
+        throw new InvalidRecord(swText("store.importPhoto"));
       }
     }
     // The plan is rebuilt after a head conflict, including revision and ownership checks.
@@ -337,7 +336,7 @@ export class GitJournalStore {
             .strict()
             .parse(payload);
           if (new Set(request.ids).size !== request.ids.length)
-            throw new InvalidRecord("Dubbla serie-ID.");
+            throw new InvalidRecord(swText("store.duplicateSeries"));
           quick = request.ids.map((id) => {
             const entry = records.quickEntries!.find((q) => q.id === id);
             if (!entry) throw new RecordNotFound();
@@ -368,11 +367,9 @@ export class GitJournalStore {
               (q) => q.date !== entry.date || q.discipline !== entry.discipline,
             )
           )
-            throw new InvalidRecord(
-              "Välj ett pass med samma datum och gren som serierna.",
-            );
+            throw new InvalidRecord(swText("store.matchSession"));
           if (quick.some((q) => !entry.results.some((r) => r.id === q.id)))
-            throw new InvalidRecord("En snabbserie saknas i passet.");
+            throw new InvalidRecord(swText("store.seriesMissing"));
           if (
             quick.some((q) =>
               records.sessions.some((s) =>
@@ -380,7 +377,7 @@ export class GitJournalStore {
               ),
             )
           )
-            throw new InvalidRecord("Serien är redan kopplad till ett pass.");
+            throw new InvalidRecord(swText("store.alreadyAttached"));
           if (
             entry.results.some(
               (r) =>
@@ -388,9 +385,7 @@ export class GitJournalStore {
                 !quick.some((q) => q.id === r.id),
             )
           )
-            throw new InvalidRecord(
-              "Använd kopplingsfunktionen för snabbserier.",
-            );
+            throw new InvalidRecord(swText("store.attachQuick"));
           const existing = records.sessions.find((s) => s.id === entry.id);
           if (entry.revision !== (existing?.revision ?? 0) + 1)
             throw new DatabaseConflict();
@@ -401,7 +396,7 @@ export class GitJournalStore {
               (f) => f.id === entry.firearmId && !f.archived,
             );
             if (!firearm)
-              throw new InvalidRecord("Vapnet saknas eller är arkiverat.");
+              throw new InvalidRecord(swText("store.firearmMissing"));
             const { serial, notes, archived, defaultDiscipline, ...saved } =
               firearm;
             void serial;
@@ -537,7 +532,7 @@ export class GitJournalStore {
             message: "MyShotLog: remove profile",
             changes: [{ path: this.profilePath(), content: null }],
           });
-      } else throw new InvalidRecord("Okänd åtgärd.");
+      } else throw new InvalidRecord(swText("store.unknownAction"));
       const nextFiles = new Map(snapshot.files);
       for (const entry of entries)
         for (const change of entry.changes) {
@@ -547,11 +542,12 @@ export class GitJournalStore {
       const previousIds = photoIds(records),
         nextIds = photoIds(this.decode({ ...snapshot, files: nextFiles }));
       for (const id of prepared.keys())
-        if (!nextIds.has(id)) throw new InvalidRecord("Fotot saknar en serie.");
+        if (!nextIds.has(id))
+          throw new InvalidRecord(swText("store.orphanPhoto"));
       for (const id of nextIds) {
         if (previousIds.has(id)) continue;
         const photo = prepared.get(id) ?? importedPhotos.get(id);
-        if (!photo) throw new InvalidRecord("Fotot saknas. Välj bilden igen.");
+        if (!photo) throw new InvalidRecord(swText("store.missingPhoto"));
         entries.unshift({
           message: "MyShotLog: save optimized target photo " + id,
           changes: [
@@ -586,7 +582,7 @@ export class GitJournalStore {
 }
 export class RecordNotFound extends Error {
   constructor() {
-    super("Posten finns inte.");
+    super(swText("store.notFound"));
   }
 }
 export class InvalidRecord extends Error {}

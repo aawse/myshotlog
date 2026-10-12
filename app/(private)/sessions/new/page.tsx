@@ -1,11 +1,16 @@
+import { getI18n } from "@/lib/i18n-server";
 import { notFound } from "next/navigation";
 import { records } from "@/lib/data";
 import { SessionForm } from "@/components/session-form";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ quick?: string }>;
+  searchParams: Promise<{
+    quick?: string;
+  }>;
 }) {
+  const { tr } = await getI18n();
+
   const data = await records();
   const { quick } = await searchParams;
   const ids = quick?.split(",") ?? [];
@@ -39,9 +44,9 @@ export default async function Page({
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">PÅ BANAN</span>
-          <h1>Registrera ett pass</h1>
-          <p>Spara resultaten medan upplevelsen är färsk.</p>
+          <span className="eyebrow">{tr("quick.atRange")}</span>
+          <h1>{tr("session.newHeading")}</h1>
+          <p>{tr("session.newHelp")}</p>
         </div>
       </div>
       <SessionForm

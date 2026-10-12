@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { NextResponse, type NextRequest } from "next/server";
 import { records, journal } from "@/lib/data";
 import { AuthenticationRequired, authenticated } from "@/lib/auth/server";
@@ -27,12 +28,12 @@ function failure(error: unknown) {
     return result;
   }
   if (error instanceof BodyTooLarge)
-    return response({ error: "Filen är för stor (max 3 MB)." }, 413);
+    return response({ error: swText("api.tooLarge") }, 413);
   if (
     error instanceof AuthenticationRequired ||
     (error instanceof Error && error.message === "AUTH_REQUIRED")
   )
-    return response({ error: "Du måste logga in." }, 401);
+    return response({ error: swText("api.signIn") }, 401);
   if (error instanceof DatabaseConflict)
     return response({ error: error.message }, 409);
   if (error instanceof RecordNotFound)
@@ -42,19 +43,17 @@ function failure(error: unknown) {
   if (error instanceof z.ZodError)
     return response(
       {
-        error:
-          "Indata eller repository-data är ogiltiga. Kontrollera fälten och exportformatet.",
+        error: swText("api.invalidData"),
       },
       400,
     );
   if (error instanceof SyntaxError)
-    return response({ error: "Ogiltig JSON." }, 400);
+    return response({ error: swText("api.invalidJson") }, 400);
   if (error instanceof DatabaseUnavailable)
     return response({ error: error.message }, 503);
   return response(
     {
-      error:
-        "Git-journalen kunde inte läsas eller sparas. Kontrollera serverns anslutning.",
+      error: swText("api.storageFailure"),
     },
     503,
   );
@@ -76,12 +75,12 @@ export async function GET(request: NextRequest) {
           "photos",
         ].includes(part)
       )
-        return response({ error: "Ogiltig exportdel." }, 400);
+        return response({ error: swText("api.invalidExportPart") }, 400);
       if (part === "profile") return response(data.profile);
       if (part === "photos") data.photos = await (await journal()).photos();
       const offset = Number(request.nextUrl.searchParams.get("offset") ?? 0);
       if (!Number.isSafeInteger(offset) || offset < 0)
-        return response({ error: "Ogiltig position." }, 400);
+        return response({ error: swText("api.invalidOffset") }, 400);
       return response(
         (
           data[
@@ -103,7 +102,7 @@ export async function GET(request: NextRequest) {
     if (format === "csv" || format === "json")
       return new NextResponse(
         format === "csv"
-          ? csv(data.sessions)
+          ? csv(data.sessions, data.profile.language)
           : JSON.stringify(exportRecords(data), null, 2),
         {
           headers: {
@@ -124,7 +123,7 @@ export async function POST(request: NextRequest) {
     // Next.js can reconstruct request.url using an internal hostname without Proxy.
     // Compare with the configured public origin, never a client-controlled Host header.
     if (request.headers.get("origin") !== oauthConfig().siteUrl)
-      return response({ error: "Ogiltigt ursprung." }, 403);
+      return response({ error: swText("api.invalidOrigin") }, 403);
     const { user } = await authenticated();
     await securityStore().limitApi(user.id, true);
     const body = await boundedBody(request);

@@ -4,6 +4,7 @@ import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { profile, firearm, session } from "./fixtures";
+vi.mock("server-only", () => ({}));
 vi.mock("../lib/data", () => ({ records: vi.fn() }));
 vi.mock("../lib/auth/server", () => ({
   configured: () => true,
@@ -47,4 +48,18 @@ it("renders private dashboard without leaking serial or birth information", asyn
     join(previewDirectory, "index.html"),
     `<!doctype html><html lang="sv"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MyShotLog · UI-test med fiktiva data</title><style>${await readFile("app/globals.css", "utf8")}</style><body>${content}</body></html>`,
   );
+});
+it("renders English server navigation and dashboard without translating the user's name", async () => {
+  vi.mocked(records).mockResolvedValue({
+    profile: { ...profile, language: "en", displayName: "Översikt" },
+    firearms: [],
+    sessions: [],
+    assessments: [],
+  });
+  const html = renderToStaticMarkup(
+    await Layout({ children: await Dashboard() }),
+  );
+  expect(html).toContain("Hello, Översikt.");
+  expect(html).toContain("My firearms");
+  expect(html).toContain("Recent sessions");
 });

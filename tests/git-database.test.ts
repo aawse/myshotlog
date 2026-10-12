@@ -288,3 +288,20 @@ it("preserves multibyte UTF-8 journal data across Git output chunks", async () =
     content,
   );
 });
+it("stores a language change in profile.json without changing user-entered text", async () => {
+  const input = {
+    ...profile,
+    language: "en" as const,
+    displayName: "Översikt",
+  };
+  await store.mutate("profile", input);
+  expect((await store.records()).profile).toMatchObject({
+    language: "en",
+    displayName: "Översikt",
+  });
+  expect(
+    JSON.parse(
+      await git("show", "main:skytte/v1/users/" + owner + "/profile.json"),
+    ).entry.language,
+  ).toBe("en");
+});

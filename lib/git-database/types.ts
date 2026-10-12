@@ -1,13 +1,12 @@
+import { swText } from "@/lib/i18n";
 export class DatabaseConflict extends Error {
-  constructor(message = "Journalen har ändrats. Ladda om och försök igen.") {
+  constructor(message = swText("store.conflict")) {
     super(message);
     this.name = "DatabaseConflict";
   }
 }
 export class DatabaseUnavailable extends Error {
-  constructor(
-    message = "Git-databasen är inte tillgänglig. Kontrollera serverns konfiguration.",
-  ) {
+  constructor(message = swText("store.unavailable")) {
     super(message);
     this.name = "DatabaseUnavailable";
   }

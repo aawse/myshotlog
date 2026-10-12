@@ -104,7 +104,7 @@ it("renders medal icons and counts instead of score sums while retaining series 
     expect(html).toContain("Brons: 0 serier");
     expect(html.match(/lucide-medal/g)).toHaveLength(3);
     expect(html).toContain("serier");
-    expect(html).toContain("skott");
+    expect(html).toContain('<span class="text-lowercase">Skott</span>');
     expect(html).not.toContain("46 p");
     expect(html).not.toContain("private-birth-date");
   }

@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { z } from "../validation";
 import {
   DatabaseConflict,
@@ -44,7 +45,7 @@ export class GitHubDatabase implements GitDatabase {
       options.repository;
     this.request = options.fetch ?? fetch;
     if (!this.base.startsWith("https://"))
-      throw new DatabaseUnavailable("GitHub API måste använda HTTPS.");
+      throw new DatabaseUnavailable(swText("store.https"));
   }
   private async api(
     path: string,
@@ -78,7 +79,7 @@ export class GitHubDatabase implements GitDatabase {
       if (response.status === 404) throw new MissingReference();
       throw new DatabaseUnavailable(
         response.status === 403 || response.status === 429
-          ? "Git-tjänstens åtkomst eller API-gräns hindrar åtgärden. Försök senare."
+          ? swText("store.access")
           : undefined,
       );
     }
@@ -86,10 +87,7 @@ export class GitHubDatabase implements GitDatabase {
   }
   private async checkPrivate() {
     const data = z.object({ private: z.boolean() }).parse(await this.api(""));
-    if (!data.private)
-      throw new DatabaseUnavailable(
-        "Databasen måste använda ett privat GitHub-repository.",
-      );
+    if (!data.private) throw new DatabaseUnavailable(swText("store.private"));
   }
   async snapshot(prefix: string): Promise<GitSnapshot> {
     validPath(prefix);
@@ -104,9 +102,7 @@ export class GitHubDatabase implements GitDatabase {
       ).object.sha;
     } catch (e) {
       if (e instanceof MissingReference)
-        throw new DatabaseUnavailable(
-          "Skapa databasens branch i ett privat repository med en första commit.",
-        );
+        throw new DatabaseUnavailable(swText("store.branch"));
       throw e;
     }
     const commit = commitSchema.parse(await this.api("/git/commits/" + head));
@@ -114,9 +110,7 @@ export class GitHubDatabase implements GitDatabase {
       await this.api("/git/trees/" + commit.tree.sha + "?recursive=1"),
     );
     if (tree.truncated)
-      throw new DatabaseUnavailable(
-        "Repository-trädet är för stort. Dela upp installationen i mindre databasrepositories.",
-      );
+      throw new DatabaseUnavailable(swText("store.largeTree"));
     const entries = tree.tree.filter(
       (e) => e.type === "blob" && e.path.startsWith(prefix + "/"),
     );
@@ -141,9 +135,7 @@ export class GitHubDatabase implements GitDatabase {
   async publish(snapshot: GitSnapshot, entries: EntryCommit[]) {
     if (!entries.length) return { head: snapshot.head, commits: [] };
     if (!snapshot.head)
-      throw new DatabaseUnavailable(
-        "GitHub-repositoryt måste ha en första commit.",
-      );
+      throw new DatabaseUnavailable(swText("store.firstCommit"));
     let parent = snapshot.head;
     const commits: string[] = [];
     let baseTree = commitSchema.parse(await this.api("/git/commits/" + parent))

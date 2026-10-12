@@ -1,3 +1,4 @@
+import { getI18n } from "@/lib/i18n-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
@@ -20,50 +21,51 @@ export default async function PrivateLayout({
   if (!configured()) redirect("/setup");
   const user = await currentUser();
   if (!user) redirect("/login");
+  const { tr } = await getI18n();
   return (
     <div className="shell">
       <aside className="sidebar">
         <Link href="/dashboard" className="brand">
           <BrandLogo />
         </Link>
-        <div className="nav-caption">DIN TRÄNINGSJOURNAL</div>
+        <div className="nav-caption">{tr("nav.caption")}</div>
         <nav>
           <Link href="/quick">
-            <Zap size={19} /> Snabbserie
+            <Zap size={19} /> {tr("nav.quick")}
           </Link>
           <Link href="/dashboard">
-            <LayoutDashboard size={19} /> Översikt
+            <LayoutDashboard size={19} /> {tr("nav.dashboard")}
           </Link>
           <Link href="/sessions">
-            <NotebookPen size={19} /> Träningspass
+            <NotebookPen size={19} /> {tr("nav.sessions")}
           </Link>
           <Link href="/firearms">
-            <Target size={19} /> Mina vapen
+            <Target size={19} /> {tr("nav.firearms")}
           </Link>
           <Link href="/qualifications">
-            <ShieldCheck size={19} /> Märkesprogress
+            <ShieldCheck size={19} /> {tr("nav.qualifications")}
           </Link>
           <Link href="/settings">
-            <Settings size={19} /> Inställningar
+            <Settings size={19} /> {tr("nav.settings")}
           </Link>
         </nav>
         <div className="sidebar-bottom">
-          <span className="private-tag">● Privat journal</span>
-          <p>Din träning. Din utveckling.</p>
+          <span className="private-tag">{tr("nav.private")}</span>
+          <p>{tr("nav.motto")}</p>
           <form action={signOut}>
-            <button className="text-button">Logga ut →</button>
+            <button className="text-button">{tr("nav.signOut")}</button>
           </form>
         </div>
       </aside>
       <div className="workspace">
         <header className="topbar">
-          <span>Nationellt pistolskytte</span>
+          <span>{tr("nav.sport")}</span>
           <span className="private-tag">
-            <ShieldCheck size={14} /> Bara för dig
+            <ShieldCheck size={14} /> {tr("nav.onlyYou")}
           </span>
         </header>
         <main className="content">{children}</main>
-        <footer>MyShotLog · Personlig journal. Inget officiellt intyg.</footer>
+        <footer>{tr("nav.footer")}</footer>
       </div>
     </div>
   );

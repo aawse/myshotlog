@@ -1,13 +1,13 @@
 "use client";
+import { useI18n } from "@/components/language-provider";
 export default function Error({ reset }: { reset: () => void }) {
+  const { tr } = useI18n();
+
   return (
     <section className="card">
-      <h1>Journalen kunde inte laddas</h1>
-      <p>
-        Kontrollera anslutningen och att serverns Git-repository och branch är
-        korrekt konfigurerade.
-      </p>
-      <button onClick={reset}>Försök igen</button>
+      <h1>{tr("error.loadHeading")}</h1>
+      <p>{tr("error.loadHelp")}</p>
+      <button onClick={reset}>{tr("error.retry")}</button>
     </section>
   );
 }

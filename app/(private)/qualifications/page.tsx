@@ -1,13 +1,21 @@
+import { localizeMessage } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
 import { records } from "@/lib/data";
 import { progress } from "@/lib/rules/engine";
-import { rules, levels, levelLabels } from "@/lib/rules/catalog";
+import { rules, levels } from "@/lib/rules/catalog";
+import { disciplineName, sourceSection } from "@/lib/i18n-domain";
 import { disciplines, handbookUrl } from "@/lib/disciplines";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; group?: string }>;
+  searchParams: Promise<{
+    year?: string;
+    group?: string;
+  }>;
 }) {
+  const { tr, language } = await getI18n();
+
   const q = await searchParams;
   const data = await records();
   const y = Number(
@@ -23,18 +31,15 @@ export default async function Page({
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">PERSONLIGT UNDERLAG</span>
-          <h1>Märkesprogress</h1>
-          <p>Delprestationer och återstående prov, med spårbara regler.</p>
+          <span className="eyebrow">{tr("qualifications.eyebrow")}</span>
+          <h1>{tr("nav.qualifications")}</h1>
+          <p>{tr("qualifications.intro")}</p>
         </div>
       </div>
-      <p className="muted">
-        Personlig progression från dina sparade resultat och seriens
-        regelversion.
-      </p>
+      <p className="muted">{tr("qualifications.help")}</p>
       <form className="filters">
         <label>
-          Kalenderår
+          {tr("qualifications.year")}
           <input
             name="year"
             type="number"
@@ -44,14 +49,14 @@ export default async function Page({
           />
         </label>
         <label>
-          Vapengrupp
+          {tr("sessions.groupPrefix")}
           <select name="group" defaultValue={group}>
             {["A", "B", "C"].map((g) => (
               <option key={g}>{g}</option>
             ))}
           </select>
         </label>
-        <button className="secondary">Visa</button>
+        <button className="secondary">{tr("qualifications.show")}</button>
       </form>
       <div className="qualification-grid">
         {levels.map((level) => {
@@ -65,35 +70,38 @@ export default async function Page({
           return (
             <section className="card" key={level}>
               <span className={"medal " + level}>◎</span>
-              <h2>{levelLabels[level]}</h2>
-              <p className="muted">Pistolskyttemärkets ordinarie provväg</p>
+              <h2>{tr(`level.${level}`)}</h2>
+              <p className="muted">{tr("qualifications.path")}</p>
               <label>
-                Precision <strong>{Math.min(p.precision, 3)} / 3</strong>
+                {tr("qualifications.precision")}{" "}
+                <strong>{Math.min(p.precision, 3)} / 3</strong>
                 <progress max="3" value={p.precision} />
               </label>
               <label>
-                Tillämpning <strong>{Math.min(p.application, 3)} / 3</strong>
+                {tr("qualifications.application")}{" "}
+                <strong>{Math.min(p.application, 3)} / 3</strong>
                 <progress max="3" value={p.application} />
               </label>
               <p className="pill">
                 {p.status === "met"
-                  ? "Registrerade delprestationer uppfyllda"
+                  ? tr("qualifications.met")
                   : p.status === "not-evaluated"
-                    ? "Ej bedömt"
-                    : "Fler delprestationer behövs"}
+                    ? tr("assessment.notEvaluated")
+                    : tr("qualifications.more")}
               </p>
-              <p className="muted">{p.reason}</p>
+              <p className="muted">{localizeMessage(language, p.reason)}</p>
             </section>
           );
         })}
       </div>
       <section className="card">
-        <h2>Regelversioner och täckning</h2>
+        <h2>{tr("qualifications.coverage")}</h2>
         {rules.map((r) => (
           <p key={r.id}>
-            <strong>{r.edition}</strong> · {r.from} till {r.until} (exklusivt)
+            <strong>{localizeMessage(language, r.edition)}</strong> · {r.from}{" "}
+            {tr("sessions.to")} {r.until} {tr("qualifications.exclusive")}
             <br />
-            {r.reference}
+            {localizeMessage(language, r.reference)}
             <br />
             <code>{r.id}</code>
           </p>
@@ -105,35 +113,28 @@ export default async function Page({
             target="_blank"
             rel="noreferrer"
           >
-            Läs källdokumentet ↗
+            {tr("qualifications.source")}
           </a>
         </p>
-        <p className="muted">
-          Utgåvan är publicerad av SPSF och hämtad via Svenska PPC-cupen. Senare
-          ändringar är inte fullständigt inventerade. Gällande metadata och
-          begränsningar finns i docs/RULES.md. Sparade bedömningar finns på
-          varje pass; denna översikt räknar enbart sparade bedömningar från
-          aktuell revision. Nya regler och ändrade födelseuppgifter påverkar
-          bara nya serier.
-        </p>
+        <p className="muted">{tr("qualifications.sourceHelp")}</p>
         <div className="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>Gren</th>
-                <th>Källa</th>
-                <th>Bedömning</th>
+                <th>{tr("session.sport")}</th>
+                <th>{tr("qualifications.sourceColumn")}</th>
+                <th>{tr("qualifications.assessment")}</th>
               </tr>
             </thead>
             <tbody>
               {disciplines.map((d) => (
                 <tr key={d.id}>
-                  <td>{d.name}</td>
-                  <td>{d.section}</td>
+                  <td>{disciplineName(language, d.id)}</td>
+                  <td>{sourceSection(language, d.id)}</td>
                   <td>
                     {["precision", "application"].includes(d.id)
-                      ? "Ordinarie delprov, A/B/C"
-                      : "Ej bedömt"}
+                      ? tr("qualifications.standardTests")
+                      : tr("assessment.notEvaluated")}
                   </td>
                 </tr>
               ))}
@@ -141,7 +142,7 @@ export default async function Page({
           </table>
         </div>
         <Link className="inline-link" href="/sessions">
-          Visa pass och sparade bedömningar →
+          {tr("qualifications.viewSessions")}
         </Link>
       </section>
     </>

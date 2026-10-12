@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { spawn } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -196,9 +197,7 @@ export class GitRemoteDatabase implements GitDatabase {
       } catch {
         const latest = await this.fetch(directory);
         if (latest !== snapshot.head) throw new DatabaseConflict();
-        throw new DatabaseUnavailable(
-          "Git-push misslyckades. Kontrollera åtkomst och branchregler.",
-        );
+        throw new DatabaseUnavailable(swText("store.push"));
       }
       return { head: parent, commits };
     });

@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   beginOAuth,
@@ -37,9 +38,9 @@ export async function GET(request: NextRequest) {
           "Cache-Control": "no-store",
         },
       });
-    return new NextResponse(
-      "Konfigurera GitHub-inloggning enligt installationsguiden.",
-      { status: 503, headers: { "Cache-Control": "no-store" } },
-    );
+    return new NextResponse(swText("auth.configure"), {
+      status: 503,
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }

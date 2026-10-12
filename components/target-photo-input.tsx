@@ -1,4 +1,6 @@
 "use client";
+import { localizeMessage } from "@/lib/i18n";
+import { useI18n } from "@/components/language-provider";
 import { useId, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
@@ -17,6 +19,8 @@ export function TargetPhotoInput({
   onBusyChange: (busy: boolean) => void;
   disabled?: boolean;
 }) {
+  const { tr, language } = useI18n();
+
   const id = useId(),
     gallery = useRef<HTMLInputElement>(null),
     camera = useRef<HTMLInputElement>(null);
@@ -55,13 +59,13 @@ export function TargetPhotoInput({
   return (
     <div className="target-photo-input" role="group" aria-labelledby={id}>
       <span id={id} className="photo-label">
-        Foto av tavlan (valfritt)
+        {tr("photo.heading")}
       </span>
       {source && (
         <Image
           className="target-photo-preview"
           src={source}
-          alt="Foto av seriens tavla"
+          alt={tr("photo.alt")}
           width={320}
           height={240}
           unoptimized
@@ -74,7 +78,7 @@ export function TargetPhotoInput({
           disabled={busy || disabled}
           onClick={() => camera.current?.click()}
         >
-          <Camera size={18} /> Ta foto
+          <Camera size={18} /> {tr("photo.take")}
         </button>
         <button
           type="button"
@@ -82,7 +86,8 @@ export function TargetPhotoInput({
           disabled={busy || disabled}
           onClick={() => gallery.current?.click()}
         >
-          <ImagePlus size={18} /> {source ? "Byt bild" : "Välj bild"}
+          <ImagePlus size={18} />{" "}
+          {source ? tr("photo.replace") : tr("photo.choose")}
         </button>
         {source && (
           <button
@@ -91,7 +96,7 @@ export function TargetPhotoInput({
             disabled={busy || disabled}
             onClick={() => onChange()}
           >
-            <Trash2 size={16} /> Ta bort foto
+            <Trash2 size={16} /> {tr("photo.remove")}
           </button>
         )}
       </div>
@@ -100,7 +105,7 @@ export function TargetPhotoInput({
         type="file"
         accept="image/*"
         className="photo-file-input"
-        aria-label="Välj foto av tavlan"
+        aria-label={tr("photo.chooseLabel")}
         disabled={busy || disabled}
         onChange={(e) => {
           void choose(e.target.files?.[0]);
@@ -113,7 +118,7 @@ export function TargetPhotoInput({
         accept="image/*"
         capture="environment"
         className="photo-file-input"
-        aria-label="Ta foto av tavlan"
+        aria-label={tr("photo.takeLabel")}
         disabled={busy || disabled}
         onChange={(e) => {
           void choose(e.target.files?.[0]);
@@ -122,14 +127,14 @@ export function TargetPhotoInput({
       />
       <p className="muted" role="status">
         {busy
-          ? "Optimerar bild…"
+          ? tr("photo.optimizing")
           : source
-            ? "Bilden sparas med serien. Högst 1600 px och 180 kB i Git."
-            : "Bilden förminskas och komprimeras före sparandet."}
+            ? tr("photo.saveHelp")
+            : tr("photo.prepareHelp")}
       </p>
       {error && (
         <p className="notice" role="alert">
-          {error}
+          {localizeMessage(language, error)}
         </p>
       )}
     </div>

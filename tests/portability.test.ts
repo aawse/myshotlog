@@ -65,3 +65,21 @@ it("archived firearm changes do not change captured historical snapshot", () => 
   expect(parseImport(exported).sessions[0].firearmSnapshot?.model).toBe("Test");
   expect(parseImport(exported).sessions[0].group).toBe("C");
 });
+
+it("localizes CSV headers while preserving user-entered values", () => {
+  const content = csv(
+    [
+      {
+        ...session,
+        program: "Poäng",
+        location: "Plats",
+        results: [{ ...result, label: "Serie" }],
+      },
+    ],
+    "en",
+  );
+  expect(content).toContain('"Date";"Discipline";"Program"');
+  expect(content).toContain('"Poäng"');
+  expect(content).toContain('"Plats"');
+  expect(content).toContain('"Serie"');
+});

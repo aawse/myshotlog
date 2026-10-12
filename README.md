@@ -4,6 +4,7 @@ Svensk träningsjournal för personligt pistolskytte, byggd med Next.js och Reac
 
 ## Funktioner
 
+- Svenska och engelska, med språkval sparat i profilen. Svenska används om inget språk har valts. Egna namn, platser och anteckningar översätts inte.
 - Vapen med tillverkare, modell, kaliber och förvald gren.
 - Pass med platsförslag, starttid och gemensamt avstånd, måltyp och skjuttid för serierna.
 - Resultat med brons-, silver- och guldmarkeringar för precision och tillämpning. Regelversion väljs efter passdatum; övriga grenar kan registreras utan automatisk märkesbedömning.
@@ -46,6 +47,14 @@ npm run build
 Git måste finnas i PATH för integrationstesterna. Tester och byggen behöver inga riktiga databas- eller OAuth-hemligheter. `npm run start` startar ett färdigt produktionsbygge; produktion kräver en konfigurerad HTTPS-origin.
 
 GitHub-workflowen **Tests** kör installation, samtliga tester, typkontroll och produktionsbygge på **`ubuntu-latest` med Node.js 24**. Den startar vid pull requests, pushar till `main` och manuellt via **Actions → Tests → Run workflow**. Actions är fästa vid commit-SHA:n och uppdateras genom Dependabot.
+
+## Språk och UI-texter
+
+Alla fasta UI-texter finns i `lib/locales/sv.json` och `lib/locales/en.json`, med samma nycklar i båda filerna. Profilens `language` i `profile.json` styr både serverrenderade sidor och interaktiva formulär. Ändra språk under **Inställningar → Din profil → Språk** och spara profilen. Befintliga profiler utan språkfält använder svenska; webbläsarens språk ersätter inte profilvalet.
+
+Återanvänd befintliga nycklar för samma text och låt CSS styra casing i rubriker och enheter. Testerna kontrollerar att filerna saknar dubbla nycklar och dubbla texter, även varianter som bara skiljer i casing.
+
+Vid nya texter lägger du till en nyckel i båda språken och använder `tr(...)` i gränssnittet. Översätt endast appens fasta texter; användarinmatade värden och historiska poster behålls. JSON-backup bevarar språkvalet och rådata. CSV-rubriker följer valt språk, medan resultatvärden förblir oförändrade.
 
 ## Lagring och foton
 

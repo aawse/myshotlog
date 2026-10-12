@@ -1,18 +1,23 @@
+import { getI18n } from "@/lib/i18n-server";
 import { notFound } from "next/navigation";
 import { records } from "@/lib/data";
 import { FirearmForm } from "@/components/firearm-form";
 export default async function Page({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    id: string;
+  }>;
 }) {
+  const { tr } = await getI18n();
+
   const { id } = await params;
   const data = await records();
   const f = data.firearms.find((f) => f.id === id);
   if (!f) notFound();
   return (
     <>
-      <h1>Vapenuppgifter</h1>
+      <h1>{tr("firearm.details")}</h1>
       <FirearmForm initial={f} />
     </>
   );

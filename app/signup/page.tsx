@@ -1,11 +1,14 @@
+import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
-export default function Page() {
+export default async function Page() {
+  const { tr } = await getI18n();
+
   return (
     <main className="auth">
-      <h1>Använd ditt GitHub-konto.</h1>
-      <p>Kontakta instansägaren för att få åtkomst till journalen.</p>
+      <h1>{tr("login.accountHeading")}</h1>
+      <p>{tr("login.accountHelp")}</p>
       <Link className="button" href="/login">
-        Till inloggning →
+        {tr("login.returnLink")}
       </Link>
     </main>
   );

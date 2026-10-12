@@ -1,4 +1,5 @@
 "use client";
+import { useI18n } from "@/components/language-provider";
 import React, { useId, useState } from "react";
 import { matchingLocations } from "../lib/locations";
 export function LocationInput({
@@ -10,6 +11,8 @@ export function LocationInput({
   locations: string[];
   onChange: (value: string) => void;
 }) {
+  const { tr } = useI18n();
+
   const id = useId(),
     listId = id + "-options";
   const [open, setOpen] = useState(false),
@@ -24,7 +27,7 @@ export function LocationInput({
   return (
     <div className="location-field">
       <label htmlFor={id}>
-        Skjutbana / plats
+        {tr("session.location")}
         <input
           id={id}
           name="location"
@@ -85,7 +88,7 @@ export function LocationInput({
           id={listId}
           className="location-suggestions"
           role="listbox"
-          aria-label="Tidigare platser"
+          aria-label={tr("session.previousLocations")}
         >
           {matches.map((location, index) => (
             <li key={location} role="presentation">

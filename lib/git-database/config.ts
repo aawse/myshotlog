@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import "server-only";
 import { GitHubDatabase } from "./github";
 import { GitRemoteDatabase } from "./git-remote";
@@ -23,7 +24,7 @@ export function database(): GitDatabase {
     process.env.GIT_DATABASE_PROVIDER &&
     process.env.GIT_DATABASE_PROVIDER !== "github"
   )
-    throw new DatabaseUnavailable("Okänd Git-databasadapter.");
+    throw new DatabaseUnavailable(swText("store.adapter"));
   return new GitHubDatabase({
     repository: process.env.GIT_DATABASE_REPOSITORY ?? "",
     branch,

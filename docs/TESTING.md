@@ -13,6 +13,7 @@ Tester använder fiktiva journaler, mockade provider-svar och lokala temporära 
 
 Kontrollerna täcker bland annat:
 
+- Språkval från profilen, svensk standard, identiska översättningsnycklar och oförändrade användarinmatade värden.
 - Postcommits, atomiska importer, samtidiga skrivningar, revisionskonflikter och användarisolering.
 - GitHub API, OAuth-state/PKCE, engångsflöden, sessionsåterkallelse och gemensamma trafikgränser.
 - JSON/CSV, fotovalidering, bildreferenser, deduplicering och städning av tillfälliga Git-repositories.

@@ -1,8 +1,11 @@
+import { getI18n } from "@/lib/i18n-server";
 import { FirearmForm } from "@/components/firearm-form";
-export default function Page() {
+export default async function Page() {
+  const { tr } = await getI18n();
+
   return (
     <>
-      <h1>Lägg till vapen</h1>
+      <h1>{tr("firearm.add")}</h1>
       <FirearmForm />
     </>
   );

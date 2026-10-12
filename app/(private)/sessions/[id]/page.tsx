@@ -1,25 +1,29 @@
+import { localizeMessage } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
 import Image from "next/image";
 import { Medal } from "lucide-react";
-import { targetLabel } from "@/lib/options";
 import { notFound } from "next/navigation";
 import { records } from "@/lib/data";
-import { discipline } from "@/lib/disciplines";
+import { disciplineName, targetName } from "@/lib/i18n-domain";
 import { summarize } from "@/lib/rules/engine";
-import { levelLabels } from "@/lib/rules/catalog";
 import { SessionActions } from "@/components/session-actions";
-const labels = {
-  "not-applicable": "Ej tillämpligt",
-  "not-evaluated": "Ej bedömt",
-  "not-met": "Kraven ej uppfyllda",
-  met: "Delprestation uppfylld",
-};
 export default async function Page({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    id: string;
+  }>;
 }) {
+  const { tr, language } = await getI18n();
+
   const { id } = await params;
+  const labels = {
+    "not-applicable": tr("assessment.notApplicable"),
+    "not-evaluated": tr("assessment.notEvaluated"),
+    "not-met": tr("assessment.notMet"),
+    met: tr("assessment.met"),
+  };
   const data = await records();
   const s = data.sessions.find((s) => s.id === id);
   if (!s) notFound();
@@ -30,16 +34,19 @@ export default async function Page({
       <div className="page-heading">
         <div>
           <span className="eyebrow">
-            {s.date} · {s.location || "Ingen plats"}
+            {s.date} · {s.location || tr("common.noLocation")}
           </span>
-          <h1>{discipline(s.discipline).name}</h1>
+          <h1>{disciplineName(language, s.discipline)}</h1>
           <p>
-            {s.program} · {s.context === "practice" ? "Träning" : "Tävling"} ·
-            revision {s.revision}
+            {s.program} ·{" "}
+            {s.context === "practice"
+              ? tr("session.practice")
+              : tr("session.competition")}{" "}
+            {tr("details.revision")} {s.revision}
           </p>
         </div>
         <Link className="button secondary" href={"/sessions/" + id + "/edit"}>
-          Redigera pass
+          {tr("session.editHeading")}
         </Link>
       </div>
       <section className="card">
@@ -47,37 +54,39 @@ export default async function Page({
           {s.firearmSnapshot
             ? s.firearmSnapshot.nickname ||
               s.firearmSnapshot.make + " " + s.firearmSnapshot.model
-            : "Lånat vapen"}
+            : tr("common.borrowedFirearm")}
           {s.firearmSnapshot && <> · {s.firearmSnapshot.caliber}</>}
         </h2>
         <p>
-          Vapengrupp {s.group} · {total.shots} skott · {s.results.length} poster
+          {tr("sessions.groupPrefix")} {s.group} · {total.shots}{" "}
+          {tr("details.shotsSeparator")} {s.results.length}{" "}
+          {tr("details.entries")}
         </p>
         {(s.distance !== undefined || s.target !== undefined) && (
           <p>
-            Avstånd:{" "}
+            {tr("details.distance")}{" "}
             {s.distance !== null && s.distance !== undefined
               ? s.distance + " m"
-              : "Ej angivet"}{" "}
-            · Måltyp: {targetLabel(s.target)}
+              : tr("common.notSpecified")}{" "}
+            {tr("details.target")} {targetName(language, s.target)}
           </p>
         )}
         <p>
-          Skjuttid:{" "}
+          {tr("details.time")}{" "}
           {s.seconds !== null && s.seconds !== undefined
             ? s.seconds + " s"
             : s.results.some((r) => r.seconds !== undefined)
-              ? "Varierande äldre tider"
-              : "Ej angiven"}
+              ? tr("details.oldTimes")
+              : tr("common.notSpecified")}
         </p>
         <div className="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>Serie / station</th>
-                <th>Poäng</th>
-                <th>Träffar / figurer</th>
-                <th>Avdrag</th>
+                <th>{tr("details.seriesStage")}</th>
+                <th>{tr("session.points")}</th>
+                <th>{tr("details.hitsFigures")}</th>
+                <th>{tr("details.deductions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -102,38 +111,45 @@ export default async function Page({
                           <span
                             className={"series-medal " + medal}
                             role="img"
-                            aria-label={levelLabels[medal] + "serie"}
-                            title={levelLabels[medal] + "serie"}
+                            aria-label={tr("details.medalSeries", {
+                              level: tr(`level.${medal}`),
+                            })}
+                            title={tr("details.medalSeries", {
+                              level: tr(`level.${medal}`),
+                            })}
                           >
                             <Medal size={20} aria-hidden="true" />
                           </span>
                         )}
                       </span>
                       <span className="subline">
-                        {r.shots} skott
+                        {r.shots}{" "}
+                        <span className="text-lowercase">
+                          {tr("session.shots")}
+                        </span>
                         {r.scoring
                           ? " · " +
                             (r.scoring === "points"
-                              ? "Poängfält"
-                              : "Vanlig räkning")
+                              ? tr("details.fieldPoints")
+                              : tr("session.ordinaryScoring"))
                           : ""}
                       </span>
                       <span className="subline">
-                        Regelversion:{" "}
+                        {tr("details.ruleVersion")}{" "}
                         {assessments.find((a) => a.resultId === r.id)
-                          ?.ruleVersion ?? "Ej registrerad"}
+                          ?.ruleVersion ?? tr("details.notRecorded")}
                       </span>
                       {r.photoId && (
                         <a
                           href={"/api/photos/" + r.photoId}
                           target="_blank"
                           rel="noopener noreferrer"
-                          aria-label={"Öppna foto av tavlan för " + r.label}
+                          aria-label={tr("details.openPhotoPrefix") + r.label}
                         >
                           <Image
                             className="series-target-photo"
                             src={"/api/photos/" + r.photoId}
-                            alt="Foto av tavlan"
+                            alt={tr("details.photoAlt")}
                             width={120}
                             height={90}
                             unoptimized
@@ -146,12 +162,18 @@ export default async function Page({
                       {r.hits ?? "–"} / {r.figures ?? "–"}
                       {r.scoring === "points" && (
                         <span className="subline">
-                          {(r.hits ?? 0) + (r.figures ?? 0)} fältpoäng
+                          {(r.hits ?? 0) + (r.figures ?? 0)}{" "}
+                          <span className="text-lowercase">
+                            {tr("details.fieldPoints")}
+                          </span>
                         </span>
                       )}
                     </td>
                     <td>
-                      {r.penaltyPoints ?? 0} p / {r.penaltySeconds ?? 0} s
+                      {tr("details.penalties", {
+                        points: r.penaltyPoints ?? 0,
+                        seconds: r.penaltySeconds ?? 0,
+                      })}
                     </td>
                   </tr>
                 );
@@ -162,10 +184,8 @@ export default async function Page({
         {s.notes && <p className="notes">{s.notes}</p>}
       </section>
       <section className="card">
-        <h2>Serieberäkningar</h2>
-        <p className="muted">
-          Beräknat från seriens resultat med regelversionen för passets datum.
-        </p>
+        <h2>{tr("details.assessments")}</h2>
+        <p className="muted">{tr("details.assessmentHelp")}</p>
         {assessments.length ? (
           assessments.map((a) => (
             <div className="assessment" key={a.id}>
@@ -173,24 +193,26 @@ export default async function Page({
                 {labels[a.status]}
               </span>
               <strong>
-                {levelLabels[a.level]} ·{" "}
+                {tr(`level.${a.level}`)} ·{" "}
                 {s.results.find((r) => r.id === a.resultId)?.label ??
-                  "Tidigare resultat"}{" "}
-                · revision {a.revision}
+                  tr("details.previousResult")}{" "}
+                {tr("details.revision")} {a.revision}
               </strong>
-              <p>{a.reason}</p>
+              <p>{localizeMessage(language, a.reason)}</p>
               <small>
                 {a.ruleVersion} · {a.createdAt.slice(0, 10)}
               </small>
-              {a.source && <p className="muted">{a.source}</p>}
+              {a.source && (
+                <p className="muted">{localizeMessage(language, a.source)}</p>
+              )}
               <details>
-                <summary>Visa sparat bedömningsunderlag</summary>
+                <summary>{tr("details.showInput")}</summary>
                 <pre>{JSON.stringify(a.input, null, 2)}</pre>
               </details>
             </div>
           ))
         ) : (
-          <p>Inga serieresultat att beräkna.</p>
+          <p>{tr("details.empty")}</p>
         )}
         <SessionActions id={id} />
       </section>

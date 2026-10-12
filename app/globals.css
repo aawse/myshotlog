@@ -1156,3 +1156,11 @@ progress {
   border-radius: 6px;
   margin-top: 10px;
 }
+
+.text-lowercase {
+  text-transform: lowercase;
+}
+.text-uppercase,
+.eyebrow {
+  text-transform: uppercase;
+}

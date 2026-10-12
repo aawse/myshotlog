@@ -1,21 +1,22 @@
+import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
 import { Target } from "lucide-react";
-import { discipline } from "@/lib/disciplines";
+import { disciplineName } from "@/lib/i18n-domain";
 import { records } from "@/lib/data";
 export default async function Page() {
+  const { tr, language } = await getI18n();
+
   const data = await records();
   return (
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">DIN UTRUSTNING</span>
-          <h1>Mina vapen</h1>
-          <p>
-            Privata uppgifter. Historiken följer med när ett vapen arkiveras.
-          </p>
+          <span className="eyebrow">{tr("firearm.eyebrow")}</span>
+          <h1>{tr("nav.firearms")}</h1>
+          <p>{tr("firearm.listHelp")}</p>
         </div>
         <Link className="button" href="/firearms/new">
-          + Lägg till vapen
+          {tr("firearm.addLink")}
         </Link>
       </div>
       <div className="firearm-grid">
@@ -27,7 +28,8 @@ export default async function Page() {
           >
             <Target size={32} />
             <span className="pill">
-              {f.archived ? "Arkiverat" : "Aktivt"} · {f.group}
+              {f.archived ? tr("firearm.archived") : tr("firearm.active")} ·{" "}
+              {f.group}
             </span>
             <h2>{f.nickname || f.make + " " + f.model}</h2>
             <p>
@@ -35,20 +37,18 @@ export default async function Page() {
             </p>
             {f.defaultDiscipline && (
               <p className="muted">
-                Förvald gren: {discipline(f.defaultDiscipline).name}
+                {tr("firearm.defaultSportPrefix")}{" "}
+                {disciplineName(language, f.defaultDiscipline)}
               </p>
             )}
-            <span className="inline-link">Visa / redigera →</span>
+            <span className="inline-link">{tr("firearm.editLink")}</span>
           </Link>
         ))}
       </div>
       {!data.firearms.length && (
         <section className="card empty">
-          <h2>Gör journalen personlig</h2>
-          <p>
-            Lägg till ditt första vapen. Du kan även logga pass med lånade
-            vapen.
-          </p>
+          <h2>{tr("firearm.emptyHeading")}</h2>
+          <p>{tr("firearm.emptyHelp")}</p>
         </section>
       )}
     </>

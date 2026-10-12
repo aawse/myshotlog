@@ -1,3 +1,4 @@
+import { swText } from "../i18n";
 import { z } from "../validation";
 import { dateSchema } from "../models";
 import data from "./versions.json";
@@ -34,14 +35,14 @@ export const catalogSchema = z
       if (ids.has(v.id))
         ctx.addIssue({
           code: "custom",
-          message: "Regel-ID måste vara unika",
+          message: swText("validation.ruleIds"),
           path: [index, "id"],
         });
       ids.add(v.id);
       if (v.from >= v.until)
         ctx.addIssue({
           code: "custom",
-          message: "Giltighetsperioden är ogiltig",
+          message: swText("validation.validity"),
           path: [index, "until"],
         });
       if (
@@ -52,7 +53,7 @@ export const catalogSchema = z
       )
         ctx.addIssue({
           code: "custom",
-          message: "Regelperioder får inte överlappa",
+          message: swText("validation.ruleOverlap"),
           path: [index],
         });
       if (
@@ -61,7 +62,7 @@ export const catalogSchema = z
       )
         ctx.addIssue({
           code: "custom",
-          message: "Tröskeln överstiger provets maximala resultat",
+          message: swText("validation.threshold"),
           path: [index],
         });
     }
@@ -69,4 +70,8 @@ export const catalogSchema = z
 // Fail closed if edited rule data is invalid. No rule downloading at runtime.
 export const rules: readonly RuleVersion[] = catalogSchema.parse(data);
 export const levels = ["bronze", "silver", "gold"] as const;
-export const levelLabels = { bronze: "Brons", silver: "Silver", gold: "Guld" };
+export const levelLabels = {
+  bronze: swText("level.bronze"),
+  silver: swText("level.silver"),
+  gold: swText("level.gold"),
+};

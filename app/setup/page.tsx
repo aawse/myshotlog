@@ -1,37 +1,30 @@
+import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
-export default function Setup() {
+export default async function Setup() {
+  const { tr } = await getI18n();
+
   return (
     <main className="auth">
       <div className="brand">
         <BrandLogo />
       </div>
-      <h1>Din egen skyttejournal.</h1>
-      <p>En privat Git-journal med en commit per sparad post.</p>
+      <h1>{tr("setup.heading")}</h1>
+      <p>{tr("setup.intro")}</p>
       <section className="card">
-        <h2>Kom igång</h2>
+        <h2>{tr("setup.start")}</h2>
         <ol>
-          <li>Välj ett privat Git-repository och en databranch.</li>
-          <li>
-            Konfigurera repository och serverns åtkomsttoken i .env.local.
-          </li>
-          <li>
-            Registrera en GitHub OAuth-app med callback /auth/github/callback.
-          </li>
-          <li>
-            Ange klient-ID, klienthemlighet, tillåtna GitHub-ID:n och
-            sessionshemlighet. Starta om appen.
-          </li>
+          <li>{tr("setup.repository")}</li>
+          <li>{tr("setup.token")}</li>
+          <li>{tr("setup.oauth")}</li>
+          <li>{tr("setup.variables")}</li>
         </ol>
-        <p>Se README.md och docs/SETUP.md för hela guiden.</p>
+        <p>{tr("setup.guide")}</p>
         <Link className="button" href="/login">
-          Till inloggning →
+          {tr("login.returnLink")}
         </Link>
       </section>
-      <p className="muted">
-        Git-historiken bevarar tidigare versioner även efter borttagning från
-        journalen.
-      </p>
+      <p className="muted">{tr("setup.history")}</p>
     </main>
   );
 }

@@ -1,3 +1,4 @@
+import { swText, t, type Language } from "@/lib/i18n";
 import { discipline, type DisciplineId } from "./disciplines";
 import { sessionSchema, type Session, type Firearm } from "./models";
 export function sessionSetup(initial: Session): Session {
@@ -24,16 +25,22 @@ export function hasMixedLegacyConditions(session: Session) {
       new Set(session.results.map((r) => r[key])).size > 1,
   );
 }
-export function changeDiscipline(session: Session, id: DisciplineId): Session {
+export function changeDiscipline(
+  session: Session,
+  id: DisciplineId,
+  language: Language = "sv",
+): Session {
   if (id === session.discipline) return session;
   const kind = discipline(id).kind;
   return {
     ...session,
     discipline: id,
     program:
-      session.program === "5-skottsserier" ||
-      session.program === discipline(session.discipline).name
-        ? discipline(id).name
+      session.program === swText("session.defaultProgram") ||
+      session.program === t(language, "session.defaultProgram") ||
+      session.program === discipline(session.discipline).name ||
+      session.program === t(language, `discipline.${session.discipline}`)
+        ? t(language, `discipline.${id}`)
         : session.program,
     results: session.results.map((r) => ({
       ...r,
@@ -48,6 +55,7 @@ export function selectFirearm(
   session: Session,
   firearm: Firearm | undefined,
   editing = false,
+  language: Language = "sv",
 ): Session {
   const selected = {
     ...session,
@@ -55,6 +63,6 @@ export function selectFirearm(
     group: firearm?.group ?? session.group,
   };
   return !editing && firearm?.defaultDiscipline
-    ? changeDiscipline(selected, firearm.defaultDiscipline)
+    ? changeDiscipline(selected, firearm.defaultDiscipline, language)
     : selected;
 }

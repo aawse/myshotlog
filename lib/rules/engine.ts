@@ -1,3 +1,4 @@
+import { swText, t } from "../i18n";
 import {
   resultSchema,
   seriesConditions,
@@ -59,35 +60,19 @@ export function evaluate(
       !dateSchema.safeParse(session.date).success ||
       !profileSchema.safeParse(profile).success
     )
-      return out("not-evaluated", "Indata är ogiltiga eller ofullständiga.");
+      return out("not-evaluated", swText("rules.invalidInput"));
     if (
       (profile.birthDate && profile.birthDate > session.date) ||
       (birthYear !== null && birthYear > year)
     )
-      return out(
-        "not-evaluated",
-        "Provets datum ligger före födelsedatumet eller födelseåret.",
-      );
+      return out("not-evaluated", swText("rules.beforeBirth"));
     if (!["precision", "application"].includes(session.discipline))
-      return out(
-        "not-evaluated",
-        "Märkes- och medaljregler för denna gren är ännu inte implementerade.",
-      );
-    if (!rule)
-      return out(
-        "not-evaluated",
-        "Ingen verifierad regelversion för resultatets datum.",
-      );
+      return out("not-evaluated", swText("rules.unsupportedSport"));
+    if (!rule) return out("not-evaluated", swText("rules.noVersion"));
     if (session.date < rule.from || session.date >= rule.until)
-      return out(
-        "not-evaluated",
-        "Provdatumet omfattas inte av seriens sparade regelversion.",
-      );
+      return out("not-evaluated", swText("rules.outsideVersion"));
     if (!["A", "B", "C"].includes(session.group))
-      return out(
-        "not-evaluated",
-        "Den här vapengruppen omfattas inte av den implementerade regelvägen.",
-      );
+      return out("not-evaluated", swText("rules.unsupportedGroup"));
     const group = session.group as "A" | "B" | "C";
     if (session.discipline === "precision") {
       if (
@@ -97,17 +82,20 @@ export function evaluate(
         !Number.isInteger(result.points) ||
         result.points > 50
       )
-        return out(
-          "not-evaluated",
-          "Precisonsberäkningen kräver fem skott och heltalspoäng mellan 0 och 50.",
-        );
+        return out("not-evaluated", swText("rules.precisionInput"));
       const threshold =
         rule.precision[group][i] -
         (birthYear === null ? 0 : ageReduction(birthYear, year));
       const points = result.points - (result.penaltyPoints ?? 0);
       return out(
         points >= threshold ? "met" : "not-met",
-        `${points} av minst ${threshold} poäng.${birthYear === null ? " Utan åldersavdrag; födelseuppgifter saknas." : ""}`,
+        t(
+          "sv",
+          birthYear === null
+            ? "rules.precisionScoreNoBirth"
+            : "rules.precisionScore",
+          { points, threshold },
+        ),
       );
     }
     if (
@@ -117,15 +105,17 @@ export function evaluate(
       result.hits === undefined ||
       result.seconds === undefined
     )
-      return out(
-        "not-evaluated",
-        "Tillämpningsberäkningen kräver sex skott, antal träffar och skjuttid.",
-      );
+      return out("not-evaluated", swText("rules.applicationInput"));
     const hits = rule.application[i],
       seconds = rule.applicationSeconds[group][i];
     return out(
       result.hits >= hits && result.seconds <= seconds ? "met" : "not-met",
-      `${result.hits}/${hits} träffar, ${result.seconds}/${seconds} sekunder.`,
+      t("sv", "rules.applicationScore", {
+        hits: result.hits,
+        requiredHits: hits,
+        seconds: result.seconds,
+        allowedSeconds: seconds,
+      }),
     );
   });
 }
@@ -178,8 +168,7 @@ export function progress(
         : complete
           ? "met"
           : "not-met",
-    reason:
-      "Tre sparade precisionsdelprestationer + tre tillämpning inom kalenderåret. Varje serie använder sina registrerade regler och födelseuppgifter. Alternativa provvägar, tidigare märkesinnehav och föreningens beslut bedöms separat. Inget officiellt intyg.",
+    reason: swText("rules.progressHelp"),
   } as const;
 }
 // Only arithmetic on already adjudicated inputs. No guessed penalty, ranking or competition-award rules.

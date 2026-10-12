@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { z } from "./validation";
 import caliberData from "./data/calibers.json";
 import targetData from "./data/targets.json";
@@ -18,5 +19,9 @@ const optionSchema = z
 export const calibers = optionSchema.parse(caliberData);
 export const targets = optionSchema.parse(targetData);
 export function targetLabel(value: string | null | undefined) {
-  return targets.find((t) => t.value === value)?.label ?? value ?? "Ej angiven";
+  return (
+    targets.find((t) => t.value === value)?.label ??
+    value ??
+    swText("common.notSpecified")
+  );
 }

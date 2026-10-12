@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
 import { z } from "../validation";
 import { InvalidOAuthFlow } from "./security-store";
@@ -97,14 +98,12 @@ export function beginOAuth(config: OAuthConfig, now = Date.now()) {
 }
 export class OAuthFailure extends Error {
   constructor() {
-    super("GitHub-inloggningen kunde inte genomföras. Försök igen.");
+    super(swText("login.failed"));
   }
 }
 export class AccessDenied extends Error {
   constructor() {
-    super(
-      "Ditt GitHub-konto har inte åtkomst till den här journalinstallationen. Kontakta instansägaren.",
-    );
+    super(swText("auth.denied"));
   }
 }
 export async function completeOAuth(

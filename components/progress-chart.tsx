@@ -1,9 +1,13 @@
 "use client";
+import { useI18n } from "@/components/language-provider";
 import { useState } from "react";
 import type { Session } from "@/lib/models";
+import { disciplineName } from "@/lib/i18n-domain";
 import { discipline } from "@/lib/disciplines";
 import { summarize } from "@/lib/rules/engine";
 export function ProgressChart({ sessions }: { sessions: Session[] }) {
+  const { tr, language, locale } = useI18n();
+
   const groups = Array.from(
     new Set(
       sessions.map((s) => JSON.stringify([s.discipline, s.group, s.program])),
@@ -28,23 +32,23 @@ export function ProgressChart({ sessions }: { sessions: Session[] }) {
   const max = Math.max(...values, 1),
     unit =
       kind === "points"
-        ? "poäng/skott"
+        ? tr("chart.pointsPerShot")
         : kind === "time" || kind === "dynamic"
-          ? "sekunder"
-          : "träffar";
+          ? tr("csv.seconds")
+          : tr("session.hits");
   return (
     <section className="card chart">
       <div className="section-heading">
         <div>
-          <span className="eyebrow">ÖVER TID</span>
-          <h2>Din utveckling</h2>
+          <span className="eyebrow">{tr("chart.eyebrow")}</span>
+          <h2>{tr("chart.heading")}</h2>
         </div>
-        <span className="pill">Senaste 12 passen</span>
+        <span className="pill">{tr("chart.latest")}</span>
       </div>
       {groups.length ? (
         <>
           <label>
-            Jämför samma gren, vapengrupp och program
+            {tr("chart.compare")}
             <select
               value={selected}
               onChange={(e) => setSelected(e.target.value)}
@@ -53,7 +57,7 @@ export function ProgressChart({ sessions }: { sessions: Session[] }) {
                 const [id, group, program] = JSON.parse(g);
                 return (
                   <option key={g} value={g}>
-                    {discipline(id).name} · {group} · {program}
+                    {disciplineName(language, id)} · {group} · {program}
                   </option>
                 );
               })}
@@ -62,11 +66,16 @@ export function ProgressChart({ sessions }: { sessions: Session[] }) {
           <div
             className="bar-chart"
             role="img"
-            aria-label={"Resultat i " + unit}
+            aria-label={tr("chart.resultUnit") + unit}
           >
             {rows.map((s, i) => (
               <div className="bar-col" key={s.id}>
-                <span>{values[i].toFixed(1)}</span>
+                <span>
+                  {new Intl.NumberFormat(locale, {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  }).format(values[i])}
+                </span>
                 <div
                   className="bar"
                   style={{
@@ -78,15 +87,15 @@ export function ProgressChart({ sessions }: { sessions: Session[] }) {
             ))}
           </div>
           <p className="muted">
-            {unit}. Skillnader i mål, bana och tävlingsförhållanden kan påverka
-            jämförelsen.
+            <span className="text-lowercase">{unit}</span>
+            {tr("chart.help")}
           </p>
           <details>
-            <summary>Visa värden som tabell</summary>
+            <summary>{tr("chart.table")}</summary>
             <table>
               <thead>
                 <tr>
-                  <th>Datum</th>
+                  <th>{tr("common.date")}</th>
                   <th>{unit}</th>
                 </tr>
               </thead>
@@ -94,7 +103,12 @@ export function ProgressChart({ sessions }: { sessions: Session[] }) {
                 {rows.map((s, i) => (
                   <tr key={s.id}>
                     <td>{s.date}</td>
-                    <td>{values[i].toFixed(2)}</td>
+                    <td>
+                      {new Intl.NumberFormat(locale, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }).format(values[i])}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -103,7 +117,7 @@ export function ProgressChart({ sessions }: { sessions: Session[] }) {
         </>
       ) : (
         <div className="empty">
-          <p>Efter ditt första pass börjar kurvan ta form.</p>
+          <p>{tr("chart.empty")}</p>
           <div className="chart-placeholder" aria-hidden="true">
             ▁ ▂ ▂ ▃ ▂ ▄ ▄ ▅ ▄ ▆
           </div>

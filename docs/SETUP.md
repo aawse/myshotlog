@@ -237,3 +237,9 @@ npm run build
 Workflowen **Tests** i `.github/workflows/tests.yml` kör `npm ci`, `npm test`, typkontroll och produktionsbygge på **`ubuntu-latest` med Node.js 24**. Den utlöses av pull requests, push till `main` och `workflow_dispatch`. GitHub-hemligheter för appen eller åtkomst till datarepot behövs inte. Starta manuellt via **Actions → Tests → Run workflow**; workflowfilen behöver finnas på standardbranchen. Se [GitHubs guide](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow).
 
 Actions är fästa vid commit-SHA:n. Dependabot kontrollerar GitHub Actions varje vecka och kan öppna uppdaterings-PR:er. Lokal utveckling och tester använder fortfarande samma npm-kommandon på Windows, macOS och Linux.
+
+## Språk i profilen
+
+Appen har svenska och engelska. Under **Inställningar → Din profil → Språk** väljer användaren **Svenska** eller **English** och sparar profilen. Valet lagras som `language: "sv"` eller `language: "en"` i användarens `profile.json` i Git-databasen och gäller hela webbplatsen efter sparandet. Svenska är standard om fältet saknas. Ingen extra miljövariabel eller webbläsarinställning behövs. Inloggningssidor utan en autentiserad profil använder svenska.
+
+Egna namn, vapenuppgifter, platser, program, seriebeteckningar och anteckningar översätts inte. JSON-export bevarar profilens språkval; CSV använder valt språk för rubrikerna. Fasta UI-texter underhålls i `lib/locales/sv.json` och `lib/locales/en.json`; lägg till samma nyckel med en svensk och en engelsk text vid nya kontroller.

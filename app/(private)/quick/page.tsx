@@ -1,15 +1,18 @@
+import { getI18n } from "@/lib/i18n-server";
 import { records } from "@/lib/data";
 import { todayInTimezone } from "@/lib/models";
 import { QuickSeries } from "@/components/quick-series";
 export default async function Page() {
+  const { tr } = await getI18n();
+
   const data = await records();
   return (
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">PÅ BANAN</span>
-          <h1>Snabbregistrera serie</h1>
-          <p>Spara nu. Samla serierna i ett pass senare.</p>
+          <span className="eyebrow">{tr("quick.atRange")}</span>
+          <h1>{tr("quick.heading")}</h1>
+          <p>{tr("quick.intro")}</p>
         </div>
       </div>
       <QuickSeries

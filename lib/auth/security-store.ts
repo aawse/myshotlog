@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { createHash, createHmac } from "node:crypto";
 import { z } from "../validation";
 import {
@@ -9,7 +10,7 @@ import {
 
 export class RateLimited extends Error {
   constructor(public readonly retryAfter: number) {
-    super("För många försök. Vänta och försök igen.");
+    super(swText("auth.rateLimited"));
   }
 }
 export class InvalidOAuthFlow extends Error {}

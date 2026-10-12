@@ -1,14 +1,17 @@
+import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
-export default function Page() {
+export default async function Page() {
+  const { tr } = await getI18n();
+
   return (
     <main className="auth">
-      <h1>Ditt lösenord hanteras av GitHub.</h1>
-      <p>Återställ ditt GitHub-lösenord på GitHub och logga sedan in igen.</p>
+      <h1>{tr("login.passwordHeading")}</h1>
+      <p>{tr("login.passwordHelp")}</p>
       <a className="button" href="https://github.com/password_reset">
-        Till GitHub →
+        {tr("login.visitGithub")}
       </a>
       <p>
-        <Link href="/login">Till inloggning</Link>
+        <Link href="/login">{tr("login.return")}</Link>
       </p>
     </main>
   );

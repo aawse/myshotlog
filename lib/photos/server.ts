@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import {
@@ -14,13 +15,12 @@ export async function validateUploadedPhoto(
   input: Buffer,
 ): Promise<PhotoAsset> {
   if (!input.length || input.length > PHOTO_MAX_BYTES)
-    throw new Error("Bilden är för stor eller tom.");
+    throw new Error(swText("photo.emptyOrLarge"));
   const metadata = await sharp(input, {
     limitInputPixels: PHOTO_MAX_EDGE ** 2,
     failOn: "error",
   }).metadata();
-  if (metadata.format !== "webp")
-    throw new Error("Bilden måste vara optimerad WebP.");
+  if (metadata.format !== "webp") throw new Error(swText("photo.requiresWebp"));
   return validatePhotoAsset({
     id: createHash("sha256").update(input).digest("hex"),
     mediaType: "image/webp",
@@ -38,7 +38,7 @@ export async function validatePhotoAsset(value: unknown): Promise<PhotoAsset> {
     data.toString("base64") !== photo.data ||
     createHash("sha256").update(data).digest("hex") !== photo.id
   )
-    throw new Error("Ogiltig bilddata.");
+    throw new Error(swText("photo.invalidData"));
   const metadata = await sharp(data, {
     limitInputPixels: PHOTO_MAX_EDGE ** 2,
     failOn: "error",
@@ -52,7 +52,7 @@ export async function validatePhotoAsset(value: unknown): Promise<PhotoAsset> {
     metadata.xmp ||
     metadata.icc
   )
-    throw new Error("Ogiltigt eller ooptimerat foto.");
+    throw new Error(swText("photo.invalidAsset"));
   // Decode too, so truncated files cannot be committed via backup import.
   await sharp(data, {
     limitInputPixels: PHOTO_MAX_EDGE ** 2,

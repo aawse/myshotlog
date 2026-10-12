@@ -1,3 +1,4 @@
+import { swText } from "@/lib/i18n";
 import { z } from "./validation";
 import { photoIdSchema, type PhotoAsset } from "./photos/schema";
 import { discipline, disciplineIds } from "./disciplines";
@@ -8,7 +9,7 @@ export const dateSchema = z
   .refine((s) => {
     const d = new Date(s + "T12:00:00Z");
     return !isNaN(d.valueOf()) && d.toISOString().slice(0, 10) === s;
-  }, "Ogiltigt datum");
+  }, swText("validation.date"));
 const n = z.number().finite().nonnegative().max(1000000);
 const integer = n.int();
 export const resultSchema = z
@@ -36,19 +37,19 @@ export const resultSchema = z
     if (r.hits !== undefined && r.hits > r.shots)
       c.addIssue({
         code: "custom",
-        message: "Träffar överstiger antal skott",
+        message: swText("validation.hits"),
         path: ["hits"],
       });
     if (r.figures !== undefined && (r.hits === undefined || r.figures > r.hits))
       c.addIssue({
         code: "custom",
-        message: "Figurer kräver minst lika många träffar",
+        message: swText("validation.figures"),
         path: ["figures"],
       });
     if (r.x !== undefined && r.x > r.shots)
       c.addIssue({
         code: "custom",
-        message: "För många innertior",
+        message: swText("validation.innerTens"),
         path: ["x"],
       });
     if (
@@ -57,7 +58,7 @@ export const resultSchema = z
     )
       c.addIssue({
         code: "custom",
-        message: "Poängavdrag kräver tillräcklig poäng",
+        message: swText("validation.penalty"),
         path: ["penaltyPoints"],
       });
   });
@@ -105,7 +106,10 @@ export const sessionSchema = z
   .strict()
   .superRefine((s, c) => {
     if (new Set(s.results.map((r) => r.id)).size !== s.results.length)
-      c.addIssue({ code: "custom", message: "Dubbla resultat-ID" });
+      c.addIssue({
+        code: "custom",
+        message: swText("validation.duplicateResults"),
+      });
     for (const [i, r] of s.results.entries()) {
       if (
         [
@@ -121,7 +125,7 @@ export const sessionSchema = z
       )
         c.addIssue({
           code: "custom",
-          message: "Poäng krävs",
+          message: swText("validation.points"),
           path: ["results", i, "points"],
         });
       if (
@@ -137,7 +141,7 @@ export const sessionSchema = z
       )
         c.addIssue({
           code: "custom",
-          message: "Träffar krävs",
+          message: swText("validation.requiredHits"),
           path: ["results", i, "hits"],
         });
       if (
@@ -147,7 +151,7 @@ export const sessionSchema = z
       )
         c.addIssue({
           code: "custom",
-          message: "Högst 10 poäng per skott",
+          message: swText("validation.maximumPoints"),
           path: ["results", i, "points"],
         });
       if (
@@ -157,7 +161,7 @@ export const sessionSchema = z
       )
         c.addIssue({
           code: "custom",
-          message: "Tid krävs",
+          message: swText("validation.time"),
           path:
             s.seconds !== undefined ? ["seconds"] : ["results", i, "seconds"],
         });
@@ -207,15 +211,12 @@ export const profileSchema = z
   .object({
     displayName: text(100),
     birthDate: dateSchema
-      .refine(
-        (date) => date >= "1900-01-01",
-        "Födelsedatum måste vara 1900 eller senare",
-      )
+      .refine((date) => date >= "1900-01-01", swText("validation.birthMinimum"))
       .nullable()
       .default(null),
     // Retained for version-1 exports and existing Git profile files.
     birthYear: z.number().int().min(1900).nullable().default(null),
-    language: z.enum(["sv", "en"]),
+    language: z.enum(["sv", "en"]).default("sv"),
     timezone: z
       .string()
       .max(100)
@@ -226,7 +227,7 @@ export const profileSchema = z
         } catch {
           return false;
         }
-      }, "Ogiltig tidszon"),
+      }, swText("validation.timezone")),
   })
   .strict()
   .superRefine((p, ctx) => {
@@ -240,13 +241,13 @@ export const profileSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["birthDate"],
-        message: "Födelsedatum får inte ligga i framtiden",
+        message: swText("validation.birthFuture"),
       });
     if (p.birthYear !== null && p.birthYear > Number(today.slice(0, 4)))
       ctx.addIssue({
         code: "custom",
         path: ["birthYear"],
-        message: "Födelseår får inte ligga i framtiden",
+        message: swText("validation.yearFuture"),
       });
     if (
       p.birthDate &&
@@ -256,7 +257,7 @@ export const profileSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["birthDate"],
-        message: "Födelsedatum och födelseår stämmer inte överens",
+        message: swText("validation.birthMismatch"),
       });
   })
   .transform((p) => ({
@@ -294,29 +295,35 @@ function validateQuick(
   ctx: z.RefinementCtx,
 ) {
   if (entry.id !== entry.result.id)
-    ctx.addIssue({ code: "custom", message: "Ogiltigt serie-ID" });
+    ctx.addIssue({ code: "custom", message: swText("validation.seriesId") });
   if (
     ["seconds", "distance", "target", "evidence", "conditionsConfirmed"].some(
       (key) => Object.hasOwn(entry.result, key),
     )
   )
-    ctx.addIssue({ code: "custom", message: "Serievillkor anges på passet" });
+    ctx.addIssue({ code: "custom", message: swText("validation.conditions") });
   const kind = discipline(entry.discipline).kind;
   if (kind === "points" && entry.result.points === undefined)
-    ctx.addIssue({ code: "custom", message: "Poäng krävs" });
+    ctx.addIssue({ code: "custom", message: swText("validation.points") });
   if (!["points", "dynamic"].includes(kind) && entry.result.hits === undefined)
-    ctx.addIssue({ code: "custom", message: "Träffar krävs" });
+    ctx.addIssue({
+      code: "custom",
+      message: swText("validation.requiredHits"),
+    });
   if (
     kind === "dynamic" &&
     entry.result.hits === undefined &&
     entry.result.points === undefined
   )
-    ctx.addIssue({ code: "custom", message: "Ange poäng eller träffar" });
+    ctx.addIssue({ code: "custom", message: swText("validation.score") });
   if (
     entry.discipline === "precision" &&
     (entry.result.points ?? 0) > entry.result.shots * 10
   )
-    ctx.addIssue({ code: "custom", message: "Högst 10 poäng per skott" });
+    ctx.addIssue({
+      code: "custom",
+      message: swText("validation.maximumPoints"),
+    });
 }
 export const quickEntryInputSchema = z
   .object(quickFields)

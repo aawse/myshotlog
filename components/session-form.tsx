@@ -1,7 +1,10 @@
 "use client";
+import { localizeMessage } from "@/lib/i18n";
+import { useI18n } from "@/components/language-provider";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { targets, targetLabel } from "@/lib/options";
+import { disciplineName, targetName } from "@/lib/i18n-domain";
+import { targets } from "@/lib/options";
 import { Plus, Trash2 } from "lucide-react";
 import { disciplines, discipline } from "@/lib/disciplines";
 import type { Session, Firearm, Result, QuickEntry } from "@/lib/models";
@@ -15,9 +18,9 @@ import { TargetPhotoInput } from "./target-photo-input";
 import type { PhotoDraft } from "@/lib/photos/schema";
 import { LocationInput } from "./location-input";
 import { mutate } from "./mutate";
-const entry = (): Result => ({
+const entry = (label: string): Result => ({
   id: crypto.randomUUID(),
-  label: "Serie 1",
+  label,
   type: "score",
   shots: 5,
   points: 0,
@@ -38,6 +41,8 @@ export function SessionForm({
   locations?: string[];
   timezone?: string;
 }) {
+  const { tr, language } = useI18n();
+
   const router = useRouter();
   const [session, setSession] = useState<Session>(() =>
     initial
@@ -53,8 +58,8 @@ export function SessionForm({
           location: "",
           discipline: quickEntries[0]?.discipline ?? "precision",
           program: quickEntries[0]
-            ? discipline(quickEntries[0].discipline).name
-            : "5-skottsserier",
+            ? disciplineName(language, quickEntries[0].discipline)
+            : tr("session.defaultProgram"),
           seconds:
             quickEntries[0] && quickEntries[0].discipline !== "precision"
               ? null
@@ -77,7 +82,7 @@ export function SessionForm({
             .join("\n"),
           results: quickEntries.length
             ? quickEntries.map((q) => q.result)
-            : [entry()],
+            : [entry(tr("common.seriesLabel") + " 1")],
           revision: 0,
         },
   );
@@ -147,15 +152,14 @@ export function SessionForm({
     <form onSubmit={save} className="form">
       {quickEntries.length > 0 && (
         <p className="notice">
-          {quickEntries.length} snabbserier kopplas när du sparar passet. Datum
-          och gren behålls.
+          {quickEntries.length} {tr("session.linkQuickHelp")}
         </p>
       )}
       <section className="card">
-        <h2>Om passet</h2>
+        <h2>{tr("session.about")}</h2>
         <div className="form-grid">
           <label>
-            Datum
+            {tr("common.date")}
             <input
               disabled={quickEntries.length > 0}
               type="date"
@@ -165,7 +169,7 @@ export function SessionForm({
             />
           </label>
           <label>
-            Starttid (valfritt)
+            {tr("session.startTime")}
             <input
               type="time"
               value={session.time}
@@ -178,25 +182,29 @@ export function SessionForm({
             onChange={(value) => patch({ location: value })}
           />
           <label>
-            Gren
+            {tr("session.sport")}
             <select
               disabled={quickEntries.length > 0}
               value={session.discipline}
               onChange={(e) => {
                 setSession((s) =>
-                  changeDiscipline(s, e.target.value as Session["discipline"]),
+                  changeDiscipline(
+                    s,
+                    e.target.value as Session["discipline"],
+                    language,
+                  ),
                 );
               }}
             >
               {disciplines.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.name}
+                  {disciplineName(language, d.id)}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Program / moment
+            {tr("session.program")}
             <input
               required
               maxLength={120}
@@ -205,7 +213,7 @@ export function SessionForm({
             />
           </label>
           <label>
-            Vapen
+            {tr("session.firearm")}
             <select
               value={session.firearmId ?? ""}
               onChange={(e) => {
@@ -215,23 +223,24 @@ export function SessionForm({
                     s,
                     f,
                     Boolean(initial) || quickEntries.length > 0,
+                    language,
                   ),
                 );
               }}
             >
-              <option value="">Lånat / inget registrerat vapen</option>
+              <option value="">{tr("session.borrowed")}</option>
               {firearms
                 .filter((f) => !f.archived || f.id === initial?.firearmId)
                 .map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.nickname || f.make + " " + f.model}
-                    {f.archived ? " (arkiverat)" : ""}
+                    {f.archived ? tr("common.archivedSuffix") : ""}
                   </option>
                 ))}
             </select>
           </label>
           <label>
-            Vapengrupp / klassificering
+            {tr("session.group")}
             <input
               value={session.group}
               required
@@ -241,12 +250,14 @@ export function SessionForm({
             />
             <datalist id="groups">
               {["A", "A optisk", "B", "C", "R"].map((g) => (
-                <option key={g}>{g}</option>
+                <option key={g} value={g}>
+                  {g === "A optisk" ? tr("domain.optical") : g}
+                </option>
               ))}
             </datalist>
           </label>
           <label>
-            Avstånd (meter)
+            {tr("session.distance")}
             <input
               type="number"
               min="0"
@@ -261,7 +272,7 @@ export function SessionForm({
             />
           </label>
           <label>
-            Skjuttid (sekunder)
+            {tr("session.shootingTime")}
             <input
               name="seconds"
               type="number"
@@ -278,100 +289,100 @@ export function SessionForm({
             />
           </label>
           <label>
-            Måltyp
+            {tr("session.target")}
             <select
               name="target"
               value={session.target ?? ""}
               onChange={(e) => patch({ target: e.target.value || null })}
             >
-              <option value="">Välj måltyp</option>
+              <option value="">{tr("session.selectTarget")}</option>
               {session.target &&
                 !targets.some((t) => t.value === session.target) && (
                   <option value={session.target}>
-                    {session.target} (tidigare sparad)
+                    {session.target} {tr("common.savedPreviously")}
                   </option>
                 )}
               {targets.map((t) => (
                 <option key={t.value} value={t.value}>
-                  {t.label}
+                  {targetName(language, t.value)}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Sammanhang
+            {tr("session.context")}
             <select
               value={session.context}
               onChange={(e) =>
                 patch({ context: e.target.value as Session["context"] })
               }
             >
-              <option value="practice">Träning</option>
-              <option value="competition">Tävling</option>
+              <option value="practice">{tr("session.practice")}</option>
+              <option value="competition">{tr("session.competition")}</option>
             </select>
           </label>
         </div>
-        <p className="muted">
-          Avstånd, måltyp och skjuttid gäller alla serier i passet.
-        </p>
+        <p className="muted">{tr("session.sharedHelp")}</p>
         {hasMixedLegacyConditions(session) && (
-          <p className="notice">
-            Det här äldre passet har olika avstånd, mål eller tider per serie.
-            De behålls tills du väljer ett gemensamt värde ovan.
-          </p>
+          <p className="notice">{tr("session.legacyHelp")}</p>
         )}
       </section>
       <section className="card">
         <div className="section-heading">
-          <h2>Resultat per serie / station</h2>
-          <span className="pill">{session.results.length} poster</span>
+          <h2>{tr("session.results")}</h2>
+          <span className="pill">
+            {session.results.length} {tr("details.entries")}
+          </span>
         </div>
-        <p className="muted">
-          Ange råresultat före avdrag. Avdrag anges separat. Tävlingsplacering
-          och regelstyrda straff räknas inte automatiskt.
-        </p>
+        <p className="muted">{tr("session.resultsHelp")}</p>
         {session.results.map((r, i) => (
           <fieldset className="result-entry" key={r.id}>
             <legend>
-              {kind === "field" ? "Station" : "Resultat"} {i + 1}
+              {kind === "field" ? tr("session.stage") : tr("session.result")}{" "}
+              {i + 1}
             </legend>
             {hasMixedLegacyConditions(session) && (
               <p className="muted">
-                Äldre serievillkor:{" "}
+                {tr("session.legacyConditions")}{" "}
                 {r.distance !== undefined
                   ? r.distance + " m"
-                  : "Avstånd ej angivet"}{" "}
-                · {r.target ? targetLabel(r.target) : "Måltyp ej angiven"}
+                  : tr("session.noDistance")}{" "}
+                ·{" "}
+                {r.target
+                  ? targetName(language, r.target)
+                  : tr("session.noTarget")}
               </p>
             )}
             <div className="form-grid">
               <label>
-                Namn / moment
+                {tr("session.resultName")}
                 <input
                   value={r.label}
                   maxLength={120}
                   onChange={(e) => resultPatch(r.id, { label: e.target.value })}
                 />
               </label>
-              {field("Antal skott", "shots", r, true)}
+              {field(tr("quick.shots"), "shots", r, true)}
               {["points", "field", "dynamic"].includes(kind) &&
                 field(
-                  kind === "field" ? "Poängmål (valfritt)" : "Poäng",
+                  kind === "field"
+                    ? tr("session.pointTargets")
+                    : tr("session.points"),
                   "points",
                   r,
                   kind === "points",
                 )}
               {kind !== "points" &&
-                field("Träffar", "hits", r, kind !== "dynamic")}
-              {kind === "field" && field("Träffade figurer", "figures", r)}
-              {kind === "points" && field("Innertior (valfritt)", "x", r)}
+                field(tr("session.hits"), "hits", r, kind !== "dynamic")}
+              {kind === "field" && field(tr("quick.figures"), "figures", r)}
+              {kind === "points" && field(tr("session.innerTens"), "x", r)}
               {["points", "field", "dynamic"].includes(kind) &&
-                field("Poängavdrag", "penaltyPoints", r)}
+                field(tr("session.penaltyPoints"), "penaltyPoints", r)}
               {["time", "dynamic"].includes(kind) &&
-                field("Strafftid (sekunder)", "penaltySeconds", r)}
+                field(tr("session.penaltyTime"), "penaltySeconds", r)}
               {kind === "field" && (
                 <label>
-                  Räknesätt
+                  {tr("session.scoring")}
                   <select
                     value={r.scoring ?? "ordinary"}
                     onChange={(e) =>
@@ -380,9 +391,11 @@ export function SessionForm({
                       })
                     }
                   >
-                    <option value="ordinary">Vanlig räkning</option>
+                    <option value="ordinary">
+                      {tr("session.ordinaryScoring")}
+                    </option>
                     <option value="points">
-                      Poängfält (träffar + figurer)
+                      {tr("session.pointsScoring")}
                     </option>
                   </select>
                 </label>
@@ -417,7 +430,7 @@ export function SessionForm({
                     })
                   }
                 >
-                  <Trash2 size={15} /> Ta bort post
+                  <Trash2 size={15} /> {tr("session.removeResult")}
                 </button>
               )}
           </fieldset>
@@ -431,13 +444,16 @@ export function SessionForm({
               results: [
                 ...session.results,
                 {
-                  ...entry(),
+                  ...entry(tr("common.seriesLabel") + " 1"),
                   type:
                     session.discipline === "application"
                       ? "application"
                       : "score",
                   shots: session.discipline === "application" ? 6 : 5,
-                  label: "Serie " + (session.results.length + 1),
+                  label:
+                    tr("common.seriesLabel") +
+                    " " +
+                    (session.results.length + 1),
                   points: kind === "points" ? 0 : undefined,
                   hits: kind !== "points" ? 0 : undefined,
                 },
@@ -445,12 +461,12 @@ export function SessionForm({
             })
           }
         >
-          <Plus size={16} /> Lägg till serie / station
+          <Plus size={16} /> {tr("session.addResult")}
         </button>
       </section>
       <section className="card">
         <label>
-          Anteckningar
+          {tr("common.notes")}
           <textarea
             value={session.notes}
             maxLength={5000}
@@ -460,15 +476,15 @@ export function SessionForm({
       </section>
       {error && (
         <p className="notice" role="alert">
-          {error}
+          {localizeMessage(language, error)}
         </p>
       )}
       <button disabled={busy || photoBusy}>
         {photoBusy
-          ? "Optimerar foto…"
+          ? tr("quick.optimizing")
           : busy
-            ? "Sparar…"
-            : "Spara träningspass"}{" "}
+            ? tr("common.saving")
+            : tr("session.save")}{" "}
         →
       </button>
     </form>

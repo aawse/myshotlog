@@ -1,8 +1,12 @@
 "use client";
+import { localizeMessage } from "@/lib/i18n";
+import { useI18n } from "@/components/language-provider";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { mutate } from "./mutate";
 export function SessionActions({ id }: { id: string }) {
+  const { tr, language } = useI18n();
+
   const router = useRouter();
   const [confirm, setConfirm] = useState(false),
     [error, setError] = useState(""),
@@ -25,21 +29,20 @@ export function SessionActions({ id }: { id: string }) {
         className="text-button danger"
         onClick={() => setConfirm(!confirm)}
       >
-        Radera pass
+        {tr("session.delete")}
       </button>
       {confirm && (
         <span>
-          Ta bort pass och bedömningar från aktuell journal? Git-historiken
-          finns kvar.{" "}
+          {tr("session.deleteHelp")}{" "}
           <button disabled={busy} onClick={() => act("delete-session")}>
-            Ja, radera
+            {tr("session.confirmDelete")}
           </button>
           <button className="secondary" onClick={() => setConfirm(false)}>
-            Avbryt
+            {tr("common.cancel")}
           </button>
         </span>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{localizeMessage(language, error)}</p>}
     </div>
   );
 }

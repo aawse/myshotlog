@@ -1,39 +1,75 @@
+import { swText } from "./i18n";
 export const handbookUrl =
   "https://www.svenskappccupen.se/wp-content/uploads/2026/01/SHB_2026.pdf";
 export const disciplines = [
   {
     id: "precision",
-    name: "Precisionsskjutning",
+    name: swText("discipline.precision"),
     kind: "points",
     section: "F",
   },
-  { id: "field", name: "Fältskjutning", kind: "field", section: "D" },
+  {
+    id: "field",
+    name: swText("discipline.field"),
+    kind: "field",
+    section: "D",
+  },
   {
     id: "magnum-field",
-    name: "Magnumfältskjutning",
+    name: swText("discipline.magnum-field"),
     kind: "field",
     section: "E",
   },
   {
     id: "magnum-precision",
-    name: "Magnumprecision",
+    name: swText("discipline.magnum-precision"),
     kind: "points",
     section: "G",
   },
-  { id: "rapid", name: "Snabbskjutning", kind: "points", section: "H" },
-  { id: "military", name: "Militär snabbmatch", kind: "points", section: "J" },
-  { id: "national", name: "Nationell helmatch", kind: "points", section: "I" },
-  { id: "running", name: "Springskytte", kind: "time", section: "L" },
-  { id: "ski", name: "Skidskytte", kind: "time", section: "K" },
-  { id: "air", name: "Luftpistol", kind: "points", section: "M" },
-  { id: "falling", name: "Falling target", kind: "time", section: "N" },
-  { id: "ppc", name: "PPC", kind: "points", section: "O" },
-  { id: "sra", name: "SRA", kind: "dynamic", section: "Separat regelverk" },
+  {
+    id: "rapid",
+    name: swText("discipline.rapid"),
+    kind: "points",
+    section: "H",
+  },
+  {
+    id: "military",
+    name: swText("discipline.military"),
+    kind: "points",
+    section: "J",
+  },
+  {
+    id: "national",
+    name: swText("discipline.national"),
+    kind: "points",
+    section: "I",
+  },
+  {
+    id: "running",
+    name: swText("discipline.running"),
+    kind: "time",
+    section: "L",
+  },
+  { id: "ski", name: swText("discipline.ski"), kind: "time", section: "K" },
+  { id: "air", name: swText("discipline.air"), kind: "points", section: "M" },
+  {
+    id: "falling",
+    name: swText("discipline.falling"),
+    kind: "time",
+    section: "N",
+  },
+  { id: "ppc", name: swText("discipline.ppc"), kind: "points", section: "O" },
+  {
+    id: "sra",
+    name: swText("discipline.sra"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
   {
     id: "application",
-    name: "Tillämpningsserie (märkesprov)",
+    name: swText("discipline.application"),
     kind: "hits",
-    section: "Bilaga 1 §5.1.1.1",
+    section: swText("domain.appendix"),
   },
 ] as const;
 export type DisciplineId = (typeof disciplines)[number]["id"];
@@ -46,7 +82,7 @@ export function discipline(id: string) {
 }
 export const weaponGroups = [
   "A",
-  "A optisk",
+  swText("domain.optical"),
   "B",
   "C",
   "R",
@@ -59,5 +95,5 @@ export const weaponGroups = [
   "M7",
   "M8",
   "M9",
-  "Övrig / programspecifik",
+  swText("domain.otherGroup"),
 ] as const;
