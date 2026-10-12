@@ -10,7 +10,7 @@ Svensk träningsjournal för personligt pistolskytte, byggd med Next.js och Reac
 - Resultat med brons-, silver- och guldmarkeringar för precision och tillämpning. Regelversion väljs efter passdatum; övriga grenar kan registreras utan automatisk märkesbedömning.
 - Födelsedatum i profilen för precisionens åldersavdrag. Sparade födelseuppgifter används när de finns i seriens underlag; annars används profilen.
 - Mobilanpassad **Snabbserie** som sparas direkt och senare kan kopplas till ett pass med samma datum och gren. Nätanslutning krävs.
-- Ett valfritt tavelfoto per serie, optimerat till WebP i webbläsaren före uppladdning.
+- Ett valfritt tavelfoto per serie. Välj en bild; formatet avgör automatiskt om den kan användas direkt eller behöver konverteras och optimeras i webbläsaren före uppladdning.
 - JSON-export/import med profil, vapen, pass, bedömningar, okopplade serier och foton. CSV exporterar resultat från pass till kalkylblad.
 - Vercel Web Analytics via rotlayouten; aktiveras för projektet i Vercels dashboard.
 
@@ -58,7 +58,7 @@ Vid nya texter lägger du till en nyckel i båda språken och använder `tr(...)
 
 ## Lagring och foton
 
-Profiler, vapen, pass och okopplade serier lagras som JSON. Foton ligger i ett separat användarprefix och publiceras atomiskt med tillhörande poster. Bilden får en egen commit; identiska optimerade bilder återanvänds per användare. Webbläsaren begränsar bilder till **1600 pixlar på längsta sidan och 180 kB**. Ett original får vara högst **25 MB**; högst **tio nya foton** kan skickas i ett anrop. Servern validerar bilden utan att komprimera om den och behåller ingen permanent upload-kopia.
+Profiler, vapen, pass och okopplade serier lagras som JSON. Foton ligger i ett separat användarprefix och publiceras atomiskt med tillhörande poster. Bilden får en egen commit; identiska optimerade bilder återanvänds per användare. Webbläsaren begränsar bilder till **1600 pixlar på längsta sidan och 180 kB**. WebP som redan uppfyller gränserna och saknar metadata används utan omkomprimering. Andra bilder konverteras automatiskt till WebP; för stora WebP-bilder optimeras och metadata tas bort. Filvalet kräver inte ett visst format eller en MIME-typ, men webbläsaren måste kunna avkoda bilden. Ett original får vara högst **25 MB**; högst **tio nya foton** kan skickas i ett anrop. Servern validerar bilden utan att komprimera om den och behåller ingen permanent upload-kopia.
 
 Git lagrar även gemensamt säkerhetstillstånd för sessioner, engångsflöden för OAuth och trafikgränser. Det innebär ytterligare Git-läsningar och säkerhetscommits. Utloggning återkallar sessionen på servern innan cookien tas bort.
 

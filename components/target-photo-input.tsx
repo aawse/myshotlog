@@ -103,7 +103,6 @@ export function TargetPhotoInput({
       <input
         ref={gallery}
         type="file"
-        accept="image/*"
         className="photo-file-input"
         aria-label={tr("photo.chooseLabel")}
         disabled={busy || disabled}
