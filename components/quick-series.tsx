@@ -321,7 +321,7 @@ export function QuickSeries({
                   {q.result.photoId && (
                     <Image
                       className="series-target-photo"
-                      src={"/api/photos/" + q.result.photoId}
+                      src={"/api/photos/" + q.result.photoId + "/"}
                       alt={tr("details.photoAlt")}
                       width={120}
                       height={90}
@@ -365,7 +365,7 @@ export function QuickSeries({
             {compatible && (
               <Link
                 className="button secondary"
-                href={`/sessions/new?quick=${chosen.map((q) => q.id).join(",")}`}
+                href={`/sessions/new/?quick=${chosen.map((q) => q.id).join(",")}`}
               >
                 {tr("quick.createSession")}
               </Link>
@@ -408,7 +408,7 @@ export function QuickSeries({
                   ))
                 ) {
                   setSelected([]);
-                  router.push(`/sessions/${s.id}`);
+                  router.push(`/sessions/${s.id}/`);
                 }
               }}
             >

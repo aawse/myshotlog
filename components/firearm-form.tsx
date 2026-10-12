@@ -34,7 +34,7 @@ export function FirearmForm({ initial }: { initial?: Firearm }) {
     setBusy(true);
     try {
       await mutate("firearm", f);
-      router.push("/firearms");
+      router.push("/firearms/");
       router.refresh();
     } catch (e) {
       setMessage((e as Error).message);

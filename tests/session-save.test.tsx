@@ -75,7 +75,7 @@ it.each([undefined, session])(
     ).toBe(true);
     complete();
     await pending;
-    expect(router.replace).toHaveBeenCalledWith("/sessions");
+    expect(router.replace).toHaveBeenCalledWith("/sessions/");
     expect(router.refresh).toHaveBeenCalledTimes(1);
     expect(children(form(initial)).at(-1)?.props.disabled).toBe(true);
   },
@@ -90,7 +90,7 @@ it("keeps a failed save open with an error and allows retry", async () => {
   expect(failed.some((child) => child.type === LoadingIndicator)).toBe(false);
   vi.mocked(mutate).mockResolvedValueOnce({ ok: true });
   await form(session).props.onSubmit(event());
-  expect(router.replace).toHaveBeenCalledWith("/sessions");
+  expect(router.replace).toHaveBeenCalledWith("/sessions/");
 });
 it("provides accessible loading text with a decorative spinner", () => {
   const html = renderToStaticMarkup(<LoadingIndicator label="Sparar…" />);

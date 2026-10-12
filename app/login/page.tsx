@@ -22,7 +22,7 @@ export default async function Page({
       <h1>{tr("login.heading")}</h1>
       <p className="muted">{tr("login.intro")}</p>
       <section className="card">
-        <a className="button" href="/auth/github">
+        <a className="button" href="/auth/github/">
           <Github size={18} /> {tr("login.github")}
         </a>
         <p className="muted">{tr("login.help")}</p>

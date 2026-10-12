@@ -77,7 +77,7 @@ it("generates random state and S256 PKCE without requesting repository scopes", 
   expect(a.url.searchParams.get("code_challenge_method")).toBe("S256");
   expect(a.url.searchParams.get("scope")).toBe("");
   expect(a.url.searchParams.get("redirect_uri")).toBe(
-    config.siteUrl + "/auth/github/callback",
+    config.siteUrl + "/auth/github/callback/",
   );
 });
 it("verifies identity server-side and keeps OAuth tokens out of the identity", async () => {
@@ -158,7 +158,7 @@ it("sets secure HTTP-only cookies, consumes the flow cookie and redirects to a f
   env();
   vi.stubEnv("NODE_ENV", "production");
   const beginning = await start(
-    new NextRequest(config.siteUrl + "/auth/github"),
+    new NextRequest(config.siteUrl + "/auth/github/"),
   );
   expect(beginning.status).toBe(307);
   expect(beginning.headers.get("set-cookie")).toContain("HttpOnly");
@@ -169,12 +169,12 @@ it("sets secure HTTP-only cookies, consumes the flow cookie and redirects to a f
   vi.stubGlobal("fetch", api());
   const response = await callback(
     new NextRequest(
-      "https://spoof.example/auth/github/callback?code=code&state=" +
+      "https://spoof.example/auth/github/callback/?code=code&state=" +
         url.searchParams.get("state"),
       { headers: { cookie: oauthCookie + "=" + cookie } },
     ),
   );
-  expect(response.headers.get("location")).toBe(config.siteUrl + "/dashboard");
+  expect(response.headers.get("location")).toBe(config.siteUrl + "/dashboard/");
   expect(response.cookies.get(oauthCookie)?.value).toBe("");
   const session = response.cookies.get("myshotlog_session")!.value;
   expect(
@@ -189,11 +189,11 @@ it("does not create a session on callback failure or reflect provider error text
   env();
   const response = await callback(
     new NextRequest(
-      config.siteUrl + "/auth/github/callback?error=private-secret",
+      config.siteUrl + "/auth/github/callback/?error=private-secret",
     ),
   );
   expect(response.headers.get("location")).toBe(
-    config.siteUrl + "/login?error=oauth",
+    config.siteUrl + "/login/?error=oauth",
   );
   expect(response.cookies.get("myshotlog_session")).toBeUndefined();
   expect(response.cookies.get(oauthCookie)?.value).toBe("");
@@ -225,7 +225,7 @@ it("does not exchange codes after flow consumption is rejected or rate limited",
 it("returns rate limits without issuing OAuth cookies or calling GitHub", async () => {
   env();
   controls.registerFlow.mockRejectedValue(new RateLimited(120));
-  const result = await start(new NextRequest(config.siteUrl + "/auth/github"));
+  const result = await start(new NextRequest(config.siteUrl + "/auth/github/"));
   expect(result.status).toBe(429);
   expect(result.headers.get("Retry-After")).toBe("120");
   expect(result.cookies.get(oauthCookie)).toBeUndefined();
@@ -234,7 +234,7 @@ it("returns rate limits without issuing OAuth cookies or calling GitHub", async 
   vi.stubGlobal("fetch", request);
   controls.consumeFlow.mockRejectedValue(new RateLimited(60));
   const response = await callback(
-    new NextRequest(config.siteUrl + "/auth/github/callback?" + a.params, {
+    new NextRequest(config.siteUrl + "/auth/github/callback/?" + a.params, {
       headers: { cookie: oauthCookie + "=" + a.cookie },
     }),
   );
@@ -247,7 +247,7 @@ it("issues a signed session after OAuth without registering it in Git", async ()
   const a = flow();
   vi.stubGlobal("fetch", api());
   const response = await callback(
-    new NextRequest(config.siteUrl + "/auth/github/callback?" + a.params, {
+    new NextRequest(config.siteUrl + "/auth/github/callback/?" + a.params, {
       headers: { cookie: oauthCookie + "=" + a.cookie },
     }),
   );
@@ -290,7 +290,7 @@ it("sets secure production cookie flags and the absolute session lifetime", asyn
   const a = flow();
   vi.stubGlobal("fetch", api());
   const response = await callback(
-    new NextRequest(config.siteUrl + "/auth/github/callback?" + a.params, {
+    new NextRequest(config.siteUrl + "/auth/github/callback/?" + a.params, {
       headers: { cookie: oauthCookie + "=" + a.cookie },
     }),
   );

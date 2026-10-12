@@ -45,7 +45,7 @@ export default async function Page({
             {tr("details.revision")} {s.revision}
           </p>
         </div>
-        <Link className="button secondary" href={"/sessions/" + id + "/edit"}>
+        <Link className="button secondary" href={"/sessions/" + id + "/edit/"}>
           {tr("session.editHeading")}
         </Link>
       </div>
@@ -143,14 +143,14 @@ export default async function Page({
                       </span>
                       {r.photoId && (
                         <a
-                          href={"/api/photos/" + r.photoId}
+                          href={"/api/photos/" + r.photoId + "/"}
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label={tr("details.openPhotoPrefix") + r.label}
                         >
                           <Image
                             className="series-target-photo"
-                            src={"/api/photos/" + r.photoId}
+                            src={"/api/photos/" + r.photoId + "/"}
                             alt={tr("details.photoAlt")}
                             width={120}
                             height={90}

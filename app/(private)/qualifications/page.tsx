@@ -141,7 +141,7 @@ export default async function Page({
             </tbody>
           </table>
         </div>
-        <Link className="inline-link" href="/sessions">
+        <Link className="inline-link" href="/sessions/">
           {tr("qualifications.viewSessions")}
         </Link>
       </section>

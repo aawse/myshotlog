@@ -109,7 +109,7 @@ export function SessionList({
                     <td>
                       <Link
                         className="row-title"
-                        href={"/sessions/" + s.id}
+                        href={"/sessions/" + s.id + "/"}
                         aria-label={tr("sessions.view", {
                           p0: disciplineName(language, s.discipline),
                           p1: s.date,
@@ -212,7 +212,7 @@ export function SessionList({
               : tr("sessions.emptyHelp")}
           </p>
           {!sessions.length && (
-            <Link className="button secondary" href="/sessions/new">
+            <Link className="button secondary" href="/sessions/new/">
               {tr("sessions.recordLink")}
             </Link>
           )}

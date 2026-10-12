@@ -18,34 +18,34 @@ export default async function PrivateLayout({
 }: {
   children: React.ReactNode;
 }) {
-  if (!configured()) redirect("/setup");
+  if (!configured()) redirect("/setup/");
   const user = await currentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/login/");
   const { tr } = await getI18n();
   return (
     <div className="shell">
       <aside className="sidebar">
-        <Link href="/dashboard" className="brand">
+        <Link href="/dashboard/" className="brand">
           <BrandLogo />
         </Link>
         <div className="nav-caption">{tr("nav.caption")}</div>
         <nav>
-          <Link href="/quick">
+          <Link href="/quick/">
             <Zap size={19} /> {tr("nav.quick")}
           </Link>
-          <Link href="/dashboard">
+          <Link href="/dashboard/">
             <LayoutDashboard size={19} /> {tr("nav.dashboard")}
           </Link>
-          <Link href="/sessions">
+          <Link href="/sessions/">
             <NotebookPen size={19} /> {tr("nav.sessions")}
           </Link>
-          <Link href="/firearms">
+          <Link href="/firearms/">
             <Target size={19} /> {tr("nav.firearms")}
           </Link>
-          <Link href="/qualifications">
+          <Link href="/qualifications/">
             <ShieldCheck size={19} /> {tr("nav.qualifications")}
           </Link>
-          <Link href="/settings">
+          <Link href="/settings/">
             <Settings size={19} /> {tr("nav.settings")}
           </Link>
         </nav>

@@ -37,7 +37,7 @@ export default async function Dashboard() {
           </h1>
           <p>{tr("dashboard.intro")}</p>
         </div>
-        <Link className="button" href="/sessions/new">
+        <Link className="button" href="/sessions/new/">
           <Plus size={18} /> {tr("session.register")}
         </Link>
       </div>
@@ -54,7 +54,7 @@ export default async function Dashboard() {
             <br />
             {tr("dashboard.heroIntroSecond")}
           </p>
-          <Link href="/sessions/new">
+          <Link href="/sessions/new/">
             {tr("dashboard.start")} <ArrowRight size={17} />
           </Link>
         </div>
@@ -102,7 +102,7 @@ export default async function Dashboard() {
             {tr("dashboard.badgeSecond")}
           </h2>
           <p>{tr("dashboard.badgeHelp")}</p>
-          <Link href="/qualifications">
+          <Link href="/qualifications/">
             {tr("dashboard.viewBadges")} <ArrowRight size={17} />
           </Link>
           <span className="muted">{tr("dashboard.personal")}</span>
@@ -114,7 +114,7 @@ export default async function Dashboard() {
             <span className="eyebrow">{tr("quick.atRange")}</span>
             <h2>{tr("dashboard.recent")}</h2>
           </div>
-          <Link className="inline-link" href="/sessions">
+          <Link className="inline-link" href="/sessions/">
             {tr("dashboard.viewAll")} <ArrowRight size={16} />
           </Link>
         </div>

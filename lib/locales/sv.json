@@ -373,7 +373,7 @@
   "setup.heading": "Din egen skyttejournal.",
   "setup.history": "Git-historiken bevarar tidigare versioner även efter borttagning från journalen.",
   "setup.intro": "En privat Git-journal med en commit per sparad post.",
-  "setup.oauth": "Registrera en GitHub OAuth-app med callback /auth/github/callback.",
+  "setup.oauth": "Registrera en GitHub OAuth-app med callback /auth/github/callback/.",
   "setup.repository": "Välj ett privat Git-repository och en databranch.",
   "setup.start": "Kom igång",
   "setup.token": "Konfigurera repository och serverns åtkomsttoken i .env.local.",

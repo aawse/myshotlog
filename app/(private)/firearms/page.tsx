@@ -15,7 +15,7 @@ export default async function Page() {
           <h1>{tr("nav.firearms")}</h1>
           <p>{tr("firearm.listHelp")}</p>
         </div>
-        <Link className="button" href="/firearms/new">
+        <Link className="button" href="/firearms/new/">
           {tr("firearm.addLink")}
         </Link>
       </div>
@@ -24,7 +24,7 @@ export default async function Page() {
           <Link
             className="card firearm-card"
             key={f.id}
-            href={"/firearms/" + f.id}
+            href={"/firearms/" + f.id + "/"}
           >
             <Target size={32} />
             <span className="pill">

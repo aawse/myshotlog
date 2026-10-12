@@ -46,25 +46,25 @@ it("does not clone API request bodies through Proxy", async () => {
   const { unstable_doesMiddlewareMatch } =
     await import("next/experimental/testing/server");
   const { config } = await import("../proxy");
+  for (const url of [
+    "/api/records",
+    "/api/records/",
+    "/api/photos/image",
+    "/api/photos/image/",
+  ]) {
+    expect(
+      unstable_doesMiddlewareMatch({
+        config,
+        nextConfig: { trailingSlash: true },
+        url,
+      }),
+    ).toBe(false);
+  }
   expect(
     unstable_doesMiddlewareMatch({
       config,
       nextConfig: {},
-      url: "/api/records",
-    }),
-  ).toBe(false);
-  expect(
-    unstable_doesMiddlewareMatch({
-      config,
-      nextConfig: {},
-      url: "/api/photos/image",
-    }),
-  ).toBe(false);
-  expect(
-    unstable_doesMiddlewareMatch({
-      config,
-      nextConfig: {},
-      url: "/sessions/new",
+      url: "/sessions/new/",
     }),
   ).toBe(true);
 });

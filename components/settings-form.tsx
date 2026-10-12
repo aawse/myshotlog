@@ -37,7 +37,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     setMessage(tr("profile.preparingExport"));
     try {
       const read = async (part: string, offset = 0) => {
-        const res = await fetch(`/api/records?part=${part}&offset=${offset}`);
+        const res = await fetch(`/api/records/?part=${part}&offset=${offset}`);
         if (!res.ok) throw new Error(tr("profile.exportFailed"));
         return res.json();
       };

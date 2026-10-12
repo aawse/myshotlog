@@ -32,6 +32,12 @@ Ersätt platshållarna. Ange prefixet uttryckligen; behåll det befintliga värd
 
 GitHub-adaptern behöver ingen Git-binär eller beständig serverdisk när appen körs. Git behövs fortfarande lokalt för utveckling och integrationstester. Repository-åtkomst ger tillgång till hela datahistoriken; begränsa även medlemmar, integrationer och backups.
 
+## Avslutande snedstreck
+
+Både `next.config.ts` och `vercel.json` använder `trailingSlash: true`. Behåll inställningarna lika för att undvika redirect-loopar. Appens sidor och API-rutter använder avslutande snedstreck, exempelvis `/sessions/` och `/api/records/`. Statiska filer som `/brand/MyShotLog-logo.svg` får inget extra snedstreck.
+
+Vid uppgradering ska GitHub OAuth-appens **Authorization callback URL** ändras till `https://YOUR_SITE/auth/github/callback/`. `NEXT_PUBLIC_SITE_URL` förblir endast origin. Publicera om appen efter konfigurationsändringen.
+
 ## Läscache
 
 Journal- och fotoläsningar använder en minnescache per serverinstans. Standardlivslängden är **15 sekunder**, med högst **64 snapshots och 32 MiB filinnehåll/sökvägar**. Samtidiga läsningar av samma prefix delar en hämtning. Cachen kräver ingen extra tjänst och skriver ingen journal- eller bilddata till serverdisk.
@@ -47,7 +53,7 @@ Minnet delas inte mellan Vercel-instanser. Ändringar från en annan instans ell
 ## GitHub-inloggning
 
 1. Registrera en **GitHub OAuth App** via GitHub → Settings → Developer settings → OAuth Apps. Detta är separat från datarepo-tokenen.
-2. För lokal utveckling, använd `http://localhost:3000` som Homepage URL och `http://localhost:3000/auth/github/callback` som Authorization callback URL. Skapa en separat OAuth-app för produktion med din stabila HTTPS-domän och samma callback-sökväg. Se [GitHubs OAuth-guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
+2. För lokal utveckling, använd `http://localhost:3000` som Homepage URL och `http://localhost:3000/auth/github/callback/` som Authorization callback URL. Skapa en separat OAuth-app för produktion med din stabila HTTPS-domän och samma callback-sökväg med avslutande snedstreck (`/auth/github/callback/`). Se [GitHubs OAuth-guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
 3. Generera OAuth-appens klienthemlighet och fyll i följande:
 
 ```dotenv

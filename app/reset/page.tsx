@@ -11,7 +11,7 @@ export default async function Page() {
         {tr("login.visitGithub")}
       </a>
       <p>
-        <Link href="/login">{tr("login.return")}</Link>
+        <Link href="/login/">{tr("login.return")}</Link>
       </p>
     </main>
   );

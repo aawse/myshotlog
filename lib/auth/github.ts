@@ -58,7 +58,7 @@ export function oauthConfig(): OAuthConfig {
   };
 }
 export function callbackUrl(config: OAuthConfig) {
-  return config.siteUrl + "/auth/github/callback";
+  return config.siteUrl + "/auth/github/callback/";
 }
 const flowSchema = z
   .object({

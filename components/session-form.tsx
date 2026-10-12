@@ -143,7 +143,7 @@ export function SessionForm({
           )
           .map(([, photo]) => photo),
       );
-      router.replace("/sessions");
+      router.replace("/sessions/");
       router.refresh();
     } catch (e) {
       setError((e as Error).message);

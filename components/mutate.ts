@@ -6,7 +6,7 @@ export async function mutate(
   photos: PhotoDraft[] = [],
 ) {
   if (photos.length > 10) throw new Error(swText("api.photoLimit"));
-  const response = await fetch("/api/records", {
+  const response = await fetch("/api/records/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

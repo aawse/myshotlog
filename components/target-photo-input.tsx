@@ -54,7 +54,7 @@ export function TargetPhotoInput({
   const source = draft
     ? "data:image/jpeg;base64," + draft.data
     : photoId
-      ? "/api/photos/" + photoId
+      ? "/api/photos/" + photoId + "/"
       : null;
   return (
     <div className="target-photo-input" role="group" aria-labelledby={id}>

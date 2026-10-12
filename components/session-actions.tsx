@@ -15,7 +15,7 @@ export function SessionActions({ id }: { id: string }) {
     setBusy(true);
     try {
       await mutate(action, { id });
-      if (action === "delete-session") router.push("/sessions");
+      if (action === "delete-session") router.push("/sessions/");
       router.refresh();
     } catch (e) {
       setError((e as Error).message);

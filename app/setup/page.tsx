@@ -20,7 +20,7 @@ export default async function Setup() {
           <li>{tr("setup.variables")}</li>
         </ol>
         <p>{tr("setup.guide")}</p>
-        <Link className="button" href="/login">
+        <Link className="button" href="/login/">
           {tr("login.returnLink")}
         </Link>
       </section>

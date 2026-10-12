@@ -373,7 +373,7 @@
   "setup.heading": "Your own shooting journal.",
   "setup.history": "Git history keeps previous versions even after deletion from the journal.",
   "setup.intro": "A private Git journal with one commit per saved entry.",
-  "setup.oauth": "Register a GitHub OAuth app with callback /auth/github/callback.",
+  "setup.oauth": "Register a GitHub OAuth app with callback /auth/github/callback/.",
   "setup.repository": "Choose a private Git repository and data branch.",
   "setup.start": "Get started",
   "setup.token": "Configure the repository and server access token in .env.local.",

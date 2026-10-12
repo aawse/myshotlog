@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     );
     const now = Date.now(),
       token = signSession(identity, config.secret, config.siteUrl, now);
-    response = NextResponse.redirect(config.siteUrl + "/dashboard");
+    response = NextResponse.redirect(config.siteUrl + "/dashboard/");
     response.cookies.set(sessionCookie, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           })
         : NextResponse.redirect(
             config.siteUrl +
-              "/login?error=" +
+              "/login/?error=" +
               (error instanceof AccessDenied ? "access" : "oauth"),
           );
   }

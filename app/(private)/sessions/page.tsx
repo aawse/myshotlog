@@ -16,11 +16,11 @@ export default async function Page() {
           <p>{tr("sessions.intro")}</p>
         </div>
         <div className="actions">
-          <Link className="button secondary" href="/quick">
+          <Link className="button secondary" href="/quick/">
             {tr("nav.quick")}
             {data.quickEntries?.length ? ` (${data.quickEntries.length})` : ""}
           </Link>
-          <Link className="button" href="/sessions/new">
+          <Link className="button" href="/sessions/new/">
             {tr("sessions.add")}
           </Link>
         </div>

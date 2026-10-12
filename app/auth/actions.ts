@@ -3,5 +3,5 @@ import { redirect } from "next/navigation";
 import { endSession } from "@/lib/auth/server";
 export async function signOut() {
   await endSession();
-  redirect("/login");
+  redirect("/login/");
 }
