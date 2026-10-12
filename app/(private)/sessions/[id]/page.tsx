@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Medal } from "lucide-react";
 import { targetLabel } from "@/lib/options";
 import { notFound } from "next/navigation";
@@ -122,6 +123,23 @@ export default async function Page({
                         {assessments.find((a) => a.resultId === r.id)
                           ?.ruleVersion ?? "Ej registrerad"}
                       </span>
+                      {r.photoId && (
+                        <a
+                          href={"/api/photos/" + r.photoId}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={"Öppna foto av tavlan för " + r.label}
+                        >
+                          <Image
+                            className="series-target-photo"
+                            src={"/api/photos/" + r.photoId}
+                            alt="Foto av tavlan"
+                            width={120}
+                            height={90}
+                            unoptimized
+                          />
+                        </a>
+                      )}
                     </td>
                     <td>{r.points ?? "–"}</td>
                     <td>

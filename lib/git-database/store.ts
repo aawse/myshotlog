@@ -1,6 +1,13 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import {
+  photoDraftSchema,
+  photoIdSchema,
+  photoAssetSchema,
+  type PhotoAsset,
+} from "../photos/schema";
+import { optimizeTargetPhoto, validatePhotoAsset } from "../photos/server";
+import {
   firearmSchema,
   sessionSchema,
   profileSchema,
@@ -23,6 +30,16 @@ import {
   type EntryCommit,
   type GitSnapshot,
 } from "./types";
+const photoFile = z
+  .object({ version: z.literal(1), entry: photoAssetSchema })
+  .strict();
+const photoIds = (records: Records) =>
+  new Set(
+    [
+      ...records.sessions.flatMap((s) => s.results),
+      ...(records.quickEntries ?? []).map((q) => q.result),
+    ].flatMap((r) => (r.photoId ? [r.photoId] : [])),
+  );
 const quickFile = z
   .object({ version: z.literal(1), entry: quickEntrySchema })
   .strict();
@@ -69,12 +86,15 @@ function json(value: unknown) {
 }
 export class GitJournalStore {
   private readonly path: string;
+  private readonly photosPath: string;
   constructor(
     private provider: GitDatabase,
     ownerId: string,
     prefix = "skytte/v1",
   ) {
     this.path = validPath(prefix) + "/users/" + z.uuid().parse(ownerId);
+    this.photosPath =
+      validPath(prefix) + "/photos/users/" + z.uuid().parse(ownerId);
   }
   private profilePath() {
     return this.path + "/profile.json";
@@ -84,6 +104,33 @@ export class GitJournalStore {
     id: string,
   ) {
     return this.path + "/" + kind + "/" + z.uuid().parse(id) + ".json";
+  }
+  private photoPath(id: string) {
+    return this.photosPath + "/" + photoIdSchema.parse(id) + "/image.json";
+  }
+  async photo(id: string): Promise<PhotoAsset> {
+    const path = this.photoPath(id);
+    const snapshot = await this.provider.snapshot(this.photosPath + "/" + id);
+    const content = snapshot.files.get(path);
+    if (!content) throw new RecordNotFound();
+    const photo = photoFile.parse(JSON.parse(content)).entry;
+    if (photo.id !== id) throw new InvalidRecord("Ogiltigt foto-ID.");
+    return photo;
+  }
+  async photos(): Promise<PhotoAsset[]> {
+    const snapshot = await this.provider.snapshot(this.photosPath);
+    return [...snapshot.files]
+      .filter(
+        ([path]) =>
+          path.startsWith(this.photosPath + "/") &&
+          path.endsWith("/image.json"),
+      )
+      .map(([path, content]) => {
+        const photo = photoFile.parse(JSON.parse(content)).entry;
+        if (path !== this.photoPath(photo.id))
+          throw new InvalidRecord("Ogiltig fotofil.");
+        return photo;
+      });
   }
   private decode(snapshot: GitSnapshot): Records {
     const records: Records = {
@@ -143,7 +190,68 @@ export class GitJournalStore {
     );
     return records;
   }
-  async mutate(action: string, payload: unknown) {
+  async mutate(action: string, payload: unknown, photoDrafts: unknown[] = []) {
+    const drafts = z.array(photoDraftSchema).max(10).parse(photoDrafts);
+    if (new Set(drafts.map((p) => p.id)).size !== drafts.length)
+      throw new InvalidRecord("Dubbla foto-ID.");
+    if (
+      drafts.length &&
+      !["session", "session-with-quick", "quick-entry"].includes(action)
+    )
+      throw new InvalidRecord("Foto kräver en serie.");
+    const prepared = new Map<string, PhotoAsset>();
+    const replacements = new Map<string, string>();
+    try {
+      for (const draft of drafts) {
+        const photo = await optimizeTargetPhoto(
+          Buffer.from(draft.data, "base64"),
+        );
+        prepared.set(photo.id, photo);
+        replacements.set(draft.id, photo.id);
+      }
+    } catch {
+      throw new InvalidRecord(
+        "Fotot kunde inte öppnas eller optimeras. Välj en annan bild.",
+      );
+    }
+    const patchResult = (result: unknown) => {
+      if (!result || typeof result !== "object") return result;
+      const r = result as Record<string, unknown>;
+      return {
+        ...r,
+        ...(typeof r.photoId === "string" && replacements.has(r.photoId)
+          ? { photoId: replacements.get(r.photoId) }
+          : {}),
+      };
+    };
+    const patchSession = (session: unknown) => {
+      if (!session || typeof session !== "object") return session;
+      const s = session as Record<string, unknown>;
+      return {
+        ...s,
+        ...(Array.isArray(s.results)
+          ? { results: s.results.map(patchResult) }
+          : {}),
+      };
+    };
+    if (payload && typeof payload === "object") {
+      const p = payload as Record<string, unknown>;
+      if (action === "quick-entry")
+        payload = { ...p, result: patchResult(p.result) };
+      else if (action === "session-with-quick")
+        payload = { ...p, session: patchSession(p.session) };
+      else if (action === "session") payload = patchSession(payload);
+    }
+    const importedPhotos = new Map<string, PhotoAsset>();
+    if (action === "import") {
+      const data = parseImport(payload);
+      try {
+        for (const photo of data.photos)
+          importedPhotos.set(photo.id, await validatePhotoAsset(photo));
+      } catch {
+        throw new InvalidRecord("Importen innehåller ett ogiltigt foto.");
+      }
+    }
     // The plan is rebuilt after a head conflict, including revision and ownership checks.
     for (let attempt = 0; attempt < 3; attempt++) {
       const snapshot = await this.provider.snapshot(this.path),
@@ -430,6 +538,36 @@ export class GitJournalStore {
             changes: [{ path: this.profilePath(), content: null }],
           });
       } else throw new InvalidRecord("Okänd åtgärd.");
+      const nextFiles = new Map(snapshot.files);
+      for (const entry of entries)
+        for (const change of entry.changes) {
+          if (change.content === null) nextFiles.delete(change.path);
+          else nextFiles.set(change.path, change.content);
+        }
+      const previousIds = photoIds(records),
+        nextIds = photoIds(this.decode({ ...snapshot, files: nextFiles }));
+      for (const id of prepared.keys())
+        if (!nextIds.has(id)) throw new InvalidRecord("Fotot saknar en serie.");
+      for (const id of nextIds) {
+        if (previousIds.has(id)) continue;
+        const photo = prepared.get(id) ?? importedPhotos.get(id);
+        if (!photo) throw new InvalidRecord("Fotot saknas. Välj bilden igen.");
+        entries.unshift({
+          message: "MyShotLog: save optimized target photo " + id,
+          changes: [
+            {
+              path: this.photoPath(id),
+              content: json({ version: 1, entry: photo }),
+            },
+          ],
+        });
+      }
+      for (const id of previousIds)
+        if (!nextIds.has(id))
+          entries.push({
+            message: "MyShotLog: remove target photo " + id,
+            changes: [{ path: this.photoPath(id), content: null }],
+          });
       try {
         const receipt = await this.provider.publish(snapshot, entries);
         return {

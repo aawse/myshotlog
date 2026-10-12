@@ -60,17 +60,24 @@ export async function GET(request: NextRequest) {
           "sessions",
           "assessments",
           "quickEntries",
+          "photos",
         ].includes(part)
       )
         return response({ error: "Ogiltig exportdel." }, 400);
       if (part === "profile") return response(data.profile);
+      if (part === "photos") data.photos = await (await journal()).photos();
       const offset = Number(request.nextUrl.searchParams.get("offset") ?? 0);
       if (!Number.isSafeInteger(offset) || offset < 0)
         return response({ error: "Ogiltig position." }, 400);
       return response(
         (
           data[
-            part as "firearms" | "sessions" | "assessments" | "quickEntries"
+            part as
+              | "firearms"
+              | "sessions"
+              | "assessments"
+              | "quickEntries"
+              | "photos"
           ] ?? []
         )
           .slice()
@@ -79,6 +86,7 @@ export async function GET(request: NextRequest) {
       );
     }
     const format = request.nextUrl.searchParams.get("format");
+    if (format === "json") data.photos = await (await journal()).photos();
     if (format === "csv" || format === "json")
       return new NextResponse(
         format === "csv"
@@ -106,11 +114,19 @@ export async function POST(request: NextRequest) {
     const body = await request.text();
     if (Buffer.byteLength(body) > 3_000_000)
       return response({ error: "Filen är för stor (max 3 MB)." }, 413);
-    const { action, payload } = z
-      .object({ action: z.string(), payload: z.unknown() })
+    const { action, payload, photos } = z
+      .object({
+        action: z.string(),
+        payload: z.unknown(),
+        photos: z.array(z.unknown()).max(10).optional(),
+      })
       .strict()
       .parse(JSON.parse(body));
-    return response(await store.mutate(action, payload));
+    return response(
+      await (photos
+        ? store.mutate(action, payload, photos)
+        : store.mutate(action, payload)),
+    );
   } catch (error) {
     return failure(error);
   }

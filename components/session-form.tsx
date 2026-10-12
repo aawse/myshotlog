@@ -11,6 +11,8 @@ import {
   selectFirearm,
   hasMixedLegacyConditions,
 } from "@/lib/session-setup";
+import { TargetPhotoInput } from "./target-photo-input";
+import type { PhotoDraft } from "@/lib/photos/schema";
 import { LocationInput } from "./location-input";
 import { mutate } from "./mutate";
 const entry = (): Result => ({
@@ -81,12 +83,18 @@ export function SessionForm({
   );
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const [photos, setPhotos] = useState<Record<string, PhotoDraft>>({});
+  const [processingPhotos, setProcessingPhotos] = useState<
+    Record<string, boolean>
+  >({});
+  const photoBusy = Object.values(processingPhotos).some(Boolean);
   const kind = discipline(session.discipline).kind;
   const patch = (p: Partial<Session>) => setSession((s) => ({ ...s, ...p }));
   const resultPatch = (id: string, p: Partial<Result>) =>
-    patch({
-      results: session.results.map((r) => (r.id === id ? { ...r, ...p } : r)),
-    });
+    setSession((s) => ({
+      ...s,
+      results: s.results.map((r) => (r.id === id ? { ...r, ...p } : r)),
+    }));
   const field = (
     label: string,
     key: keyof Result,
@@ -111,6 +119,7 @@ export function SessionForm({
   );
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (photoBusy) return;
     setBusy(true);
     setError("");
     try {
@@ -120,6 +129,11 @@ export function SessionForm({
         quickEntries.length
           ? { session: saved, ids: quickEntries.map((q) => q.id) }
           : saved,
+        Object.entries(photos)
+          .filter(([id, photo]) =>
+            session.results.some((r) => r.id === id && r.photoId === photo.id),
+          )
+          .map(([, photo]) => photo),
       );
       router.push("/sessions/" + session.id);
       router.refresh();
@@ -374,11 +388,29 @@ export function SessionForm({
                 </label>
               )}
             </div>
+            <TargetPhotoInput
+              photoId={r.photoId}
+              draft={photos[r.id]}
+              disabled={busy}
+              onBusyChange={(processing) =>
+                setProcessingPhotos((p) => ({ ...p, [r.id]: processing }))
+              }
+              onChange={(photo) => {
+                setPhotos((p) => {
+                  const copy = { ...p };
+                  if (photo) copy[r.id] = photo;
+                  else delete copy[r.id];
+                  return copy;
+                });
+                resultPatch(r.id, { photoId: photo?.id });
+              }}
+            />
             {session.results.length > 1 &&
               !quickEntries.some((q) => q.id === r.id) && (
                 <button
                   type="button"
                   className="text-button danger"
+                  disabled={busy || processingPhotos[r.id]}
                   onClick={() =>
                     patch({
                       results: session.results.filter((x) => x.id !== r.id),
@@ -431,8 +463,13 @@ export function SessionForm({
           {error}
         </p>
       )}
-      <button disabled={busy}>
-        {busy ? "Sparar…" : "Spara träningspass"} →
+      <button disabled={busy || photoBusy}>
+        {photoBusy
+          ? "Optimerar foto…"
+          : busy
+            ? "Sparar…"
+            : "Spara träningspass"}{" "}
+        →
       </button>
     </form>
   );

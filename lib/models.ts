@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { photoIdSchema, type PhotoAsset } from "./photos/schema";
 import { discipline, disciplineIds } from "./disciplines";
 const text = (max = 1000) => z.string().trim().max(max);
 export const dateSchema = z
@@ -14,6 +15,7 @@ export const resultSchema = z
   .object({
     id: z.uuid(),
     label: text(120),
+    photoId: photoIdSchema.optional(),
     type: z.enum(["score", "application"]),
     shots: integer.min(1).max(1000),
     points: n.optional(),
@@ -337,4 +339,5 @@ export type Records = {
   sessions: Session[];
   assessments: Assessment[];
   quickEntries?: QuickEntry[];
+  photos?: PhotoAsset[];
 };

@@ -1,6 +1,9 @@
 "use client";
 import { useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { TargetPhotoInput } from "./target-photo-input";
+import type { PhotoDraft } from "@/lib/photos/schema";
 import { useRouter } from "next/navigation";
 import { Plus, Zap, Check, Trash2 } from "lucide-react";
 import { disciplines, discipline } from "@/lib/disciplines";
@@ -31,6 +34,8 @@ export function QuickSeries({
   const [figures, setFigures] = useState("");
   const [x, setX] = useState("");
   const [notes, setNotes] = useState("");
+  const [photo, setPhoto] = useState<PhotoDraft>();
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [targetSession, setTargetSession] = useState("");
   const [busy, setBusy] = useState(false);
@@ -51,12 +56,17 @@ export function QuickSeries({
     chosen.every(
       (q) => q.date === chosen[0].date && q.discipline === chosen[0].discipline,
     );
-  async function run(action: string, payload: unknown, success: string) {
+  async function run(
+    action: string,
+    payload: unknown,
+    success: string,
+    photos: PhotoDraft[] = [],
+  ) {
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      await mutate(action, payload);
+      await mutate(action, payload, photos);
       setMessage(success);
       router.refresh();
       return true;
@@ -69,6 +79,7 @@ export function QuickSeries({
   }
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (photoBusy) return;
     const key = JSON.stringify({
       date,
       sport,
@@ -78,6 +89,7 @@ export function QuickSeries({
       figures,
       x,
       notes,
+      photoId: photo?.id,
     });
     if (pending.current?.key !== key)
       pending.current = { key, id: crypto.randomUUID() };
@@ -85,6 +97,7 @@ export function QuickSeries({
     const result: Result = {
       id,
       label: "Serie",
+      ...(photo ? { photoId: photo.id } : {}),
       type: sport === "application" ? "application" : "score",
       shots: Number(shots),
       ...(["points", "dynamic"].includes(kind) && points !== ""
@@ -101,6 +114,7 @@ export function QuickSeries({
         "quick-entry",
         { id, date, discipline: sport, result, notes },
         "Serien är sparad. Klar för nästa!",
+        photo ? [photo] : [],
       )
     ) {
       pending.current = null;
@@ -109,6 +123,7 @@ export function QuickSeries({
       setFigures("");
       setX("");
       setNotes("");
+      setPhoto(undefined);
       scoreInput.current?.focus();
     }
   }
@@ -209,6 +224,12 @@ export function QuickSeries({
               </label>
             )}
           </div>
+          <TargetPhotoInput
+            draft={photo}
+            onChange={setPhoto}
+            onBusyChange={setPhotoBusy}
+            disabled={busy}
+          />
           <details className="quick-details">
             <summary>Fler uppgifter</summary>
             <div className="form-grid">
@@ -254,8 +275,13 @@ export function QuickSeries({
             Vapen, plats, avstånd, måltyp och skjuttid väljer du när serien
             kopplas till ett pass. Valör visas därefter.
           </p>
-          <button className="quick-save" disabled={busy}>
-            <Plus size={20} /> {busy ? "Sparar…" : "Spara serie & nästa"}
+          <button className="quick-save" disabled={busy || photoBusy}>
+            <Plus size={20} />{" "}
+            {photoBusy
+              ? "Optimerar foto…"
+              : busy
+                ? "Sparar…"
+                : "Spara serie & nästa"}
           </button>
         </fieldset>
       </form>
@@ -291,6 +317,16 @@ export function QuickSeries({
                     {discipline(q.discipline).name}
                   </small>
                   {q.notes && <small>{q.notes}</small>}
+                  {q.result.photoId && (
+                    <Image
+                      className="series-target-photo"
+                      src={"/api/photos/" + q.result.photoId}
+                      alt="Foto av tavlan"
+                      width={120}
+                      height={90}
+                      unoptimized
+                    />
+                  )}
                 </span>
               </label>
               <button

@@ -46,13 +46,14 @@ export function SettingsForm({ profile }: { profile: Profile }) {
         }
         return items;
       };
-      const [profile, firearms, sessions, assessments, quickEntries] =
+      const [profile, firearms, sessions, assessments, quickEntries, photos] =
         await Promise.all([
           read("profile"),
           all("firearms"),
           all("sessions"),
           all("assessments"),
           all("quickEntries"),
+          format === "json" ? all("photos") : [],
         ]);
       const data: Records = {
         profile,
@@ -60,6 +61,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
         sessions,
         assessments,
         quickEntries,
+        photos,
       };
       const blob = new Blob(
         [

@@ -1101,8 +1101,6 @@ progress {
     min-height: 82px;
   }
   .quick-save {
-    position: sticky;
-    bottom: 12px;
     box-shadow: 0 4px 18px #23332930;
   }
   .quick-feedback {
@@ -1114,4 +1112,47 @@ progress {
   margin: 0;
   padding: 0;
   min-width: 0;
+}
+
+.target-photo-input {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.photo-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.photo-actions button {
+  min-height: 48px;
+}
+.photo-file-input {
+  display: none;
+}
+.target-photo-preview {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: 240px;
+  object-fit: contain;
+  background: #f5f6f3;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.series-target-photo {
+  display: block;
+  width: 120px;
+  height: 90px;
+  object-fit: contain;
+  background: #f5f6f3;
+  border-radius: 6px;
+  margin-top: 10px;
 }

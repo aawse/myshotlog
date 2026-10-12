@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { photoAssetSchema } from "./photos/schema";
 import {
   seriesConditions,
   firearmSchema,
@@ -32,10 +33,12 @@ export const exportSchema = z
     sessions: z.array(sessionSchema).max(10000),
     assessments: z.array(assessmentSchema).max(100000),
     quickEntries: z.array(quickEntrySchema).max(10000).default([]),
+    photos: z.array(photoAssetSchema).max(10000).default([]),
   })
   .strict()
   .superRefine((d, c) => {
     if (
+      new Set(d.photos.map((p) => p.id)).size !== d.photos.length ||
       new Set(d.quickEntries.map((q) => q.id)).size !== d.quickEntries.length ||
       new Set(d.firearms.map((f) => f.id)).size !== d.firearms.length ||
       new Set(d.sessions.map((s) => s.id)).size !== d.sessions.length ||
@@ -51,6 +54,16 @@ export const exportSchema = z
         code: "custom",
         message: "En snabbserie är redan kopplad till ett pass",
       });
+    const ids = new Set(d.photos.map((p) => p.id));
+    for (const r of [
+      ...d.sessions.flatMap((s) => s.results),
+      ...d.quickEntries.map((q) => q.result),
+    ])
+      if (r.photoId && !ids.has(r.photoId))
+        c.addIssue({
+          code: "custom",
+          message: "Fotoreferens saknas i importen",
+        });
     for (const s of d.sessions)
       if (s.firearmId && !d.firearms.some((f) => f.id === s.firearmId))
         c.addIssue({ code: "custom", message: "Vapenreferens saknas" });
