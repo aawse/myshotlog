@@ -1,0 +1,55 @@
+{
+  "format": "skytte-rules",
+  "version": 1,
+  "rules": [
+    {
+      "id": "spsf-2026-21-badge-v1",
+      "from": "2026-01-01",
+      "until": "2028-01-01",
+      "source": "https://www.svenskappccupen.se/wp-content/uploads/2026/01/SHB_2026.pdf",
+      "edition": "Skjuthandboken 21 (2026)",
+      "reference": "Bilaga 1 §5.1.1–5.1.1.1, tryckta s. 452–453 (PDF s. 454–455)",
+      "precision": {
+        "A": [
+          32,
+          38,
+          43
+        ],
+        "B": [
+          33,
+          39,
+          45
+        ],
+        "C": [
+          34,
+          40,
+          46
+        ]
+      },
+      "application": [
+        5,
+        6,
+        6
+      ],
+      "applicationSeconds": {
+        "A": [
+          60,
+          40,
+          17
+        ],
+        "B": [
+          60,
+          40,
+          15
+        ],
+        "C": [
+          60,
+          40,
+          15
+        ]
+      },
+      "ageBasis": "previous-calendar-year",
+      "requiredCount": 3
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+[
+  { "value": ".22 LR", "label": ".22 LR" },
+  { "value": "9x19 mm", "label": "9 × 19 mm (9 mm Luger / Parabellum)" },
+  { "value": ".32 S&W Long", "label": ".32 S&W Long" },
+  { "value": ".38 Special", "label": ".38 Special" },
+  { "value": ".357 Magnum", "label": ".357 Magnum" },
+  { "value": ".45 ACP", "label": ".45 ACP" },
+  { "value": ".40 S&W", "label": ".40 S&W" },
+  { "value": ".38 Super", "label": ".38 Super" },
+  { "value": ".44 Magnum", "label": ".44 Magnum" },
+  { "value": ".44 Special", "label": ".44 Special" },
+  { "value": ".45 Colt", "label": ".45 Colt" },
+  { "value": ".32 ACP", "label": ".32 ACP (7,65 mm Browning)" },
+  { "value": ".380 ACP", "label": ".380 ACP (9 mm kort)" },
+  { "value": "4.5 mm", "label": "4,5 mm (.177, luftpistol)" }
+]

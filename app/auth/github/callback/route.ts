@@ -1,0 +1,58 @@
+import { NextResponse, type NextRequest } from "next/server";
+import {
+  completeOAuth,
+  oauthConfig,
+  oauthCookie,
+  AccessDenied,
+  type OAuthConfig,
+} from "@/lib/auth/github";
+import { signSession, sessionSeconds } from "@/lib/auth/session";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export async function GET(request: NextRequest) {
+  let config: OAuthConfig;
+  try {
+    config = oauthConfig();
+  } catch {
+    return new NextResponse("GitHub-inloggningen är inte konfigurerad.", {
+      status: 503,
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
+  let response: NextResponse;
+  try {
+    const identity = await completeOAuth(
+      config,
+      request.nextUrl.searchParams,
+      request.cookies.get(oauthCookie)?.value,
+    );
+    response = NextResponse.redirect(config.siteUrl + "/dashboard");
+    response.cookies.set(
+      "skytte_session",
+      signSession(identity, config.secret),
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: sessionSeconds,
+      },
+    );
+  } catch (error) {
+    response = NextResponse.redirect(
+      config.siteUrl +
+        "/login?error=" +
+        (error instanceof AccessDenied ? "access" : "oauth"),
+    );
+  }
+  response.cookies.set(oauthCookie, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/auth/github",
+    maxAge: 0,
+  });
+  response.headers.set("Cache-Control", "private, no-store");
+  response.headers.set("Referrer-Policy", "no-referrer");
+  return response;
+}

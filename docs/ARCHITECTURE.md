@@ -1,0 +1,19 @@
+# Arkitektur
+
+Next.js App Router kör privata sidor och `/api/records` på servern. Inloggning använder GitHub OAuth authorization-code-flödet med slumpmässig state, S256 PKCE och en signerad HttpOnly-cookie som gäller tio minuter. Callback verifierar state och utgång innan kodutbyte, använder en fast konfigurerad callback-origin och hämtar den aktuella identiteten från GitHubs `/user`-API. OAuth-tokenen används tillfälligt på servern och sparas inte.
+
+Endast numeriska GitHub-ID:n i serverns tillåtelselista får en lokal HMAC-signerad sessionscookie. Cookie har HttpOnly, SameSite=Lax och Secure i produktion och gäller åtta timmar. Varje privat anrop kontrollerar aktuell tillåtelselista. En deterministic UUID från GitHub-ID väljer journalprefix; en explicit unik mapping kan återanvända gamla UUID:n. Användarnamn visas som identitet men väljer aldrig data. Lokala lösenord har avvecklats. Den separata databas-tokenen ger repository-åtkomst och begärs inte från användarnas OAuth-konton.
+
+API-skrivningar kontrollerar Origin. Servern väljer alltid användarens UUID; klienten får inte bestämma ägarskap. Privat data cachelagras inte i delade HTTP-cacher. OAuth-routes skickar no-store och no-referrer, rensar flödescookien efter callback och visar generiska fel utan provider-svar eller tokens.
+
+`lib/git-database/types.ts` definierar adaptergränsen: läs ett oföränderligt branch-snapshot och publicera en kedja av entry-commits. `github.ts` använder HTTPS GitHub API; `git-remote.ts` använder Git-objektkommandon i tillfälliga bare repositories. De använder ingen checkout och inga användarfält interpoleras som shellkod. Tokens och upstream-fel loggas inte till klienten.
+
+`store.ts` validerar JSON-filer under `<prefix>/users/<UUID>/`. Profil, vapen och pass har egna filer och varje sparning får en commit. Import publicerar en commit per post som en atomär kedja; konflikter bygger om planen upp till tre gånger, och passrevisioner hindrar föråldrade redigeringar. Git-historik bevarar gamla filversioner även efter radering.
+
+Journalen räknar brons/silver/guld direkt vid läsning från varje series råresultat med regelversionen för passets datum. Tidigare sparade statusar, verifieringsfält och regelsnapshots styr inte beräkningen. Läsning är skrivskyddad och skapar inga commits. Funktioner och API-åtgärder för ombedömning har avvecklats. Sparade äldre bedömningar finns kvar i Git-filer/historik; gränssnitt och export visar aktuella beräkningar med stabila UUID:n.
+
+Födelseuppgifter från seriens ursprungliga underlag används när de finns. Äldre serier utan födelseunderlag använder profilen. Åldersavdrag baseras alltid på året före passåret; utan födelseuppgifter används ordinarie gränser utan avdrag. Precision kräver fem skott och heltalspoäng 0–50 (med eventuellt poängavdrag), men inga mål-, tids-, avstånds- eller signaturbevis. Tillämpning använder sex skott, träffar och tid.
+
+Passet har gemensamt avstånd, måltyp och skjuttid per serie. Samma skjuttid används av beräkning och CSV-export för varje resultat. Äldre serievisa villkor stöds för import/läsning. Gemensamma äldre tider lyfts till passnivå redan vid läsning och tas bort från de enskilda serierna i formulär och API-svar; olika tider behålls tills en gemensam tid väljs. Starttid och strafftid är separata uppgifter. Vapen kan ange `defaultDiscipline` för nya pass; gamla pass påverkas inte av ändrade vapenpreferenser. Dropdown-listor kommer från `lib/data/calibers.json` och `lib/data/targets.json`.
+
+Passlistan visar varje serie under sin högsta uppnådda valör, samt totalt antal serier/stationer och skott. Listkomponenten får endast aggregerade antal. Märkesprogress räknar samma beräkningar. Nya regelupplagor läggs till med egna giltighetsperioder i `lib/rules/versions.json`; historiska versioner behålls.

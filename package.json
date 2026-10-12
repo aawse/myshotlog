@@ -1,0 +1,40 @@
+{
+  "name": "myshotlog",
+  "version": "2.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "start": "next start",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "rules:check": "vitest run tests/catalog.test.ts tests/rules.test.ts",
+    "rules:sync": "npm run rules:check && node scripts/sync-rules.mjs",
+    "format": "prettier --write app components lib tests scripts *.ts *.json",
+    "format:check": "prettier --check app components lib tests scripts *.ts *.json"
+  },
+  "dependencies": {
+    "approve": "^0.0.12",
+    "fsevents": "^2.3.3",
+    "lucide-react": "0.468.0",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.15",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "prettier": "^3.7.4",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3"
+  },
+  "type": "module",
+  "allowScripts": {
+    "fsevents@2.3.3": true
+  }
+}

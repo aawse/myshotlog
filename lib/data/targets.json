@@ -1,0 +1,12 @@
+[
+  { "value": "precision25", "label": "Pistoltavla precision 25 m" },
+  { "value": "B100", "label": "B 100" },
+  { "value": "C30", "label": "Cirkelmål C 30" },
+  { "value": "sixth", "label": "1/6 rak" },
+  { "value": "air10", "label": "Luftpistoltavla 10 m" },
+  { "value": "field", "label": "Fältskyttefigur" },
+  { "value": "falling", "label": "Falling target / fallmål" },
+  { "value": "ppc", "label": "PPC-tavla" },
+  { "value": "sra", "label": "SRA-mål" },
+  { "value": "other", "label": "Annat mål" }
+]
