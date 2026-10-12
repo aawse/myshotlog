@@ -1164,3 +1164,23 @@ progress {
 .eyebrow {
   text-transform: uppercase;
 }
+
+.loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.loading-spinner {
+  flex-shrink: 0;
+  animation: loading-spin 1s linear infinite;
+}
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+  }
+}

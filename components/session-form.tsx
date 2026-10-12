@@ -1,7 +1,7 @@
 "use client";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { disciplineName, targetName } from "@/lib/i18n-domain";
 import { targets } from "@/lib/options";
@@ -17,6 +17,7 @@ import {
 import { TargetPhotoInput } from "./target-photo-input";
 import type { PhotoDraft } from "@/lib/photos/schema";
 import { LocationInput } from "./location-input";
+import { LoadingIndicator } from "./loading-indicator";
 import { mutate } from "./mutate";
 const entry = (label: string): Result => ({
   id: crypto.randomUUID(),
@@ -88,6 +89,7 @@ export function SessionForm({
   );
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const saving = useRef(false);
   const [photos, setPhotos] = useState<Record<string, PhotoDraft>>({});
   const [processingPhotos, setProcessingPhotos] = useState<
     Record<string, boolean>
@@ -124,7 +126,8 @@ export function SessionForm({
   );
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (photoBusy) return;
+    if (photoBusy || saving.current) return;
+    saving.current = true;
     setBusy(true);
     setError("");
     try {
@@ -140,11 +143,11 @@ export function SessionForm({
           )
           .map(([, photo]) => photo),
       );
-      router.push("/sessions/" + session.id);
+      router.replace("/sessions");
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
-    } finally {
+      saving.current = false;
       setBusy(false);
     }
   }
@@ -479,7 +482,8 @@ export function SessionForm({
           {localizeMessage(language, error)}
         </p>
       )}
-      <button disabled={busy || photoBusy}>
+      {busy && <LoadingIndicator label={tr("common.saving")} />}
+      <button disabled={busy || photoBusy} aria-busy={busy}>
         {photoBusy
           ? tr("quick.optimizing")
           : busy
