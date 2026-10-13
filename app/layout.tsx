@@ -11,8 +11,16 @@ export async function generateMetadata(): Promise<Metadata> {
     applicationName: "MyShotLog",
     description: tr("site.description"),
     icons: {
-      icon: { url: "/brand/MyShotLog-icon.svg", type: "image/svg+xml" },
-      apple: "/brand/MyShotLog-icon.png",
+      icon: {
+        url: "/brand/MyShotLog-icon.svg",
+        type: "image/svg+xml",
+        sizes: "any",
+      },
+      apple: {
+        url: "/brand/MyShotLog-apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
     },
   };
 }
