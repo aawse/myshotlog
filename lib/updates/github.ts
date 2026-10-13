@@ -92,7 +92,7 @@ export class GitHubUpdates {
     readonly config: UpdateConfig,
     readonly request: typeof fetch = fetch,
   ) {}
-  private async api(route: string, body?: unknown) {
+  private async api(route: string, body?: unknown, publicRead = false) {
     let response: Response;
     try {
       response = await this.request("https://api.github.com/repos/" + route, {
@@ -100,7 +100,7 @@ export class GitHubUpdates {
         headers: {
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": "2026-03-10",
-          ...(this.config.token
+          ...(!publicRead && this.config.token
             ? { Authorization: "Bearer " + this.config.token }
             : {}),
           ...(body ? { "Content-Type": "application/json" } : {}),
@@ -114,6 +114,12 @@ export class GitHubUpdates {
       throw new UpdateError("unavailable");
     }
     if (!response.ok) {
+      if (
+        response.status === 429 ||
+        (response.status === 403 &&
+          response.headers.get("x-ratelimit-remaining") === "0")
+      )
+        throw new UpdateError("rateLimited", 429);
       if (response.status === 409 && body)
         throw new UpdateError("conflict", 409);
       if ([401, 403].includes(response.status))
@@ -133,7 +139,7 @@ export class GitHubUpdates {
     try {
       const [forkMetadata, upstreamMetadata] = await Promise.all([
         this.api(this.config.repository),
-        this.api(upstreamRepository),
+        this.api(upstreamRepository, undefined, true),
       ]);
       const meta = metadataSchema.parse(forkMetadata);
       if (meta.full_name.toLowerCase() !== this.config.repository.toLowerCase())
@@ -148,6 +154,8 @@ export class GitHubUpdates {
           upstreamRepository +
             "/branches/" +
             encodeURIComponent(upstream.default_branch),
+          undefined,
+          true,
         ),
       ]);
       const head = z.object({ commit: z.object({ sha }) }).parse(forkHead)
@@ -155,15 +163,29 @@ export class GitHubUpdates {
       const upstreamSha = z
         .object({ commit: z.object({ sha }) })
         .parse(upstreamHead).commit.sha;
+      // Public fork-network reads must not require the fork-scoped token to
+      // access upstream. Qualify both pinned SHAs with their repository owners.
+      const forkOwner = meta.full_name.split("/")[0];
+      const upstreamOwner = upstreamRepository.split("/")[0];
       const compare = async (base: string) =>
         base === upstreamSha
           ? { ahead_by: 0, commits: [] }
           : compareSchema.parse(
               await this.api(
-                this.config.repository +
+                upstreamRepository +
                   "/compare/" +
-                  encodeURIComponent(base + "..." + upstreamSha) +
+                  encodeURIComponent(
+                    forkOwner +
+                      ":" +
+                      base +
+                      "..." +
+                      upstreamOwner +
+                      ":" +
+                      upstreamSha,
+                  ) +
                   "?per_page=100",
+                undefined,
+                true,
               ),
             );
       const [running, fork] = await Promise.all([

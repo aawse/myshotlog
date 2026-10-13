@@ -28,6 +28,14 @@ function github(
 ) {
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
+    if (
+      url.includes("/aawse/myshotlog") &&
+      new Headers(init?.headers).has("Authorization")
+    )
+      return Response.json(
+        { message: "Resource not accessible by personal access token" },
+        { status: 403 },
+      );
     if (options.error)
       return Response.json(
         { message: "DO-NOT-LEAK" },
@@ -90,6 +98,49 @@ it("detects upstream commits missing from the deployed version", async () => {
   });
   expect(status.commits[0].message).toBe("Improve precision");
 });
+it("reads upstream and compares pinned fork-network commits without the fork token", async () => {
+  const request = github({ forkHead: fork, forkAhead: 2 });
+  const status = await new GitHubUpdates(config, request).inspect("1");
+  expect(status).toMatchObject({
+    upstreamAhead: 3,
+    forkAhead: 2,
+    canSync: true,
+  });
+  const comparisons = request.mock.calls.filter(([url]) =>
+    String(url).includes("/compare/"),
+  );
+  expect(comparisons.map(([url]) => decodeURIComponent(String(url)))).toEqual([
+    `https://api.github.com/repos/aawse/myshotlog/compare/tester:${deployed}...aawse:${upstream}?per_page=100`,
+    `https://api.github.com/repos/aawse/myshotlog/compare/tester:${fork}...aawse:${upstream}?per_page=100`,
+  ]);
+  for (const [url, init] of request.mock.calls) {
+    const authorization = new Headers(init?.headers).get("Authorization");
+    expect(authorization).toBe(
+      String(url).includes("/aawse/myshotlog")
+        ? null
+        : `Bearer ${config.token}`,
+    );
+  }
+});
+it.each([403, 429])(
+  "reports exhausted public GitHub quotas (%s) as a rate limit rather than a token permission failure",
+  async (httpStatus) => {
+    const normal = github();
+    const request: typeof fetch = async (url, init) =>
+      String(url).endsWith("/aawse/myshotlog")
+        ? Response.json(
+            {},
+            {
+              status: httpStatus,
+              headers: { "x-ratelimit-remaining": "0" },
+            },
+          )
+        : normal(url, init);
+    await expect(
+      new GitHubUpdates(config, request).inspect("1"),
+    ).rejects.toMatchObject({ code: "rateLimited", status: 429 });
+  },
+);
 it("keeps an old deployment marked behind even after its fork is synchronized", async () => {
   const status = await new GitHubUpdates(
     config,

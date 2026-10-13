@@ -450,7 +450,7 @@
   "updates.pending": "The fork is synced. Waiting for the updated deployment.",
   "updates.permissions": "Check the code token, its expiry and repository permissions, including branch protection.",
   "updates.previewHelp": "Syncing is disabled for preview deployments or a different deployed branch.",
-  "updates.rateLimited": "Too many update requests. Wait a minute and try again.",
+  "updates.rateLimited": "The update request limit was reached. Wait and try again later.",
   "updates.ready": "The updated deployment is ready. Reload to use it.",
   "updates.reload": "Reload app",
   "updates.review": "Review updates",

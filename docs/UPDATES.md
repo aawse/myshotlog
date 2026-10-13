@@ -4,6 +4,8 @@ Appen kontrollerar den **driftsatta versionen** mot standardbranchen i `aawse/my
 
 Kontrollen kräver ingen journalåtkomst och cachas i fem minuter per serverinstans. En öppen, synlig app kontrollerar var femte minut. GitHub-fel hindrar inte registrering av pass. Appen behöver känna till både kodrepositoryt och den driftsatta commitens SHA. Vercels Git-variabler ger normalt detta automatiskt; aktivera **Automatically expose System Environment Variables** om de saknas.
 
+Uppströmsmetadata och jämförelser inom det publika fork-nätverket läses utan autentisering. Kodtokenen används endast för läsning och sammanfogning i din kodfork; ge den inte extra åtkomst till originalrepositoryt. Jämförelserna använder ägarkvalificerade, låsta commit-SHA:n för både forken och uppströmsversionen. GitHubs gräns för anonyma API-anrop gäller för serverns utgående IP-adress. Om den nås visas ett trafikgränsfel; försök igen senare.
+
 ## Engångsinställning på Vercel
 
 1. Använd en riktig GitHub-fork av `aawse/myshotlog` som kodrepository och anslut dess produktionsbranch till Vercel. Journalrepositoryt ska vara separat och privat.
@@ -35,4 +37,4 @@ Det krävs ingen GitHub-gränssnittsåtgärd för den normala synkroniseringen e
 
 Synkronisering är spärrad på Vercels förhandsversioner och om den driftsatta branchen skiljer sig från målbranchen. För egen server uppdaterar funktionen GitHub-forken, men du ansvarar för att driftsätta den nya koden och uppdatera commitvariabeln. Funktionens trafikgräns gäller per serverinstans; den använder inte journalens Git-lagring. Förnya kodtoken före utgångsdatum och driftsätt om efter miljöändringar.
 
-Källor: [GitHubs merge-API](https://docs.github.com/en/rest/branches/branches#merge-a-branch), [GitHubs tokeninställningar](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens), [Vercels Git-integration](https://vercel.com/docs/git/vercel-for-github), [Vercels systemvariabler](https://vercel.com/docs/environment-variables/system-environment-variables).
+Källor: [GitHubs jämförelse-API](https://docs.github.com/en/rest/commits/commits#compare-two-commits), [GitHubs merge-API](https://docs.github.com/en/rest/branches/branches#merge-a-branch), [GitHubs tokeninställningar](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens), [Vercels Git-integration](https://vercel.com/docs/git/vercel-for-github), [Vercels systemvariabler](https://vercel.com/docs/environment-variables/system-environment-variables).

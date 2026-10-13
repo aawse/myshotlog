@@ -450,7 +450,7 @@
   "updates.pending": "Forken är synkroniserad. Väntar på den uppdaterade driftsättningen.",
   "updates.permissions": "Kontrollera kodtoken, dess giltighet och repository-behörigheter, inklusive branchskydd.",
   "updates.previewHelp": "Synkronisering är avstängd för förhandsversioner eller en annan driftsatt branch.",
-  "updates.rateLimited": "För många uppdateringsförfrågningar. Vänta en minut och försök igen.",
+  "updates.rateLimited": "Gränsen för uppdateringsförfrågningar har nåtts. Vänta och försök igen senare.",
   "updates.ready": "Den uppdaterade installationen är klar. Ladda om för att använda den.",
   "updates.reload": "Ladda om appen",
   "updates.review": "Visa uppdateringar",
