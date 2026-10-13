@@ -76,3 +76,7 @@ Befintliga WebP-foton förblir läsbara och bevaras i JSON-export/import. Nya up
 - [Regelkällor och nya upplagor](docs/RULES.md)
 - [Tester och kontroller](docs/TESTING.md)
 - [Säkerhetsgranskning och åtgärder](docs/SECURITY-AUDIT-2026-10-12.md)
+
+## Säkerhetskontakt
+
+`public/.well-known/security.txt` publiceras utan inloggning på `/.well-known/security.txt` enligt [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116.html). Säkerhetsrapporter skickas till `security@aaw.se`. Granska kontaktuppgifterna och förnya `Expires` före **1 oktober 2027**. Filen ska nås via HTTPS i produktion.
