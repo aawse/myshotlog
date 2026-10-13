@@ -1,17 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc"><title id="title">MyShotLog icon</title><desc id="desc">An open journal with a target on the left page, a stylized pistol on the right page, and a gold bookmark. Forest green, charcoal and muted gold. All artwork and lettering are vector paths.</desc><g id="journal-mark">
-  <path d="M128 68 C100 49 67 43 38 52 V197 C68 183 98 199 128 220 C158 199 188 183 218 197 V52 C189 43 156 49 128 68Z" fill="none" stroke="#315d43" stroke-width="10" stroke-linejoin="round"/>
-  <path d="M128 70V218" fill="none" stroke="#315d43" stroke-width="7" stroke-linecap="round"/>
-  <path d="M122 65V110L128 105L134 110V65" fill="#bc9864"/>
-  <g fill="none" stroke="#315d43" stroke-width="5">
-    <circle cx="83" cy="120" r="29"/>
-    <circle cx="83" cy="120" r="16"/>
-    <path d="M83 84V97M83 143V156M47 120H60M106 120H119" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-labelledby="title desc"><title id="title">MyShotLog</title><desc id="desc">A shield enclosing a precision target and two journal lines, with an outlined MyShotLog wordmark.</desc><path d="M128 20 216 53V122C216 173 183 209 128 237C73 209 40 173 40 122V53Z" fill="#315d43"/>
+  <g fill="none" stroke="#ffffff" stroke-width="6">
+    <circle cx="128" cy="112" r="43"/><circle cx="128" cy="112" r="23"/>
+    <path d="M128 59V75M128 149V165M75 112H91M165 112H181"/>
   </g>
-  <circle cx="83" cy="120" r="5" fill="#bc9864"/>
-  <path d="M62 174H98M66 186H98" fill="none" stroke="#bc9864" stroke-width="4" stroke-linecap="round"/>
-  <path d="M149 95H210V108H197L191 120H179L167 158H152L166 118H149Z" fill="#233329"/>
-  <path d="M196 89H204V95H196Z" fill="#233329"/>
-  <path d="M181 120H192V127Q192 138 177 133" fill="none" stroke="#233329" stroke-width="5" stroke-linejoin="round"/>
-  <path d="M157 143L166 146" fill="none" stroke="#bc9864" stroke-width="3" stroke-linecap="round"/>
-  <path d="M149 176H191" fill="none" stroke="#bc9864" stroke-width="4" stroke-linecap="round"/>
-</g></svg>
+  <circle cx="128" cy="112" r="7" fill="#bc9864"/>
+  <path d="M98 183H158M112 197H144" fill="none" stroke="#ffffff" stroke-width="5"/></svg>
