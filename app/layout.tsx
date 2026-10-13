@@ -6,7 +6,7 @@ import localFont from "next/font/local";
 import type { Metadata } from "next";
 import "./globals.css";
 const didactGothic = localFont({
-  src: "../lib/fonts/DidactGothic-Regular.ttf",
+  src: "../lib/fonts/DidactGothic-Regular.woff2",
   weight: "400",
   style: "normal",
   display: "swap",
@@ -17,6 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: tr("site.title"),
     applicationName: "MyShotLog",
+    robots: { index: false, follow: false, nocache: true },
     description: tr("site.description"),
     icons: {
       icon: {

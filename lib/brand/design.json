@@ -2,7 +2,8 @@
   "font": {
     "family": "Didact Gothic",
     "file": "DidactGothic-Regular.ttf",
-    "variable": "--font-didact-gothic"
+    "variable": "--font-didact-gothic",
+    "webFile": "DidactGothic-Regular.woff2"
   },
   "colours": {
     "background": "#f6f8f5",

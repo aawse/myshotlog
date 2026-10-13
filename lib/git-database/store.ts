@@ -188,20 +188,28 @@ export class GitJournalStore {
   async records() {
     const records = this.decode(await this.readSnapshot(this.path));
     records.sessions = records.sessions.map(sessionSetup);
-    const history = records.assessments;
+    // Preserve the first historical assessment per series, including captured birth
+    // information, without scanning the entire journal for every evaluation.
+    const history = new Map<string, Assessment>();
+    for (const assessment of records.assessments) {
+      const key = assessment.sessionId + ":" + assessment.resultId;
+      if (!history.has(key)) history.set(key, assessment);
+    }
     records.assessments = records.sessions.flatMap((session) =>
-      session.results.flatMap((result) =>
-        recordSeries(session, result, records.profile, history, false).map(
-          (a) => ({
-            ...a,
-            id: assessmentId(session.id, result.id, a.level),
-            createdAt:
-              history.find(
-                (h) => h.sessionId === session.id && h.resultId === result.id,
-              )?.createdAt ?? session.date + "T00:00:00Z",
-          }),
-        ),
-      ),
+      session.results.flatMap((result) => {
+        const previous = history.get(session.id + ":" + result.id);
+        return recordSeries(
+          session,
+          result,
+          records.profile,
+          previous ? [previous] : [],
+          false,
+        ).map((assessment) => ({
+          ...assessment,
+          id: assessmentId(session.id, result.id, assessment.level),
+          createdAt: previous?.createdAt ?? session.date + "T00:00:00Z",
+        }));
+      }),
     );
     return records;
   }

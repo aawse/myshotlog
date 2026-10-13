@@ -14,7 +14,7 @@ Synkronisering av kodforken påverkar inte det separata privata journalrepositor
 
 ## Automatisk versionskontroll
 
-Kontrollen cachas i fem minuter per serverinstans. En öppen, synlig app kontrollerar var femte minut. GitHub-fel hindrar inte registrering av pass. GitHubs trafikgräns för anonyma API-anrop gäller för serverns utgående IP-adress; försök igen senare om den nås.
+Versionsresultatet cachas i fem minuter per serverinstans. Publika repositorymetadata (identitet och standardbranch) cachas i en timme för att minska GitHub-anrop; branchhuvuden och commitjämförelser hämtas vid varje ny versionskontroll. En öppen, synlig app kontrollerar var femte minut. GitHub-fel hindrar inte registrering av pass. GitHubs trafikgräns för anonyma API-anrop gäller för serverns utgående IP-adress; försök igen senare om den nås.
 
 Commiten bäddas in vid bygget från `VERCEL_GIT_COMMIT_SHA` eller från `git rev-parse HEAD`. Ingen egen commit-miljövariabel behövs. Vercels Git-variabler identifierar normalt kodrepositoryt; aktivera **Automatically expose System Environment Variables** om de saknas.
 

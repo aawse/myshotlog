@@ -190,3 +190,50 @@ it("refuses to use the data repository for code updates", () => {
   vi.stubEnv("GIT_DATABASE_REPOSITORY", "tester/private-journal");
   expect(updateConfig).toThrow("configuration");
 });
+it("reuses repository metadata while refreshing branch heads and comparisons", async () => {
+  const request = github();
+  const client = new GitHubUpdates(config, request);
+  await client.inspect();
+  await client.inspect();
+  expect(
+    request.mock.calls.filter(([url]) =>
+      String(url).endsWith("/tester/myshotlog"),
+    ),
+  ).toHaveLength(1);
+  expect(
+    request.mock.calls.filter(([url]) =>
+      String(url).endsWith("/aawse/myshotlog"),
+    ),
+  ).toHaveLength(1);
+  expect(
+    request.mock.calls.filter(([url]) => String(url).includes("/branches/")),
+  ).toHaveLength(4);
+  expect(
+    request.mock.calls.filter(([url]) => String(url).includes("/compare/")),
+  ).toHaveLength(2);
+});
+it("expires cached repository metadata and does not cache upstream failures", async () => {
+  const clock = vi.spyOn(Date, "now").mockReturnValue(1000);
+  try {
+    const request = github();
+    const client = new GitHubUpdates(config, request);
+    await client.inspect();
+    clock.mockReturnValue(3601001);
+    await client.inspect();
+    expect(
+      request.mock.calls.filter(([url]) =>
+        String(url).endsWith("/tester/myshotlog"),
+      ),
+    ).toHaveLength(2);
+    const normal = github();
+    let fail = true;
+    const failing: typeof fetch = async (url, init) =>
+      fail ? Response.json({}, { status: 503 }) : normal(url, init);
+    const retry = new GitHubUpdates(config, failing);
+    await expect(retry.inspect()).rejects.toBeDefined();
+    fail = false;
+    expect((await retry.inspect()).configured).toBe(true);
+  } finally {
+    clock.mockRestore();
+  }
+});

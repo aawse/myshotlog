@@ -4,7 +4,6 @@ import { useI18n } from "./language-provider";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { todayInTimezone, type Profile } from "@/lib/models";
-import { csv, exportRecords } from "@/lib/portability";
 import type { Records } from "@/lib/models";
 import { ImportData } from "./import-data";
 import { mutate } from "./mutate";
@@ -34,6 +33,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     setBusy(true);
     setMessage(tr("profile.preparingExport"));
     try {
+      const { csv, exportRecords } = await import("@/lib/portability");
       const read = async (part: string, offset = 0) => {
         const res = await fetch(`/api/records/?part=${part}&offset=${offset}`);
         if (!res.ok) throw new Error(tr("profile.exportFailed"));

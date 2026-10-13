@@ -73,6 +73,15 @@ const compareSchema = z.object({
     z.object({ sha, commit: z.object({ message: z.string() }) }),
   ),
 });
+// Public repository identity/default branches change infrequently. Scope caches
+// by transport and bound each one; live branch heads and comparisons stay fresh.
+let metadataCaches = new WeakMap<
+  typeof fetch,
+  Map<
+    string,
+    { until: number; promise: Promise<z.infer<typeof metadataSchema>> }
+  >
+>();
 export class GitHubUpdates {
   constructor(
     readonly config: UpdateConfig,
@@ -112,11 +121,28 @@ export class GitHubUpdates {
       throw new UpdateError("unavailable");
     }
   }
+  private metadata(route: string) {
+    let cache = metadataCaches.get(this.request);
+    if (!cache) {
+      cache = new Map();
+      metadataCaches.set(this.request, cache);
+    }
+    const existing = cache.get(route);
+    if (existing && existing.until > Date.now()) return existing.promise;
+    if (cache.size >= 16) cache.delete(cache.keys().next().value!);
+    const promise = this.api(route).then((data) => metadataSchema.parse(data));
+    cache.set(route, { until: Date.now() + 3600000, promise });
+    const entries = cache;
+    promise.catch(() => {
+      if (entries.get(route)?.promise === promise) entries.delete(route);
+    });
+    return promise;
+  }
   async inspect(): Promise<UpdateStatus> {
     try {
       const [forkMetadata, upstreamMetadata] = await Promise.all([
-        this.api(this.config.repository),
-        this.api(upstreamRepository),
+        this.metadata(this.config.repository),
+        this.metadata(upstreamRepository),
       ]);
       const meta = metadataSchema.parse(forkMetadata);
       if (meta.full_name.toLowerCase() !== this.config.repository.toLowerCase())
@@ -227,4 +253,5 @@ export async function updateStatus(
 }
 export function clearUpdateCache() {
   snapshot = undefined;
+  metadataCaches = new WeakMap();
 }
