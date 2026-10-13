@@ -2,7 +2,7 @@ import { localizeMessage } from "@/lib/i18n";
 import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
 import { PhotoViewer } from "@/components/photo-viewer";
-import { Medal } from "lucide-react";
+import { Medal, CircleX, CircleHelp } from "lucide-react";
 import { notFound } from "next/navigation";
 import { authenticated } from "@/lib/auth/server";
 import { ownerWitnessStore } from "@/lib/witness/server";
@@ -194,30 +194,72 @@ export default async function Page({
         <h2>{tr("details.assessments")}</h2>
         <p className="muted">{tr("details.assessmentHelp")}</p>
         {assessments.length ? (
-          assessments.map((a) => (
-            <div className="assessment" key={a.id}>
-              <span className={"pill " + (a.status === "met" ? "success" : "")}>
-                {labels[a.status]}
-              </span>
-              <strong>
-                {tr(`level.${a.level}`)} ·{" "}
-                {s.results.find((r) => r.id === a.resultId)?.label ??
-                  tr("details.previousResult")}{" "}
-                {tr("details.revision")} {a.revision}
-              </strong>
-              <p>{localizeMessage(language, a.reason)}</p>
-              <small>
-                {a.ruleVersion} · {a.createdAt.slice(0, 10)}
-              </small>
-              {a.source && (
-                <p className="muted">{localizeMessage(language, a.source)}</p>
-              )}
-              <details>
-                <summary>{tr("details.showInput")}</summary>
-                <pre>{JSON.stringify(a.input, null, 2)}</pre>
-              </details>
-            </div>
-          ))
+          assessments.map((a) => {
+            const result = s.results.find((r) => r.id === a.resultId);
+            const points =
+              result?.points === undefined
+                ? undefined
+                : result.points - (result.penaltyPoints ?? 0);
+            return (
+              <div className="assessment" key={a.id}>
+                <span
+                  className={"pill " + (a.status === "met" ? "success" : "")}
+                >
+                  {labels[a.status]}
+                </span>
+                <strong>
+                  <span className="calculation-grade">
+                    {a.status === "met" ? (
+                      <span
+                        className={`series-medal ${a.level}`}
+                        role="img"
+                        aria-label={tr("details.medalSeries", {
+                          level: tr(`level.${a.level}`),
+                        })}
+                      >
+                        <Medal size={20} aria-hidden="true" />
+                      </span>
+                    ) : a.status === "not-met" ? (
+                      <span
+                        className="assessment-cross"
+                        role="img"
+                        aria-label={tr("details.gradeNotAchieved")}
+                      >
+                        <CircleX size={20} aria-hidden="true" />
+                      </span>
+                    ) : (
+                      <CircleHelp size={20} aria-hidden="true" />
+                    )}
+                    {tr(`level.${a.level}`)}
+                  </span>{" "}
+                  ·{" "}
+                  {s.results.find((r) => r.id === a.resultId)?.label ??
+                    tr("details.previousResult")}{" "}
+                  {tr("details.revision")} {a.revision}
+                </strong>
+                <p>
+                  {points === undefined
+                    ? localizeMessage(language, a.reason)
+                    : tr("quick.points", { p0: points })}
+                </p>
+                {points !== undefined &&
+                  (a.status === "not-evaluated" ||
+                    a.status === "not-applicable") && (
+                    <p>{localizeMessage(language, a.reason)}</p>
+                  )}
+                <small>
+                  {a.ruleVersion} · {a.createdAt.slice(0, 10)}
+                </small>
+                {a.source && (
+                  <p className="muted">{localizeMessage(language, a.source)}</p>
+                )}
+                <details>
+                  <summary>{tr("details.showInput")}</summary>
+                  <pre>{JSON.stringify(a.input, null, 2)}</pre>
+                </details>
+              </div>
+            );
+          })
         ) : (
           <p>{tr("details.empty")}</p>
         )}

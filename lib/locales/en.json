@@ -88,6 +88,7 @@
   "details.empty": "No series results to assess.",
   "details.entries": "entries",
   "details.fieldPoints": "Field points",
+  "details.gradeNotAchieved": "Grade not achieved",
   "details.hitsFigures": "Hits / figures",
   "details.medalSeries": "{level} series",
   "details.notRecorded": "Not recorded",

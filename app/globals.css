@@ -1351,3 +1351,14 @@ progress {
 .witness-review {
   overflow-wrap: anywhere;
 }
+
+.calculation-grade {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+}
+.assessment-cross {
+  display: inline-flex;
+  color: #b42318;
+}

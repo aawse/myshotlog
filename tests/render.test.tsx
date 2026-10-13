@@ -123,3 +123,53 @@ it("offers direct JSON import on an empty dashboard and hides it when journal en
   const populated = renderToStaticMarkup(await Dashboard());
   expect(populated).not.toContain('type="file"');
 });
+
+it("shows earned points and medal/cross icons without threshold comparisons", async () => {
+  const { default: Details } =
+    await import("../app/(private)/sessions/[id]/page");
+  const { LanguageProvider } = await import("../components/language-provider");
+  const scored = {
+    ...session,
+    results: [{ ...session.results[0], points: 46, penaltyPoints: 1 }],
+  };
+  const assessments = (["bronze", "silver", "gold"] as const).map((level) => ({
+    id: crypto.randomUUID(),
+    sessionId: session.id,
+    resultId: session.results[0].id,
+    revision: 1,
+    ruleVersion: "fixture-rule",
+    level,
+    status: level === "gold" ? ("not-met" as const) : ("met" as const),
+    reason: "45 av minst 34 poäng.",
+    source: "",
+    createdAt: "2026-10-13T00:00:00Z",
+    input: {},
+  }));
+  vi.mocked(records).mockResolvedValue({
+    profile,
+    firearms: [],
+    sessions: [scored],
+    assessments,
+  });
+  const html = renderToStaticMarkup(
+    <LanguageProvider language="sv">
+      {await Details({ params: Promise.resolve({ id: session.id }) })}
+    </LanguageProvider>,
+  );
+  expect(html).toContain("45 poäng");
+  expect(html).not.toContain("45 av minst 34 poäng");
+  expect(html).toContain('class="series-medal bronze"');
+  expect(html).toContain('class="series-medal silver"');
+  expect(html).toContain('class="assessment-cross"');
+  expect(html).not.toContain('class="series-medal gold"');
+  vi.mocked(records).mockResolvedValue({
+    profile,
+    firearms: [],
+    sessions: [scored],
+    assessments: assessments.map((a) => ({ ...a, status: "not-met" })),
+  });
+  const failed = renderToStaticMarkup(
+    await Details({ params: Promise.resolve({ id: session.id }) }),
+  );
+  expect(failed.match(/class="assessment-cross"/g)).toHaveLength(3);
+});
