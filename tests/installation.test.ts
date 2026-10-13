@@ -28,7 +28,6 @@ beforeEach(() => {
     GIT_DATABASE_API_URL: "https://api.github.com",
     GIT_DATABASE_READ_CACHE_SECONDS: "15",
     GIT_DATABASE_REMOTE: "",
-    GITHUB_CODE_TOKEN: "",
     VERCEL: "",
   };
   for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
@@ -156,17 +155,19 @@ it("refuses insecure API addresses before sending credentials", async () => {
   expect(report.checks.find((c) => c.id === "api")?.status).toBe("error");
   expect(request).not.toHaveBeenCalled();
 });
-it("reports optional update setup separately and calls out shared code/data tokens", async () => {
-  vi.stubEnv("GITHUB_CODE_TOKEN", "FICTIONAL-DATA-SECRET");
+it("reports public update access without requesting a code token or write permissions", async () => {
   updates.config.mockReturnValue({});
-  updates.inspect.mockResolvedValue({ block: "fork" });
+  updates.inspect.mockResolvedValue({});
   const report = await checkInstallation("1", origin, github());
-  expect(report.checks.find((c) => c.id === "update-token")?.status).toBe(
-    "warning",
-  );
-  expect(report.checks.find((c) => c.id === "updates")?.message).toBe(
-    "updates.forkHelp",
-  );
+  expect(report.checks.find((c) => c.id === "updates")).toMatchObject({
+    status: "ok",
+    message: "installation.updateOk",
+  });
+  expect(
+    report.checks.some((c) =>
+      ["update-token", "update-permissions"].includes(c.id),
+    ),
+  ).toBe(false);
 });
 it("does not claim Git remote access was verified", async () => {
   vi.stubEnv("GIT_DATABASE_PROVIDER", "git");

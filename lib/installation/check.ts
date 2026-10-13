@@ -250,15 +250,6 @@ export async function checkInstallation(
       }
     }
   }
-  validate(
-    "update-token",
-    "installation.updateToken",
-    ["GITHUB_CODE_TOKEN"],
-    () =>
-      !env.GIT_DATABASE_TOKEN ||
-      env.GITHUB_CODE_TOKEN !== env.GIT_DATABASE_TOKEN,
-    true,
-  );
   try {
     const config = updateConfig();
     if (!config)
@@ -269,12 +260,9 @@ export async function checkInstallation(
         "updates.configuration",
       );
     else {
-      const status = await new GitHubUpdates(config, request).inspect(githubId);
+      const status = await new GitHubUpdates(config, request).inspect();
       const messages = {
         fork: "updates.forkHelp",
-        preview: "updates.previewHelp",
-        owner: "updates.ownerHelp",
-        token: "updates.tokenHelp",
         configuration: "updates.configuration",
       } as const;
       add(
@@ -282,12 +270,6 @@ export async function checkInstallation(
         "installation.updates",
         status.block ? "warning" : "ok",
         status.block ? messages[status.block] : "installation.updateOk",
-      );
-      add(
-        "update-permissions",
-        "installation.updatePermissions",
-        "warning",
-        "installation.updateManual",
       );
     }
   } catch (error) {

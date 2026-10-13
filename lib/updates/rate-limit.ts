@@ -5,8 +5,8 @@ export class UpdateRateLimited extends Error {
     super("rateLimited");
   }
 }
-export function limitUpdates(id: string, write: boolean, now = Date.now()) {
-  const key = (write ? "write:" : "read:") + id;
+export function limitUpdates(id: string, now = Date.now()) {
+  const key = id;
   if (windows.size >= 1000)
     for (const [key, value] of windows)
       if (value.until <= now) windows.delete(key);
@@ -17,7 +17,7 @@ export function limitUpdates(id: string, write: boolean, now = Date.now()) {
     window = { until: now + 60000, count: 0 };
     windows.set(key, window);
   }
-  if (++window.count > (write ? 2 : 12))
+  if (++window.count > 12)
     throw new UpdateRateLimited(
       Math.max(1, Math.ceil((window.until - now) / 1000)),
     );

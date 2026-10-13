@@ -38,13 +38,9 @@ export function UpdateNotice() {
 }
 export function AppUpdates() {
   const { tr } = useI18n();
-  const { status, error, checking, syncing, synced, ready, refresh, sync } =
-    useUpdates();
+  const { status, error, checking, ready, refresh } = useUpdates();
   const blockKeys = {
     configuration: "updates.configuration",
-    token: "updates.tokenHelp",
-    owner: "updates.ownerHelp",
-    preview: "updates.previewHelp",
     fork: "updates.forkHelp",
   } as const;
   return (
@@ -95,12 +91,11 @@ export function AppUpdates() {
       {status?.block && status.configured && (
         <p className="muted">{tr(blockKeys[status.block])}</p>
       )}
-      {synced && !ready && <p role="status">{tr("updates.synced")}</p>}
       <div className="actions">
         <button
           type="button"
           className="secondary"
-          disabled={checking || syncing}
+          disabled={checking}
           aria-label={tr(checking ? "updates.checking" : "updates.check")}
           onClick={() => refresh()}
         >
@@ -110,20 +105,19 @@ export function AppUpdates() {
             tr("updates.check")
           )}
         </button>
-        {status?.canSync && status.forkAhead > 0 && (
-          <button
-            type="button"
-            disabled={checking || syncing}
-            aria-label={tr(syncing ? "updates.syncing" : "updates.sync")}
-            onClick={() => sync()}
-          >
-            {syncing ? (
-              <LoadingIndicator label={tr("updates.syncing")} />
-            ) : (
-              tr("updates.sync")
-            )}
-          </button>
-        )}
+        {status?.repository &&
+          /^([A-Za-z0-9-]{1,39})\/([A-Za-z0-9._-]{1,100})$/.test(
+            status.repository,
+          ) && (
+            <a
+              className="button secondary"
+              href={"https://github.com/" + status.repository}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {tr("updates.openFork")}
+            </a>
+          )}
         {ready && (
           <button type="button" onClick={() => location.reload()}>
             {tr("updates.reload")}

@@ -31,10 +31,6 @@ export type UpdateConfig = {
   repository: string;
   branch?: string;
   deployedSha: string;
-  deployedBranch?: string;
-  token?: string;
-  admins?: string[];
-  preview: boolean;
 };
 export function updateConfig(): UpdateConfig | null {
   const inferred =
@@ -57,26 +53,16 @@ export function updateConfig(): UpdateConfig | null {
   const branch = process.env.GITHUB_CODE_BRANCH || undefined;
   if (branch && !branchName.safeParse(branch).success)
     throw new UpdateError("configuration");
-  const admins = process.env.GITHUB_UPDATE_ADMIN_IDS?.split(",")
-    .map((v) => v.trim())
-    .filter(Boolean);
-  if (admins?.some((id) => !/^[1-9][0-9]{0,19}$/.test(id)))
-    throw new UpdateError("configuration");
   return {
     repository: repo,
     branch,
     deployedSha: deployed,
-    deployedBranch: process.env.VERCEL_GIT_COMMIT_REF,
-    token: process.env.GITHUB_CODE_TOKEN || undefined,
-    admins,
-    preview: process.env.VERCEL_ENV === "preview",
   };
 }
 const metadataSchema = z.object({
   full_name: repository,
   default_branch: branchName,
   fork: z.boolean(),
-  owner: z.object({ id: z.number().int().positive() }),
   parent: z
     .object({ full_name: repository, default_branch: branchName })
     .optional(),
@@ -92,20 +78,15 @@ export class GitHubUpdates {
     readonly config: UpdateConfig,
     readonly request: typeof fetch = fetch,
   ) {}
-  private async api(route: string, body?: unknown, publicRead = false) {
+  private async api(route: string) {
     let response: Response;
     try {
       response = await this.request("https://api.github.com/repos/" + route, {
-        method: body ? "POST" : "GET",
+        method: "GET",
         headers: {
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": "2026-03-10",
-          ...(!publicRead && this.config.token
-            ? { Authorization: "Bearer " + this.config.token }
-            : {}),
-          ...(body ? { "Content-Type": "application/json" } : {}),
         },
-        body: body ? JSON.stringify(body) : undefined,
         cache: "no-store",
         redirect: "error",
         signal: AbortSignal.timeout(12000),
@@ -120,12 +101,8 @@ export class GitHubUpdates {
           response.headers.get("x-ratelimit-remaining") === "0")
       )
         throw new UpdateError("rateLimited", 429);
-      if (response.status === 409 && body)
-        throw new UpdateError("conflict", 409);
       if ([401, 403].includes(response.status))
         throw new UpdateError("permissions", 403);
-      if (response.status === 422 && body)
-        throw new UpdateError("conflict", 409);
       throw new UpdateError("unavailable");
     }
     if (response.status === 204) return {};
@@ -135,11 +112,11 @@ export class GitHubUpdates {
       throw new UpdateError("unavailable");
     }
   }
-  async inspect(githubId: string): Promise<UpdateStatus & { ownerId: string }> {
+  async inspect(): Promise<UpdateStatus> {
     try {
       const [forkMetadata, upstreamMetadata] = await Promise.all([
         this.api(this.config.repository),
-        this.api(upstreamRepository, undefined, true),
+        this.api(upstreamRepository),
       ]);
       const meta = metadataSchema.parse(forkMetadata);
       if (meta.full_name.toLowerCase() !== this.config.repository.toLowerCase())
@@ -154,8 +131,6 @@ export class GitHubUpdates {
           upstreamRepository +
             "/branches/" +
             encodeURIComponent(upstream.default_branch),
-          undefined,
-          true,
         ),
       ]);
       const head = z.object({ commit: z.object({ sha }) }).parse(forkHead)
@@ -163,8 +138,8 @@ export class GitHubUpdates {
       const upstreamSha = z
         .object({ commit: z.object({ sha }) })
         .parse(upstreamHead).commit.sha;
-      // Public fork-network reads must not require the fork-scoped token to
-      // access upstream. Qualify both pinned SHAs with their repository owners.
+      // Public fork-network reads use no credentials. Qualify both pinned SHAs
+      // with their repository owners.
       const forkOwner = meta.full_name.split("/")[0];
       const upstreamOwner = upstreamRepository.split("/")[0];
       const compare = async (base: string) =>
@@ -184,8 +159,6 @@ export class GitHubUpdates {
                       upstreamSha,
                   ) +
                   "?per_page=100",
-                undefined,
-                true,
               ),
             );
       const [running, fork] = await Promise.all([
@@ -197,25 +170,8 @@ export class GitHubUpdates {
       const validFork =
         meta.fork &&
         meta.parent?.full_name.toLowerCase() === upstreamRepository;
-      const owner = this.config.admins?.length
-        ? this.config.admins.includes(githubId)
-        : String(meta.owner.id) === githubId;
-      const preview =
-        this.config.preview ||
-        Boolean(
-          this.config.deployedBranch && this.config.deployedBranch !== branch,
-        );
-      const block: UpdateStatus["block"] = !validFork
-        ? "fork"
-        : preview
-          ? "preview"
-          : !owner
-            ? "owner"
-            : !this.config.token
-              ? "token"
-              : undefined;
+      const block = validFork ? undefined : "fork";
       return {
-        ownerId: String(meta.owner.id),
         configured: true,
         repository: meta.full_name,
         branch,
@@ -224,7 +180,6 @@ export class GitHubUpdates {
         forkSha: head,
         upstreamAhead: running.ahead_by,
         forkAhead: (fork ?? running).ahead_by,
-        canSync: !block,
         block,
         checkedAt: new Date().toISOString(),
         commits: running.commits
@@ -240,34 +195,16 @@ export class GitHubUpdates {
       throw new UpdateError("unavailable");
     }
   }
-  async sync(githubId: string, expectedSha: string) {
-    const status = await this.inspect(githubId);
-    if (!status.canSync)
-      throw new UpdateError(
-        status.block === "owner" ? "forbidden" : "configuration",
-        403,
-      );
-    if (status.upstreamSha !== expectedSha)
-      throw new UpdateError("changed", 409);
-    if (!status.forkAhead) return { synced: true, changed: false };
-    // GitHub's non-forcing fork merge preserves local commits and reports conflicts.
-    await this.api(this.config.repository + "/merges", {
-      base: status.branch,
-      head: expectedSha,
-    });
-    return { synced: true, changed: true };
-  }
 }
-// Cache code metadata per configuration; derive permissions for each request.
+// Cache public code metadata per configuration.
 let snapshot:
   | {
       key: string;
       until: number;
-      promise: Promise<UpdateStatus & { ownerId: string }>;
+      promise: Promise<UpdateStatus>;
     }
   | undefined;
 export async function updateStatus(
-  githubId: string,
   config = updateConfig(),
 ): Promise<UpdateStatus> {
   if (!config)
@@ -275,28 +212,18 @@ export async function updateStatus(
       configured: false,
       upstreamAhead: 0,
       forkAhead: 0,
-      canSync: false,
       block: "configuration",
       commits: [],
     };
   const key = createHash("sha256").update(JSON.stringify(config)).digest("hex");
   if (!snapshot || snapshot.key !== key || snapshot.until < Date.now()) {
-    const promise = new GitHubUpdates(config).inspect("");
+    const promise = new GitHubUpdates(config).inspect();
     snapshot = { key, until: Date.now() + 300000, promise };
     promise.catch(() => {
       if (snapshot?.promise === promise) snapshot = undefined;
     });
   }
-  const { ownerId, ...base } = await snapshot.promise;
-  const owner = config.admins?.length
-    ? config.admins.includes(githubId)
-    : ownerId === githubId;
-  if (base.block !== "owner") return base;
-  return {
-    ...base,
-    canSync: owner && Boolean(config.token),
-    block: owner ? (config.token ? undefined : "token") : "owner",
-  };
+  return snapshot.promise;
 }
 export function clearUpdateCache() {
   snapshot = undefined;

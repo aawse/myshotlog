@@ -7,16 +7,12 @@ export type UpdateStatus = {
   forkSha?: string;
   upstreamAhead: number;
   forkAhead: number;
-  canSync: boolean;
-  block?: "configuration" | "token" | "owner" | "preview" | "fork";
+  block?: "configuration" | "fork";
   checkedAt?: string;
   commits: { sha: string; message: string }[];
 };
 export type UpdateErrorCode =
   | "configuration"
-  | "forbidden"
   | "unavailable"
   | "permissions"
-  | "conflict"
-  | "changed"
   | "rateLimited";

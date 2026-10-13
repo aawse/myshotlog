@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const headers = { "Cache-Control": "private, no-store" };
   try {
     const { user } = await authenticated();
-    limitUpdates(user.id, false);
+    limitUpdates(user.id);
     return Response.json(
       await checkInstallation(user.githubId, new URL(request.url).origin),
       { headers },

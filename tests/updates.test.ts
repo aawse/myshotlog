@@ -13,8 +13,6 @@ const deployed = "a".repeat(40),
 const config: UpdateConfig = {
   repository: "tester/myshotlog",
   deployedSha: deployed,
-  token: "FICTIONAL-CODE-TOKEN",
-  preview: false,
 };
 function github(
   options: {
@@ -22,7 +20,6 @@ function github(
     ahead?: number;
     forkAhead?: number;
     parent?: string;
-    mergeStatus?: number;
     error?: number;
   } = {},
 ) {
@@ -41,10 +38,6 @@ function github(
         { message: "DO-NOT-LEAK" },
         { status: options.error },
       );
-    if (init?.method === "POST")
-      return options.mergeStatus === 204
-        ? new Response(null, { status: 204 })
-        : Response.json({ sha: fork }, { status: options.mergeStatus ?? 201 });
     if (url.endsWith("/tester/myshotlog"))
       return Response.json({
         full_name: "tester/myshotlog",
@@ -90,21 +83,19 @@ beforeEach(() => {
   vi.unstubAllEnvs();
 });
 it("detects upstream commits missing from the deployed version", async () => {
-  const status = await new GitHubUpdates(config, github()).inspect("1");
+  const status = await new GitHubUpdates(config, github()).inspect();
   expect(status).toMatchObject({
     upstreamAhead: 3,
     forkAhead: 3,
-    canSync: true,
   });
   expect(status.commits[0].message).toBe("Improve precision");
 });
 it("reads upstream and compares pinned fork-network commits without the fork token", async () => {
   const request = github({ forkHead: fork, forkAhead: 2 });
-  const status = await new GitHubUpdates(config, request).inspect("1");
+  const status = await new GitHubUpdates(config, request).inspect();
   expect(status).toMatchObject({
     upstreamAhead: 3,
     forkAhead: 2,
-    canSync: true,
   });
   const comparisons = request.mock.calls.filter(([url]) =>
     String(url).includes("/compare/"),
@@ -115,11 +106,7 @@ it("reads upstream and compares pinned fork-network commits without the fork tok
   ]);
   for (const [url, init] of request.mock.calls) {
     const authorization = new Headers(init?.headers).get("Authorization");
-    expect(authorization).toBe(
-      String(url).includes("/aawse/myshotlog")
-        ? null
-        : `Bearer ${config.token}`,
-    );
+    expect(authorization).toBe(null);
   }
 });
 it.each([403, 429])(
@@ -137,7 +124,7 @@ it.each([403, 429])(
           )
         : normal(url, init);
     await expect(
-      new GitHubUpdates(config, request).inspect("1"),
+      new GitHubUpdates(config, request).inspect(),
     ).rejects.toMatchObject({ code: "rateLimited", status: 429 });
   },
 );
@@ -145,7 +132,7 @@ it("keeps an old deployment marked behind even after its fork is synchronized", 
   const status = await new GitHubUpdates(
     config,
     github({ forkHead: upstream }),
-  ).inspect("1");
+  ).inspect();
   expect(status.upstreamAhead).toBe(3);
   expect(status.forkAhead).toBe(0);
 });
@@ -153,108 +140,28 @@ it("does not mistake custom fork commits for missing upstream updates", async ()
   const status = await new GitHubUpdates(
     config,
     github({ forkHead: fork, ahead: 0, forkAhead: 0 }),
-  ).inspect("1");
+  ).inspect();
   expect(status.upstreamAhead).toBe(0);
 });
-it("merges the reviewed commit into the configured code branch without force updates", async () => {
-  const request = github({ forkHead: fork, forkAhead: 2 });
-  await new GitHubUpdates(config, request).sync("1", upstream);
-  const writes = request.mock.calls.filter(
-    ([, init]) => init?.method === "POST",
-  );
-  expect(writes).toHaveLength(1);
-  expect(writes[0][0]).toBe(
-    "https://api.github.com/repos/tester/myshotlog/merges",
-  );
-  expect(JSON.parse(String(writes[0][1]?.body))).toEqual({
-    base: "main",
-    head: upstream,
-  });
-  expect(writes[0][1]?.redirect).toBe("error");
-});
-it.each([
-  [{ ...config }, "99", "owner"],
-  [{ ...config, preview: true }, "1", "preview"],
-  [{ ...config, deployedBranch: "preview-branch" }, "1", "preview"],
-  [{ ...config, token: undefined }, "1", "token"],
-  [{ ...config, admins: ["99"] }, "1", "owner"],
-])(
-  "blocks writes without ownership, production scope or credentials",
-  async (cfg, id, block) => {
-    const request = github();
-    const client = new GitHubUpdates(cfg, request);
-    expect((await client.inspect(id)).block).toBe(block);
-    await expect(client.sync(id, upstream)).rejects.toBeDefined();
-    expect(request.mock.calls.some(([, init]) => init?.method === "POST")).toBe(
-      false,
-    );
-  },
-);
-it("allows only explicitly listed admins when an override is configured", async () => {
-  expect(
-    (
-      await new GitHubUpdates({ ...config, admins: ["99"] }, github()).inspect(
-        "99",
-      )
-    ).canSync,
-  ).toBe(true);
-});
-it("refuses to write to a fork with a different upstream", async () => {
-  const request = github({ parent: "other/project" });
-  await expect(
-    new GitHubUpdates(config, request).sync("1", upstream),
-  ).rejects.toMatchObject({ code: "configuration" });
-  expect(request.mock.calls.some(([, init]) => init?.method === "POST")).toBe(
-    false,
-  );
-});
-it("rejects a stale reviewed version before writing", async () => {
-  const request = github();
-  await expect(
-    new GitHubUpdates(config, request).sync("1", fork),
-  ).rejects.toMatchObject({ code: "changed", status: 409 });
-  expect(request.mock.calls.some(([, init]) => init?.method === "POST")).toBe(
-    false,
-  );
-});
-it.each([409, 422])(
-  "reports merge conflicts instead of resetting the fork",
-  async (mergeStatus) => {
-    const request = github({ mergeStatus });
-    await expect(
-      new GitHubUpdates(config, request).sync("1", upstream),
-    ).rejects.toMatchObject({ code: "conflict", status: 409 });
-    expect(
-      request.mock.calls.filter(([, init]) => init?.method === "POST"),
-    ).toHaveLength(1);
-  },
-);
-it("treats already-applied merges as successful and idempotent", async () => {
-  await expect(
-    new GitHubUpdates(config, github({ mergeStatus: 204 })).sync("1", upstream),
-  ).resolves.toMatchObject({ synced: true });
-  const request = github({ forkHead: upstream });
-  await new GitHubUpdates(config, request).sync("1", upstream);
-  expect(request.mock.calls.some(([, init]) => init?.method === "POST")).toBe(
-    false,
-  );
-});
-it("shares cached reads but derives authorization separately for each account", async () => {
+it("shares cached public reads and never writes to GitHub", async () => {
   const request = github();
   vi.stubGlobal("fetch", request);
-  const owner = await updateStatus("1", config);
+  const first = await updateStatus(config);
   const calls = request.mock.calls.length;
-  const guest = await updateStatus("99", config);
-  expect(owner.canSync).toBe(true);
-  expect(guest.canSync).toBe(false);
-  expect(guest.block).toBe("owner");
+  expect(await updateStatus(config)).toEqual(first);
   expect(request.mock.calls).toHaveLength(calls);
-  expect(owner).not.toHaveProperty("ownerId");
-  expect(JSON.stringify(owner)).not.toContain(config.token);
+  expect(
+    request.mock.calls.every(
+      ([, init]) =>
+        init?.method === "GET" &&
+        !new Headers(init?.headers).has("Authorization"),
+    ),
+  ).toBe(true);
+  expect(new GitHubUpdates(config, request)).not.toHaveProperty("sync");
 });
-it("maps token failures without exposing GitHub response details", async () => {
+it("maps GitHub read failures without exposing GitHub response details", async () => {
   await expect(
-    new GitHubUpdates(config, github({ error: 403 })).inspect("1"),
+    new GitHubUpdates(config, github({ error: 403 })).inspect(),
   ).rejects.toMatchObject({ message: "permissions" });
 });
 it("infers Vercel's code repository and detects missing deployment metadata", () => {

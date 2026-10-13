@@ -294,7 +294,7 @@ Egna namn, vapenuppgifter, platser, program, seriebeteckningar och anteckningar 
 
 ## Uppdateringar i appen
 
-MyShotLog visar en notis när den driftsatta installationen är efter uppströmsversionen. Med en separat `GITHUB_CODE_TOKEN` för kodforken kan installationsägaren välja **Inställningar → Appuppdateringar → Synkronisera fork**. Vercel driftsätter sedan från den anslutna produktionsbranchen. Fork och driftsättning kontrolleras var för sig, så en synkroniserad fork räknas inte automatiskt som en uppdaterad webbplats.
+MyShotLog visar en notis när den driftsatta installationen är efter uppströmsversionen. Öppna **Inställningar → Appuppdateringar → Öppna fork på GitHub** och välj **Sync fork → Update branch** på GitHub. Vercel driftsätter sedan den anslutna produktionsbranchen. Appen kontrollerar endast versioner och ändrar aldrig kodforken. Fork och driftsättning kontrolleras var för sig.
 
 Se [engångsinställning, behörigheter och uppdateringsflöde](UPDATES.md). Kodtoken ska endast nå kodforken, med Contents och Workflows: Read and write, och ligga i Vercels Production-miljö. `GIT_DATABASE_TOKEN` och journalrepositoryt är separata. Förhandsversioner kan inte synkronisera. Egna konflikter och branchskydd hanteras utan force-push.
 

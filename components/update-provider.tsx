@@ -11,10 +11,7 @@ import type { UpdateStatus } from "@/lib/updates/model";
 import type { MessageKey } from "@/lib/i18n";
 const errorKeys: Record<string, MessageKey> = {
   configuration: "updates.configuration",
-  forbidden: "updates.forbidden",
   permissions: "updates.permissions",
-  conflict: "updates.conflict",
-  changed: "updates.changed",
   rateLimited: "updates.rateLimited",
   signIn: "api.signIn",
   invalidData: "api.invalidData",
@@ -23,18 +20,12 @@ const Context = createContext<{
   status?: UpdateStatus;
   error?: MessageKey;
   checking: boolean;
-  syncing: boolean;
-  synced: boolean;
   ready: boolean;
   refresh: () => Promise<void>;
-  sync: () => Promise<void>;
 }>({
   checking: true,
-  syncing: false,
-  synced: false,
   ready: false,
   refresh: async () => {},
-  sync: async () => {},
 });
 const validErrors = new Set<MessageKey>([
   ...Object.values(errorKeys),
@@ -57,12 +48,9 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<UpdateStatus>(),
     [error, setError] = useState<MessageKey>(),
     [checking, setChecking] = useState(true),
-    [syncing, setSyncing] = useState(false),
-    [synced, setSynced] = useState(false),
     [ready, setReady] = useState(false);
   const initialSha = useRef<string>(undefined),
-    sequence = useRef(0),
-    busy = useRef(false);
+    sequence = useRef(0);
   const refresh = useCallback(async () => {
     const current = ++sequence.current;
     setChecking(true);
@@ -86,40 +74,15 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void refresh();
     const timer = setInterval(() => {
-      if (document.visibilityState === "visible" && !busy.current)
-        void refresh();
+      if (document.visibilityState === "visible") void refresh();
     }, 300000);
     return () => {
       clearInterval(timer);
       ++sequence.current;
     };
   }, [refresh]);
-  async function sync() {
-    if (!status?.canSync || !status.upstreamSha || busy.current) return;
-    busy.current = true;
-    setSyncing(true);
-    setError(undefined);
-    try {
-      await jsonResponse(
-        await fetch("/api/updates/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ upstreamSha: status.upstreamSha }),
-        }),
-      );
-      setSynced(true);
-      await refresh();
-    } catch (e) {
-      setError(errorKey(e));
-    } finally {
-      busy.current = false;
-      setSyncing(false);
-    }
-  }
   return (
-    <Context.Provider
-      value={{ status, error, checking, syncing, synced, ready, refresh, sync }}
-    >
+    <Context.Provider value={{ status, error, checking, ready, refresh }}>
       {children}
     </Context.Provider>
   );
