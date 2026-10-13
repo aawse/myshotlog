@@ -156,6 +156,12 @@ Vercels tillfälliga filsystem ska inte användas som lokal databas. GitHub-lagr
 
 `@vercel/analytics/next` finns i rotlayouten. Aktivera **Web Analytics** för kodprojektet i Vercels dashboard och gör en ny deployment. Inga ytterligare miljövariabler behövs för standardintegrationen. Kontrollera därefter sidvisningar i dashboarden enligt [Vercels snabbstart](https://vercel.com/docs/analytics/quickstart). Lokal utveckling använder SDK:ns utvecklingsläge. Den befintliga CSP:n stödjer det dynamiska scriptet och insamling via samma origin.
 
+### Vercel Speed Insights
+
+`@vercel/speed-insights/next` mäter webbläsarens prestanda via rotlayouten. Aktivera **Speed Insights** i kodprojektets Vercel-dashboard och gör en ny deployment enligt [Vercels snabbstart](https://vercel.com/docs/speed-insights/quickstart). Inga nya miljövariabler eller apphemligheter behövs. Komponenten körs bara när Vercel sätter `VERCEL=1`, så vanlig lokal utveckling och CI skickar inga prestandamätningar.
+
+Rapporterade adresser och routes innehåller endast sidkategorier: pass- och vapen-ID:n ersätts med `[id]`, och frågeparametrar samt fragment tas bort. OAuth-callbacks, foto-/API-adresser och okända sidor rapporteras inte. Filtreringen gäller Speed Insights; Web Analytics behåller sin befintliga integration. Den befintliga CSP:n stödjer scriptet och insamling via samma origin. Kontrollera mätningarna i dashboarden efter deployment.
+
 ## Annan Git-server eller lokal databas
 
 För egen server, ange `GIT_DATABASE_PROVIDER=git` och `GIT_DATABASE_REMOTE` till ett SSH-/HTTPS-remote eller en absolut sökväg till ett bare repository. Ange också branch och prefix. GitHub OAuth-konfigurationen behövs även med denna lagringsadapter.

@@ -13,7 +13,7 @@ Svensk träningsjournal för personligt pistolskytte, byggd med Next.js och Reac
 - Ett valfritt tavelfoto per serie. Välj en bild; formatet avgör automatiskt om den kan användas direkt eller behöver konverteras och optimeras i webbläsaren före uppladdning.
 - Konfigurerbar läscache i serverminnet för snabbare journal- och fotohämtning; skrivningar tömmer berörda poster.
 - JSON-export/import med profil, vapen, råresultat, seriens födelseuppgifter, okopplade serier och foton. Bedömningar exporteras inte; vid import beräknas de med reglerna för passdatumet. CSV exporterar resultat från pass till kalkylblad.
-- Vercel Web Analytics via rotlayouten; aktiveras för projektet i Vercels dashboard.
+- Vercel Web Analytics och Speed Insights via rotlayouten; aktiveras för projektet i Vercels dashboard. Speed Insights rapporterar sidkategorier utan journal-ID:n, frågeparametrar eller fragment.
 
 Appen används för personlig resultatuppföljning. Serier behöver inga signaturer eller verifieringar. Regelunderlag och begränsningar finns i [regeldokumentationen](docs/RULES.md).
 

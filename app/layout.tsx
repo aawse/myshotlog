@@ -1,5 +1,6 @@
 import { LanguageProvider } from "@/components/language-provider";
 import { getI18n } from "@/lib/i18n-server";
+import { PerformanceInsights } from "@/components/performance-insights";
 import { Analytics } from "@vercel/analytics/next";
 import { connection } from "next/server";
 import type { Metadata } from "next";
@@ -29,6 +30,7 @@ export default async function Layout({
         <LanguageProvider language={language}>
           {children}
           <Analytics />
+          {process.env.VERCEL === "1" && <PerformanceInsights />}
         </LanguageProvider>
       </body>
     </html>
