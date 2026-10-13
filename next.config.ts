@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   poweredByHeader: false,
   trailingSlash: true,
+  outputFileTracingIncludes: {
+    "/api/sessions/*/pdf": [
+      "./lib/pdf/assets/*.ttf",
+      "./public/brand/MyShotLog-logo.svg",
+    ],
+  },
   async headers() {
     return [
       {

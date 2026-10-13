@@ -11,6 +11,7 @@ import { WitnessPanel } from "@/components/witness-panel";
 import { records } from "@/lib/data";
 import { disciplineName, targetName, caliberName } from "@/lib/i18n-domain";
 import { summarize } from "@/lib/rules/engine";
+import { SessionPrint } from "@/components/session-print";
 import { SessionActions } from "@/components/session-actions";
 export default async function Page({
   params,
@@ -53,9 +54,15 @@ export default async function Page({
             {tr("details.revision")} {s.revision}
           </p>
         </div>
-        <Link className="button secondary" href={"/sessions/" + id + "/edit/"}>
-          {tr("session.editHeading")}
-        </Link>
+        <div className="actions">
+          <SessionPrint id={id} date={s.date} />
+          <Link
+            className="button secondary"
+            href={"/sessions/" + id + "/edit/"}
+          >
+            {tr("session.editHeading")}
+          </Link>
+        </div>
       </div>
       <section className="card">
         <h2>
