@@ -291,3 +291,9 @@ Actions är fästa vid commit-SHA:n. Dependabot kontrollerar GitHub Actions varj
 Appen har svenska och engelska. Under **Inställningar → Din profil → Språk** väljer användaren **Svenska** eller **English** och sparar profilen. Valet lagras som `language: "sv"` eller `language: "en"` i användarens `profile.json` i Git-databasen och gäller hela webbplatsen efter sparandet. Svenska är standard om fältet saknas. Ingen extra miljövariabel eller webbläsarinställning behövs. Inloggningssidor utan en autentiserad profil använder svenska.
 
 Egna namn, vapenuppgifter, platser, program, seriebeteckningar och anteckningar översätts inte. JSON-export bevarar profilens språkval; CSV använder valt språk för rubrikerna. Fasta UI-texter underhålls i `lib/locales/sv.json` och `lib/locales/en.json`; lägg till samma nyckel med en svensk och en engelsk text vid nya kontroller.
+
+## Uppdateringar i appen
+
+MyShotLog visar en notis när den driftsatta installationen är efter uppströmsversionen. Med en separat `GITHUB_CODE_TOKEN` för kodforken kan installationsägaren välja **Inställningar → Appuppdateringar → Synkronisera fork**. Vercel driftsätter sedan från den anslutna produktionsbranchen. Fork och driftsättning kontrolleras var för sig, så en synkroniserad fork räknas inte automatiskt som en uppdaterad webbplats.
+
+Se [engångsinställning, behörigheter och uppdateringsflöde](UPDATES.md). Kodtoken ska endast nå kodforken, med Contents och Workflows: Read and write, och ligga i Vercels Production-miljö. `GIT_DATABASE_TOKEN` och journalrepositoryt är separata. Förhandsversioner kan inte synkronisera. Egna konflikter och branchskydd hanteras utan force-push.

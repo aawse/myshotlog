@@ -1367,3 +1367,37 @@ input[type="time"],
 .medal-counts {
   font-variant-numeric: tabular-nums;
 }
+
+.update-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--pale);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  color: var(--green);
+}
+.update-notice > span {
+  flex: 1;
+  min-width: 180px;
+}
+.update-panel {
+  margin-top: 24px;
+  scroll-margin-top: 24px;
+}
+.update-changes {
+  padding-left: 20px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.update-changes code {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.update-panel p {
+  overflow-wrap: anywhere;
+}

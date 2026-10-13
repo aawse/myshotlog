@@ -236,7 +236,7 @@ export class GitHubUpdates {
     return { synced: true, changed: true };
   }
 }
-// Cache public code metadata, never tokens or user permissions in responses.
+// Cache code metadata per configuration; derive permissions for each request.
 let snapshot:
   | {
       key: string;

@@ -1,3 +1,4 @@
+import { AppUpdates } from "@/components/app-updates";
 import { getI18n } from "@/lib/i18n-server";
 import { records } from "@/lib/data";
 import { SettingsForm } from "@/components/settings-form";
@@ -15,6 +16,7 @@ export default async function Page() {
         </div>
       </div>
       <SettingsForm profile={data.profile} />
+      <AppUpdates />
     </>
   );
 }
