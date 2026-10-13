@@ -297,3 +297,9 @@ Egna namn, vapenuppgifter, platser, program, seriebeteckningar och anteckningar 
 MyShotLog visar en notis när den driftsatta installationen är efter uppströmsversionen. Med en separat `GITHUB_CODE_TOKEN` för kodforken kan installationsägaren välja **Inställningar → Appuppdateringar → Synkronisera fork**. Vercel driftsätter sedan från den anslutna produktionsbranchen. Fork och driftsättning kontrolleras var för sig, så en synkroniserad fork räknas inte automatiskt som en uppdaterad webbplats.
 
 Se [engångsinställning, behörigheter och uppdateringsflöde](UPDATES.md). Kodtoken ska endast nå kodforken, med Contents och Workflows: Read and write, och ligga i Vercels Production-miljö. `GIT_DATABASE_TOKEN` och journalrepositoryt är separata. Förhandsversioner kan inte synkronisera. Egna konflikter och branchskydd hanteras utan force-push.
+
+## Kontrollera installationen
+
+Öppna **Inställningar → Installationskontroll → Kontrollera installation** när du är inloggad. Kontrollen visar saknade eller ogiltiga miljöinställningar, en webbplatsadress som inte matchar den aktuella adressen, journalrepositoryts sekretess och branchåtkomst samt inställningar för appuppdateringar. Ett tomt repository markeras som redo att initieras, inte som ett åtkomstfel. Om journalen inte kan läsas visas kontrollen ändå på inställningssidan.
+
+Kontrollen gör endast läsanrop; inga poster eller testcommits skapas och hemliga värden visas aldrig. Skrivbehörighet, OAuth-appens registrerade returadress och Vercels projektinställningar behöver bekräftas manuellt enligt resultatet. Efter att du ändrat miljövariabler måste du driftsätta om och köra kontrollen på nytt. Kontrollpanelen kräver fungerande inloggning; om grundläggande inloggningsinställningar saknas går appen till installationssidan. Upprepade kontroller begränsas per användare och serverinstans, med samma trafikgräns som appuppdateringskontroller.

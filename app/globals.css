@@ -1401,3 +1401,32 @@ input[type="time"],
 .update-panel p {
   overflow-wrap: anywhere;
 }
+
+.installation-checks {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.installation-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.installation-result > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.installation-result p {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+.installation-ok > svg {
+  color: var(--green);
+}
+.installation-warning > svg {
+  color: #896a32;
+}
+.installation-error > svg {
+  color: #a63732;
+}

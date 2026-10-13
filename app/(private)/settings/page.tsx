@@ -1,3 +1,4 @@
+import { InstallationCheck } from "@/components/installation-check";
 import { AppUpdates } from "@/components/app-updates";
 import { getI18n } from "@/lib/i18n-server";
 import { records } from "@/lib/data";
@@ -5,7 +6,7 @@ import { SettingsForm } from "@/components/settings-form";
 export default async function Page() {
   const { tr } = await getI18n();
 
-  const data = await records();
+  const data = await records().catch(() => null);
   return (
     <>
       <div className="page-heading">
@@ -15,7 +16,12 @@ export default async function Page() {
           <p>{tr("settings.intro")}</p>
         </div>
       </div>
-      <SettingsForm profile={data.profile} />
+      {data ? (
+        <SettingsForm profile={data.profile} />
+      ) : (
+        <p role="alert">{tr("installation.journalUnavailable")}</p>
+      )}
+      <InstallationCheck />
       <AppUpdates />
     </>
   );
