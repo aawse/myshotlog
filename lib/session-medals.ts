@@ -5,45 +5,80 @@ export type SeriesMedals = {
   bronze: number;
   unassessed: number;
 };
-// Count each current series once, using only its latest saved conclusions for the current revision.
+const highestFirst = ["gold", "silver", "bronze"] as const;
+// Use saved conclusions only; never substitute today's rules or the user's current age.
+// All displays share the latest conclusion per level for each current series/revision.
+export function sessionSeriesRatings(
+  session: Session,
+  assessments: Assessment[],
+) {
+  const latest = new Map<string, Assessment>();
+  for (const a of assessments) {
+    if (a.sessionId !== session.id || a.revision !== session.revision) continue;
+    const key = a.resultId + ":" + a.level;
+    const previous = latest.get(key);
+    if (!previous || a.createdAt >= previous.createdAt) latest.set(key, a);
+  }
+  return session.results.map((result) => {
+    const conclusions = highestFirst.map((level) =>
+      latest.get(result.id + ":" + level),
+    );
+    const earned = conclusions.find((a) => a?.status === "met");
+    const incomplete = conclusions.some((a) => !a);
+    const unknown = conclusions.find(
+      (a) => a?.status === "not-evaluated" || a?.status === "not-applicable",
+    );
+    const status: Assessment["status"] = earned
+      ? "met"
+      : incomplete
+        ? "not-evaluated"
+        : (unknown?.status ?? "not-met");
+    // For a failure, retain the lowest threshold's supporting calculation.
+    const assessment =
+      earned ?? unknown ?? (incomplete ? undefined : conclusions.at(-1));
+    return {
+      result,
+      medal: earned?.level,
+      status,
+      assessment,
+      assessments: conclusions.filter((a): a is Assessment => Boolean(a)),
+      points:
+        result.points === undefined
+          ? undefined
+          : result.points - (result.penaltyPoints ?? 0),
+    };
+  });
+}
 export function sessionMedalCounts(
   sessions: Session[],
   assessments: Assessment[],
 ): Record<string, SeriesMedals> {
-  const current = new Map(sessions.map((s) => [s.id, s]));
-  const latest = new Map<string, Assessment>();
+  const bySession = new Map<string, Assessment[]>();
   for (const a of assessments) {
-    const session = current.get(a.sessionId);
-    if (!session || a.revision !== session.revision) continue;
-    const key = a.sessionId + ":" + a.resultId + ":" + a.level,
-      previous = latest.get(key);
-    if (!previous || a.createdAt >= previous.createdAt) latest.set(key, a);
+    const list = bySession.get(a.sessionId) ?? [];
+    list.push(a);
+    bySession.set(a.sessionId, list);
   }
   return Object.fromEntries(
-    sessions.map((s) => {
+    sessions.map((session) => {
       const counts: SeriesMedals = {
         gold: 0,
         silver: 0,
         bronze: 0,
         unassessed: 0,
       };
-      for (const result of s.results) {
-        const conclusions = (["gold", "silver", "bronze"] as const).map(
-          (level) => latest.get(s.id + ":" + result.id + ":" + level),
-        );
-        const met = conclusions.find((a) => a?.status === "met");
-        if (met) counts[met.level]++;
+      for (const rating of sessionSeriesRatings(
+        session,
+        bySession.get(session.id) ?? [],
+      )) {
+        if (rating.medal) counts[rating.medal]++;
         else if (
-          conclusions.some(
-            (a) =>
-              !a ||
-              a.status === "not-evaluated" ||
-              a.status === "not-applicable",
-          )
+          rating.status === "not-evaluated" ||
+          rating.status === "not-applicable"
         )
           counts.unassessed++;
       }
-      return [s.id, counts];
+      return [session.id, counts];
     }),
   );
 }

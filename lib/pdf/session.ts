@@ -11,6 +11,7 @@ import {
 import QRCode from "qrcode";
 import sharp from "sharp";
 import type { Records, Session } from "@/lib/models";
+import { sessionSeriesRatings } from "@/lib/session-medals";
 import { seriesConditions } from "@/lib/models";
 import { translator } from "@/lib/i18n";
 import { caliberName, disciplineName, targetName } from "@/lib/i18n-domain";
@@ -214,17 +215,10 @@ export async function createSessionPdf(
   );
   heading(tr("session.results"));
   headerRow();
-  for (const r of session.results) {
-    const assessments = data.assessments.filter(
-      (a) =>
-        a.sessionId === session.id &&
-        a.resultId === r.id &&
-        a.revision === session.revision,
-    );
-    const medal = (["gold", "silver", "bronze"] as const).find(
-      (level) =>
-        assessments.filter((a) => a.level === level).at(-1)?.status === "met",
-    );
+  for (const { result: r, medal, assessments } of sessionSeriesRatings(
+    session,
+    data.assessments,
+  )) {
     const currentWitnesses = signoffs.filter(
       (w) => (!w.resultId || w.resultId === r.id) && witnessCurrent(w, session),
     );

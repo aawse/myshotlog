@@ -124,7 +124,7 @@ it("offers direct JSON import on an empty dashboard and hides it when journal en
   expect(populated).not.toContain('type="file"');
 });
 
-it("shows earned points and medal/cross icons without threshold comparisons", async () => {
+it("shows the same highest grade and net points once per series in both sections", async () => {
   const { default: Details } =
     await import("../app/(private)/sessions/[id]/page");
   const { LanguageProvider } = await import("../components/language-provider");
@@ -160,9 +160,12 @@ it("shows earned points and medal/cross icons without threshold comparisons", as
   expect(html).not.toContain("Delprestation uppfylld");
   expect(html).not.toContain("Kraven ej uppfyllda");
   expect(html).not.toContain("45 av minst 34 poäng");
-  expect(html).toContain('class="series-medal bronze"');
+  expect(html).not.toContain('class="series-medal bronze"');
   expect(html).toContain('class="series-medal silver"');
-  expect(html).toContain('class="assessment-cross"');
+  expect(html).not.toContain('class="assessment-cross"');
+  expect(html.match(/class="series-medal silver"/g)).toHaveLength(2);
+  expect(html.match(/class="assessment"/g)).toHaveLength(1);
+  expect(html).toContain("<td>45</td>");
   expect(html).not.toContain('class="series-medal gold"');
   vi.mocked(records).mockResolvedValue({
     profile,
@@ -173,6 +176,62 @@ it("shows earned points and medal/cross icons without threshold comparisons", as
   const failed = renderToStaticMarkup(
     await Details({ params: Promise.resolve({ id: session.id }) }),
   );
-  expect(failed.match(/class="assessment-cross"/g)).toHaveLength(3);
+  expect(failed.match(/class="assessment-cross"/g)).toHaveLength(1);
   expect(failed).not.toContain("Kraven ej uppfyllda");
+});
+
+it("shows only current series calculations and ignores superseded or historical grades", async () => {
+  const { default: Details } =
+    await import("../app/(private)/sessions/[id]/page");
+  const a = {
+    id: crypto.randomUUID(),
+    sessionId: session.id,
+    resultId: session.results[0].id,
+    revision: 1,
+    ruleVersion: "current-rule",
+    level: "gold" as const,
+    status: "not-met" as const,
+    reason: "",
+    source: "",
+    createdAt: "2026-10-10T14:00:00Z",
+    input: {},
+  };
+  vi.mocked(records).mockResolvedValue({
+    profile,
+    firearms: [],
+    sessions: [session],
+    assessments: [
+      a,
+      {
+        ...a,
+        id: crypto.randomUUID(),
+        status: "met",
+        createdAt: "2026-10-10T13:00:00Z",
+      },
+      {
+        ...a,
+        id: crypto.randomUUID(),
+        status: "met",
+        revision: 2,
+        ruleVersion: "old-rule",
+      },
+      { ...a, id: crypto.randomUUID(), status: "met", level: "silver" },
+      { ...a, id: crypto.randomUUID(), status: "met", level: "bronze" },
+      {
+        ...a,
+        id: crypto.randomUUID(),
+        status: "met",
+        resultId: crypto.randomUUID(),
+        ruleVersion: "removed-series",
+      },
+    ],
+  });
+  const html = renderToStaticMarkup(
+    await Details({ params: Promise.resolve({ id: session.id }) }),
+  );
+  expect(html.match(/class="series-medal silver"/g)).toHaveLength(2);
+  expect(html.match(/class="assessment"/g)).toHaveLength(1);
+  expect(html).not.toContain('class="series-medal gold"');
+  expect(html).not.toContain("old-rule");
+  expect(html).not.toContain("removed-series");
 });

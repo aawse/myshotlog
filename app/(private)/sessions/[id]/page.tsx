@@ -10,6 +10,7 @@ import { witnessCurrent } from "@/lib/witness/model";
 import { WitnessPanel } from "@/components/witness-panel";
 import { records } from "@/lib/data";
 import { disciplineName, targetName, caliberName } from "@/lib/i18n-domain";
+import { sessionSeriesRatings } from "@/lib/session-medals";
 import { summarize } from "@/lib/rules/engine";
 import { SessionPrint } from "@/components/session-print";
 import { SessionActions } from "@/components/session-actions";
@@ -38,6 +39,7 @@ export default async function Page({
     .map((w) => ({ ...w, current: witnessCurrent(w, s) }));
   const total = summarize(s);
   const assessments = data.assessments.filter((a) => a.sessionId === id);
+  const ratings = sessionSeriesRatings(s, assessments);
   return (
     <>
       <div className="page-heading">
@@ -107,18 +109,7 @@ export default async function Page({
               </tr>
             </thead>
             <tbody>
-              {s.results.map((r) => {
-                const medal = (["gold", "silver", "bronze"] as const).find(
-                  (level) =>
-                    assessments
-                      .filter(
-                        (a) =>
-                          a.resultId === r.id &&
-                          a.revision === s.revision &&
-                          a.level === level,
-                      )
-                      .at(-1)?.status === "met",
-                );
+              {ratings.map(({ result: r, medal, assessment, points }) => {
                 return (
                   <tr key={r.id}>
                     <td>
@@ -153,8 +144,7 @@ export default async function Page({
                       </span>
                       <span className="subline">
                         {tr("details.ruleVersion")}{" "}
-                        {assessments.find((a) => a.resultId === r.id)
-                          ?.ruleVersion ?? tr("details.notRecorded")}
+                        {assessment?.ruleVersion ?? tr("details.notRecorded")}
                       </span>
                       {r.photoId && (
                         <PhotoViewer
@@ -163,7 +153,7 @@ export default async function Page({
                         />
                       )}
                     </td>
-                    <td>{r.points ?? "–"}</td>
+                    <td>{points ?? "–"}</td>
                     <td>
                       {r.hits ?? "–"} / {r.figures ?? "–"}
                       {r.scoring === "points" && (
@@ -187,6 +177,7 @@ export default async function Page({
             </tbody>
           </table>
         </div>
+        <p className="muted">{tr("print.netPoints")}</p>
         {s.notes && <p className="notes">{s.notes}</p>}
       </section>
       <WitnessPanel
@@ -198,59 +189,53 @@ export default async function Page({
       <section className="card">
         <h2>{tr("details.assessments")}</h2>
         <p className="muted">{tr("details.assessmentHelp")}</p>
-        {assessments.length ? (
-          assessments.map((a) => {
-            const result = s.results.find((r) => r.id === a.resultId);
-            const points =
-              result?.points === undefined
-                ? undefined
-                : result.points - (result.penaltyPoints ?? 0);
-            return (
-              <div className="assessment" key={a.id}>
-                {(a.status === "not-evaluated" ||
-                  a.status === "not-applicable") && (
-                  <span className="pill">{labels[a.status]}</span>
+        {ratings.map(({ result, medal, status, assessment: a, points }) => (
+          <div className="assessment" key={result.id}>
+            <strong>
+              <span className="calculation-grade">
+                {medal ? (
+                  <span
+                    className={`series-medal ${medal}`}
+                    role="img"
+                    aria-label={tr("details.medalSeries", {
+                      level: tr(`level.${medal}`),
+                    })}
+                  >
+                    <Medal size={20} aria-hidden="true" />
+                  </span>
+                ) : status === "not-met" ? (
+                  <span
+                    className="assessment-cross"
+                    role="img"
+                    aria-label={tr("details.gradeNotAchieved")}
+                  >
+                    <CircleX size={20} aria-hidden="true" />
+                  </span>
+                ) : (
+                  <CircleHelp size={20} aria-hidden="true" />
                 )}
-                <strong>
-                  <span className="calculation-grade">
-                    {a.status === "met" ? (
-                      <span
-                        className={`series-medal ${a.level}`}
-                        role="img"
-                        aria-label={tr("details.medalSeries", {
-                          level: tr(`level.${a.level}`),
-                        })}
-                      >
-                        <Medal size={20} aria-hidden="true" />
-                      </span>
-                    ) : a.status === "not-met" ? (
-                      <span
-                        className="assessment-cross"
-                        role="img"
-                        aria-label={tr("details.gradeNotAchieved")}
-                      >
-                        <CircleX size={20} aria-hidden="true" />
-                      </span>
-                    ) : (
-                      <CircleHelp size={20} aria-hidden="true" />
-                    )}
-                    {tr(`level.${a.level}`)}
-                  </span>{" "}
-                  ·{" "}
-                  {s.results.find((r) => r.id === a.resultId)?.label ??
-                    tr("details.previousResult")}{" "}
-                  {tr("details.revision")} {a.revision}
-                </strong>
-                <p>
-                  {points === undefined
-                    ? localizeMessage(language, a.reason)
-                    : tr("quick.points", { p0: points })}
-                </p>
-                {points !== undefined &&
-                  (a.status === "not-evaluated" ||
-                    a.status === "not-applicable") && (
-                    <p>{localizeMessage(language, a.reason)}</p>
-                  )}
+                {medal
+                  ? tr(`level.${medal}`)
+                  : status === "not-met"
+                    ? tr("details.gradeNotAchieved")
+                    : status === "not-applicable"
+                      ? labels["not-applicable"]
+                      : labels["not-evaluated"]}
+              </span>{" "}
+              · {result.label}
+            </strong>
+            {points !== undefined ? (
+              <p>{tr("quick.points", { p0: points })}</p>
+            ) : (
+              a && <p>{localizeMessage(language, a.reason)}</p>
+            )}
+            {points !== undefined &&
+              a &&
+              (status === "not-evaluated" || status === "not-applicable") && (
+                <p>{localizeMessage(language, a.reason)}</p>
+              )}
+            {a && (
+              <>
                 <small>
                   {a.ruleVersion} · {a.createdAt.slice(0, 10)}
                 </small>
@@ -261,12 +246,10 @@ export default async function Page({
                   <summary>{tr("details.showInput")}</summary>
                   <pre>{JSON.stringify(a.input, null, 2)}</pre>
                 </details>
-              </div>
-            );
-          })
-        ) : (
-          <p>{tr("details.empty")}</p>
-        )}
+              </>
+            )}
+          </div>
+        ))}
         <SessionActions id={id} />
       </section>
     </>
