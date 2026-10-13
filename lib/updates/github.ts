@@ -45,7 +45,7 @@ export function updateConfig(): UpdateConfig | null {
       : undefined;
   const repo = process.env.GITHUB_CODE_REPOSITORY || inferred;
   const deployed =
-    process.env.MYSHOTLOG_DEPLOYED_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA;
+    process.env.MYSHOTLOG_BUILD_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA;
   if (!repo || !deployed) return null;
   if (
     !repository.safeParse(repo).success ||

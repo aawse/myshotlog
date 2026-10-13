@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
+import { buildCommit } from "./lib/build-commit";
 const config: NextConfig = {
+  env: { MYSHOTLOG_BUILD_COMMIT: buildCommit() },
   poweredByHeader: false,
   trailingSlash: true,
   outputFileTracingIncludes: {

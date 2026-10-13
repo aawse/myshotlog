@@ -259,7 +259,7 @@ it("maps token failures without exposing GitHub response details", async () => {
 });
 it("infers Vercel's code repository and detects missing deployment metadata", () => {
   vi.stubEnv("GITHUB_CODE_REPOSITORY", "");
-  vi.stubEnv("MYSHOTLOG_DEPLOYED_COMMIT", "");
+  vi.stubEnv("MYSHOTLOG_BUILD_COMMIT", "");
   vi.stubEnv("VERCEL_GIT_REPO_OWNER", "tester");
   vi.stubEnv("VERCEL_GIT_REPO_SLUG", "myshotlog");
   vi.stubEnv("VERCEL_GIT_COMMIT_SHA", deployed);
@@ -268,9 +268,18 @@ it("infers Vercel's code repository and detects missing deployment metadata", ()
   vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "");
   expect(updateConfig()).toBeNull();
 });
+it("uses the embedded build commit without a manually configured deployed SHA", () => {
+  vi.stubEnv("GITHUB_CODE_REPOSITORY", "tester/myshotlog");
+  vi.stubEnv("MYSHOTLOG_BUILD_COMMIT", deployed);
+  vi.stubEnv("VERCEL_GIT_COMMIT_SHA", "");
+  vi.stubEnv("GIT_DATABASE_REPOSITORY", "tester/private-journal");
+  expect(updateConfig()?.deployedSha).toBe(deployed);
+  vi.stubEnv("VERCEL_GIT_COMMIT_SHA", fork);
+  expect(updateConfig()?.deployedSha).toBe(deployed);
+});
 it("refuses to use the data repository for code updates", () => {
   vi.stubEnv("GITHUB_CODE_REPOSITORY", "tester/private-journal");
-  vi.stubEnv("MYSHOTLOG_DEPLOYED_COMMIT", deployed);
+  vi.stubEnv("MYSHOTLOG_BUILD_COMMIT", deployed);
   vi.stubEnv("GIT_DATABASE_REPOSITORY", "tester/private-journal");
   expect(updateConfig).toThrow("configuration");
 });
