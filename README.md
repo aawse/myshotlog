@@ -87,3 +87,11 @@ Befintliga WebP-foton förblir läsbara och bevaras i JSON-export/import. Nya up
 ## Säkerhetskontakt
 
 `public/.well-known/security.txt` publiceras utan inloggning på `/.well-known/security.txt` enligt [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116.html). Säkerhetsrapporter skickas till `security@aaw.se`. Granska kontaktuppgifterna och förnya `Expires` före **1 oktober 2027**. Filen ska nås via HTTPS i produktion.
+
+## Rapportera problem och föreslå förbättringar
+
+Välj **Rapportera ett problem** i sidomenyn eller öppna **Inställningar → Hjälp oss förbättra MyShotLog**. Beskriv problemet utförligt, ange steg, förväntat beteende och relevanta felmeddelanden. Du kan också välja förbättringsförslag. Rapporten öppnas som ett förifyllt utkast i originalrepositoryt `aawse/myshotlog`; granska och skapa ärendet på GitHub med ditt eget konto. Ingen ny token, OAuth-behörighet eller miljövariabel krävs.
+
+Rapporten hålls bara i webbläsarens minne och sparas inte i journalen eller på appservern. Appen förifyller endast den publika byggcommitens korta SHA och webbläsarfamilj; du kan ändra eller ta bort båda. Installationens adress, privata repositorynamn, konto-ID:n, miljövärden och journaldata samlas inte in. För mycket långa rapporter visas hela texten för kopiering; klistra in den i **Additional details** i GitHubs formulär. Vid nekad clipboardåtkomst kan du kopiera texten manuellt.
+
+GitHub-ärenden är offentliga. Granska skärmbilder och ta bort hemligheter och personliga uppgifter innan du skickar. Säkerhetsbrister rapporteras privat till `security@aaw.se`. Repositoryts formulär finns i `.github/ISSUE_TEMPLATE/bug.yml` och `feature.yml` och accepterar svenska och engelska. Mallarna blir tillgängliga när de publiceras på repositoryts standardbranch.

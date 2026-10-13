@@ -1,3 +1,4 @@
+import { IssueReport } from "@/components/issue-report";
 import { InstallationCheck } from "@/components/installation-check";
 import { AppUpdates } from "@/components/app-updates";
 import { getI18n } from "@/lib/i18n-server";
@@ -23,6 +24,7 @@ export default async function Page() {
       )}
       <InstallationCheck />
       <AppUpdates />
+      <IssueReport />
     </>
   );
 }
