@@ -1,13 +1,13 @@
 :root {
-  --bg: #f5f6f3;
+  --bg: #f6f8f5;
   --ink: #233329;
-  --muted: #778076;
-  --line: #e2e6df;
+  --muted: #647164;
+  --line: #d9e0d9;
   --green: #315d43;
   --green-light: #e9efe6;
   --gold: #bc9864;
   --white: #fff;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: var(--font-didact-gothic), Arial, sans-serif;
   color: var(--ink);
   background: var(--bg);
   font-size: 14px;
@@ -31,7 +31,7 @@ textarea {
 button,
 .button {
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 4px;
   background: var(--green);
   color: white;
   font-weight: 600;
@@ -116,7 +116,7 @@ button:disabled {
   gap: 13px;
   padding: 13px 12px;
   color: #5c695e;
-  border-radius: 7px;
+  border-radius: 4px;
 }
 .sidebar nav a:hover {
   background: var(--green-light);
@@ -176,15 +176,15 @@ button:disabled {
 }
 h1 {
   font-size: 30px;
-  letter-spacing: -1px;
-  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-weight: 400;
   margin: 0 0 9px;
   line-height: 1.2;
 }
 h2 {
   font-size: 19px;
-  letter-spacing: -0.5px;
-  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-weight: 400;
   margin: 0 0 12px;
 }
 h3 {
@@ -202,7 +202,7 @@ p {
 .hero-panel {
   background: #e9eee5;
   border: 1px solid #e0e7da;
-  border-radius: 10px;
+  border-radius: 4px;
   position: relative;
   overflow: hidden;
   min-height: 240px;
@@ -243,7 +243,7 @@ p {
   height: 200px;
   display: grid;
   place-items: center;
-  transform: rotate(-12deg);
+  transform: none;
 }
 .target-art:before,
 .target-art:after {
@@ -296,7 +296,7 @@ p {
 .card {
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: 4px;
   padding: 25px;
   margin-bottom: 22px;
 }
@@ -324,9 +324,10 @@ p {
   color: var(--muted);
 }
 .stat strong {
+  font-variant-numeric: tabular-nums;
   font-size: 30px;
   font-weight: 550;
-  letter-spacing: -1px;
+  letter-spacing: -0.02em;
 }
 .stat small {
   font-size: 10px;
@@ -519,7 +520,7 @@ textarea {
   width: 100%;
   background: white;
   border: 1px solid #dbe1d6;
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 11px 12px;
   color: var(--ink);
   min-height: 42px;
@@ -551,7 +552,7 @@ textarea {
 }
 .result-entry {
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 4px;
   margin: 20px 0;
   padding: 20px;
 }
@@ -574,7 +575,7 @@ summary {
   border: 1px solid #d8e0ce;
   color: #566d45;
   padding: 15px 18px;
-  border-radius: 7px;
+  border-radius: 4px;
   line-height: 1.7;
   font-size: 12px;
   margin: 16px 0;
@@ -606,7 +607,7 @@ summary {
   min-width: 220px;
   border: 1px solid var(--line);
   padding-left: 13px;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 .search input {
   border: none;
@@ -959,7 +960,7 @@ progress {
   overflow-y: auto;
   background: white;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 4px;
   box-shadow: 0 8px 22px #23332920;
 }
 .location-suggestions button {
@@ -1153,7 +1154,7 @@ progress {
   height: 90px;
   object-fit: contain;
   background: #f5f6f3;
-  border-radius: 6px;
+  border-radius: 4px;
   margin-top: 10px;
 }
 
@@ -1332,7 +1333,7 @@ progress {
   aspect-ratio: 8 / 3;
   background: white;
   border: 2px solid var(--line);
-  border-radius: 10px;
+  border-radius: 4px;
   touch-action: none;
   cursor: crosshair;
 }
@@ -1361,4 +1362,17 @@ progress {
 .assessment-cross {
   display: inline-flex;
   color: #b42318;
+}
+
+/* Align recorded values on a consistent edge, like a shooting protocol. */
+.series-results th:not(:first-child),
+.series-results td:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+input[type="number"],
+input[type="date"],
+input[type="time"],
+.medal-counts {
+  font-variant-numeric: tabular-nums;
 }

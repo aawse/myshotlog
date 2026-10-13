@@ -1,5 +1,4 @@
-// Regenerate assets on any OS from the saved Helvetica Neue lettering outlines.
-// To change the outlines, set MYSHOTLOG_BRAND_FONT to a locally licensed font file.
+// Regenerate outlined branding on any OS from the bundled, openly licensed font.
 import { readFile, writeFile } from "node:fs/promises";
 import fontkit from "@pdf-lib/fontkit";
 import sharp from "sharp";
@@ -8,54 +7,31 @@ import { fileURLToPath } from "node:url";
 const green = "#315d43",
   ink = "#233329",
   gold = "#bc9864";
-const outlineUrl = new URL("./brand-wordmark.json", import.meta.url);
-let wordmark;
-if (process.env.MYSHOTLOG_BRAND_FONT) {
-  const source = fontkit.create(
-    await readFile(process.env.MYSHOTLOG_BRAND_FONT),
-  );
-  const font = source.fonts
-    ? source.fonts.find(
-        (font) => font.postscriptName === "HelveticaNeue-Medium",
-      )
-    : source;
-  if (!font || font.familyName !== "Helvetica Neue")
-    throw new Error("Use a licensed Helvetica Neue Medium font file.");
-  const size = 78,
-    scale = size / font.unitsPerEm,
-    run = font.layout("MyShotLog");
-  let advance = 0;
-  const paths = run.glyphs
-    .map((glyph, i) => {
-      const pos = run.positions[i];
-      const path = `<path d="${glyph.path.toSVG()}" transform="translate(${((advance + pos.xOffset) * scale).toFixed(3)} ${(-pos.yOffset * scale).toFixed(3)}) scale(${scale.toFixed(6)} ${(-scale).toFixed(6)})"/>`;
-      advance += pos.xAdvance;
-      return path;
-    })
-    .join("");
-  wordmark = {
-    font: font.fullName,
-    width: Math.ceil(advance * scale + 270),
-    paths,
-  };
-  await writeFile(outlineUrl, JSON.stringify(wordmark, null, 2) + "\n");
-} else wordmark = JSON.parse(await readFile(outlineUrl, "utf8"));
-const width = wordmark.width,
-  lettering = wordmark.paths;
-const shield =
-  "M128 20 216 53V122C216 173 183 209 128 237C73 209 40 173 40 122V53Z";
-function mark() {
-  return `<path d="${shield}" fill="${green}"/><circle cx="128" cy="120" r="42" fill="none" stroke="#ffffff" stroke-width="8"/><circle cx="128" cy="120" r="8" fill="${gold}"/>`;
+const font = fontkit.create(
+  await readFile(
+    new URL("../lib/fonts/DidactGothic-Regular.ttf", import.meta.url),
+  ),
+);
+const size = 84,
+  scale = size / font.unitsPerEm,
+  run = font.layout("MyShotLog");
+let advance = 0;
+const lettering = run.glyphs
+  .map((glyph, i) => {
+    const pos = run.positions[i];
+    const path = `<path d="${glyph.path.toSVG()}" transform="translate(${((advance + pos.xOffset) * scale).toFixed(3)} ${(-pos.yOffset * scale).toFixed(3)}) scale(${scale.toFixed(6)} ${(-scale).toFixed(6)})"/>`;
+    advance += pos.xAdvance;
+    return path;
+  })
+  .join("");
+const width = Math.ceil(advance * scale + 270);
+function mark(mono = false) {
+  const colour = mono ? "currentColor" : green;
+  return `<g fill="none" stroke="${colour}" stroke-width="9"><circle cx="128" cy="128" r="88"/><circle cx="128" cy="128" r="48"/></g><circle cx="128" cy="128" r="9" fill="${mono ? "currentColor" : gold}"/>`;
 }
-// Monochrome target details are transparent cut-outs, preserving the background.
-const cutouts =
-  '<circle cx="128" cy="120" r="42" fill="none" stroke="black" stroke-width="8"/><circle cx="128" cy="120" r="8" fill="black"/>';
 function svg(full, mono = false) {
   const w = full ? width : 256;
-  const symbol = mono
-    ? `<defs><mask id="cutout"><rect width="256" height="256" fill="white"/>${cutouts}</mask></defs><g mask="url(#cutout)"><path d="${shield}" fill="currentColor"/></g>`
-    : mark();
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="256" viewBox="0 0 ${w} 256" role="img" aria-labelledby="title desc"><title id="title">MyShotLog</title><desc id="desc">A minimal shield and precision target, with a Helvetica Neue Medium MyShotLog wordmark.</desc>${symbol}${full ? `<g fill="${mono ? "currentColor" : ink}" transform="translate(246 150)">${lettering}</g>` : ""}</svg>\n`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="256" viewBox="0 0 ${w} 256" role="img" aria-labelledby="title desc"><title id="title">MyShotLog</title><desc id="desc">A clean concentric target and precise centre dot, with a Didact Gothic MyShotLog wordmark.</desc>${mark(mono)}${full ? `<g fill="${mono ? "currentColor" : ink}" transform="translate(246 150)">${lettering}</g>` : ""}</svg>\n`;
 }
 for (const [name, full, mono] of [
   ["MyShotLog-logo", true, false],

@@ -7,7 +7,7 @@ export function BrandLogo() {
       className="brand-logo"
       src="/brand/MyShotLog-logo.svg"
       alt={swText("brand.name")}
-      width={685}
+      width={671}
       height={256}
       unoptimized
       loading="eager"

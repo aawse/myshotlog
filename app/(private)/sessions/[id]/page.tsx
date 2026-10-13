@@ -99,7 +99,7 @@ export default async function Page({
               : tr("common.notSpecified")}
         </p>
         <div className="table-scroll">
-          <table>
+          <table className="series-results">
             <thead>
               <tr>
                 <th>{tr("details.seriesStage")}</th>
