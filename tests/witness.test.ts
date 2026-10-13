@@ -238,3 +238,55 @@ it("backs up and imports sign-offs without live invitations, then removes them w
     [...f.files.keys()].filter((path) => path.startsWith(f.path + "/witness-")),
   ).toEqual([]);
 });
+
+it("shares only the selected series photo, never session photos or another series image", async () => {
+  const f = fixture();
+  const first = "a".repeat(64),
+    second = "b".repeat(64);
+  const other = {
+    ...result,
+    id: "30000000-0000-4000-8000-000000000001",
+    photoId: second,
+  };
+  f.files.set(
+    f.path + "/sessions/" + session.id + ".json",
+    JSON.stringify({
+      entry: { ...session, results: [{ ...result, photoId: first }, other] },
+    }),
+  );
+  const jpeg = await sharp({
+    create: { width: 20, height: 20, channels: 3, background: "white" },
+  })
+    .jpeg()
+    .toBuffer();
+  for (const id of [first, second])
+    f.files.set(
+      prefix + "/photos/users/" + owner + "/" + id + "/image.json",
+      JSON.stringify({
+        version: 1,
+        entry: {
+          id,
+          mediaType: "image/jpeg",
+          width: 20,
+          height: 20,
+          bytes: jpeg.length,
+          data: jpeg.toString("base64"),
+        },
+      }),
+    );
+  const { token } = await f.store.create(session.id, result.id);
+  const view = await f.store.preview(token);
+  expect(view.photo).toEqual({
+    mediaType: "image/jpeg",
+    width: 20,
+    height: 20,
+    data: jpeg.toString("base64"),
+  });
+  expect(view.photo).not.toHaveProperty("id");
+  const whole = await f.store.create(session.id, null);
+  expect(await f.store.preview(whole.token)).not.toHaveProperty("photo");
+  await f.store.cancel(witnessClaims(token, secret, origin, f.clock()).id);
+  await expect(f.store.preview(token)).rejects.toBeInstanceOf(
+    WitnessUnavailable,
+  );
+});

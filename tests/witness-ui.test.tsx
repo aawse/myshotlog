@@ -45,3 +45,23 @@ it("disables telemetry on witness pages and filters late events from existing SD
     }),
   ).toEqual({ type: "pageview", url: "https://example.test/login/" });
 });
+
+it("reuses the photo thumbnail and modal for the scoped witness photo", () => {
+  const html = renderToStaticMarkup(
+    <LanguageProvider language="en">
+      <WitnessReviewView
+        review={reviewSession(session, session.results[0].id)}
+        photo={{
+          mediaType: "image/jpeg",
+          width: 20,
+          height: 20,
+          data: "aGVsbG8=",
+        }}
+      />
+    </LanguageProvider>,
+  );
+  expect(html).toContain("data:image/jpeg;base64,aGVsbG8=");
+  expect(html).toContain("Open target photo for Serie");
+  expect(html).toContain("<dialog");
+  expect(html).toContain("photo-overlay");
+});

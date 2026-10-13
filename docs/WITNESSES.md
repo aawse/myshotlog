@@ -2,7 +2,7 @@
 
 Öppna ett sparat pass och välj **Begär vittnesintyg**. Välj hela passet eller en enskild serie. Dela länken, låt vittnet skanna QR-koden eller öppna länken och lämna över telefonen. Länken visas bara efter att den skapats; kopiera den innan du laddar om sidan. Du kan återkalla en aktiv inbjudan från passet.
 
-Vittnet behöver inget konto. Vittnessidan kan visas på svenska eller engelska och visar datum, starttid, plats, gren, program, vapnets tillverkare/modell/kaliber, skjutvillkor och valda råresultat. Profil, födelsedatum, vapnets serienummer, anteckningar, tavelfoton och andra pass delas inte. Vittnet skriver sitt namn, ritar en namnteckning med finger eller mus och bekräftar intygstexten innan det sparas. Namnet är självuppgivet; identiteten verifieras inte.
+Vittnet behöver inget konto. Vittnessidan kan visas på svenska eller engelska och visar datum, starttid, plats, gren, program, vapnets tillverkare/modell/kaliber, skjutvillkor och valda råresultat. Vid ett intyg för en enskild serie visas även seriens tavelfoto, om det finns. Fotot kan öppnas i samma bildmodal som i journalen. Inbjudningar för ett helt pass delar inga foton. Profil, födelsedatum, vapnets serienummer, anteckningar och andra pass delas inte. Vittnet skriver sitt namn, ritar en namnteckning med finger eller mus och bekräftar intygstexten innan det sparas. Namnet är självuppgivet; identiteten verifieras inte.
 
 ## Vad intyget omfattar
 

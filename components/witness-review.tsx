@@ -1,8 +1,15 @@
 "use client";
 import { useI18n } from "./language-provider";
 import { caliberName, disciplineName, targetName } from "@/lib/i18n-domain";
-import type { WitnessReview } from "@/lib/witness/model";
-export function WitnessReviewView({ review }: { review: WitnessReview }) {
+import { PhotoViewer } from "./photo-viewer";
+import type { WitnessReview, WitnessPhoto } from "@/lib/witness/model";
+export function WitnessReviewView({
+  review,
+  photo,
+}: {
+  review: WitnessReview;
+  photo?: WitnessPhoto | null;
+}) {
   const { tr, language } = useI18n();
   return (
     <div className="witness-review">
@@ -27,6 +34,13 @@ export function WitnessReviewView({ review }: { review: WitnessReview }) {
       {review.results.map((result) => (
         <section className="witness-result" key={result.id}>
           <h3>{result.label}</h3>
+          {photo && review.results.length === 1 && (
+            <PhotoViewer
+              src={`data:${photo.mediaType};base64,${photo.data}`}
+              label={result.label}
+              preview
+            />
+          )}
           <dl>
             <div>
               <dt>{tr("session.shots")}</dt>

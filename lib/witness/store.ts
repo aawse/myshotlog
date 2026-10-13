@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import sharp from "sharp";
+import { photoAssetSchema } from "../photos/schema";
 import { z } from "../validation";
 import { seal, unseal } from "../auth/session";
 import { sessionSchema } from "../models";
@@ -222,12 +223,48 @@ export class WitnessStore {
     return grant;
   }
   async preview(token: string) {
-    const grant = this.grant(await this.db.snapshot(this.path), token);
-    return {
-      snapshot: grant.snapshot,
-      expiresAt: grant.expiresAt,
-      resultId: grant.resultId,
-    };
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const snapshot = await this.db.snapshot(this.path);
+      const grant = this.grant(snapshot, token);
+      let photo: import("./model").WitnessPhoto | undefined;
+      // Only an individual-series invitation grants access to its own target photo.
+      const photoId = grant.resultId
+        ? this.session(snapshot, grant.sessionId).results.find(
+            (r) => r.id === grant.resultId,
+          )?.photoId
+        : undefined;
+      if (photoId) {
+        const path =
+          this.prefix +
+          "/photos/users/" +
+          this.ownerId +
+          "/" +
+          photoId +
+          "/image.json";
+        const imageSnapshot = await this.db.snapshot(
+          path.slice(0, -"/image.json".length),
+        );
+        // Never combine an authorized session snapshot with a newer repository state.
+        if (imageSnapshot.head !== snapshot.head) continue;
+        const content = imageSnapshot.files.get(path);
+        if (content) {
+          const asset = z
+            .object({ version: z.literal(1), entry: photoAssetSchema })
+            .strict()
+            .parse(JSON.parse(content)).entry;
+          if (asset.id !== photoId) throw new WitnessUnavailable();
+          const { mediaType, width, height, data } = asset;
+          photo = { mediaType, width, height, data };
+        }
+      }
+      return {
+        snapshot: grant.snapshot,
+        expiresAt: grant.expiresAt,
+        resultId: grant.resultId,
+        ...(photo ? { photo } : {}),
+      };
+    }
+    throw new DatabaseConflict();
   }
   async sign(
     token: string,

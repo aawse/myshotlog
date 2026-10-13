@@ -1,3 +1,4 @@
+import type { PhotoAsset } from "../photos/schema";
 import { z } from "../validation";
 import { sessionSchema, resultSchema, type Session } from "../models";
 import { disciplineIds } from "../disciplines";
@@ -133,3 +134,8 @@ export function witnessCurrent(signoff: WitnessSignoff, session: Session) {
     return false;
   }
 }
+
+export type WitnessPhoto = Pick<
+  PhotoAsset,
+  "mediaType" | "width" | "height" | "data"
+>;

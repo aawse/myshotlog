@@ -3,11 +3,12 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { useI18n } from "./language-provider";
 import { LoadingIndicator } from "./loading-indicator";
 import { WitnessReviewView } from "./witness-review";
-import type { WitnessReview } from "@/lib/witness/model";
+import type { WitnessReview, WitnessPhoto } from "@/lib/witness/model";
 export function WitnessSigning() {
   const { tr, language, setLanguage } = useI18n();
   const [token, setToken] = useState(""),
     [review, setReview] = useState<WitnessReview | null>(null),
+    [photo, setPhoto] = useState<WitnessPhoto | null>(null),
     [loading, setLoading] = useState(true),
     [saved, setSaved] = useState(false),
     [busy, setBusy] = useState(false);
@@ -50,7 +51,10 @@ export function WitnessSigning() {
           return;
         }
         const data = await response.json();
-        if (active) setReview(data.snapshot);
+        if (active) {
+          setReview(data.snapshot);
+          setPhoto(data.photo ?? null);
+        }
       })
       .catch(() => {
         if (active) setFailure("error");
@@ -181,7 +185,7 @@ export function WitnessSigning() {
             <>
               <p>{tr("witness.inviteHelp")}</p>
               <section className="card">
-                <WitnessReviewView review={review} />
+                <WitnessReviewView review={review} photo={photo} />
               </section>
               <form className="card witness-form" onSubmit={submit}>
                 <label>
