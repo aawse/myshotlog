@@ -147,6 +147,13 @@ export class GitSecurityStore {
       return true;
     });
   }
+  async limitWitness(client: string) {
+    await this.limited("witness", client, (data, now) => {
+      this.charge(data, now, "witness", "global", 120, 60);
+      this.charge(data, now, "witness-client", client, 30, 60);
+      return true;
+    });
+  }
   async limitApi(owner: string, write: boolean) {
     const scope = write ? "api-write" : "api-read";
     await this.limited(scope, owner, (data, now) => {

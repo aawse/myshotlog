@@ -4,6 +4,10 @@ import Link from "next/link";
 import { PhotoViewer } from "@/components/photo-viewer";
 import { Medal } from "lucide-react";
 import { notFound } from "next/navigation";
+import { authenticated } from "@/lib/auth/server";
+import { ownerWitnessStore } from "@/lib/witness/server";
+import { witnessCurrent } from "@/lib/witness/model";
+import { WitnessPanel } from "@/components/witness-panel";
 import { records } from "@/lib/data";
 import { disciplineName, targetName, caliberName } from "@/lib/i18n-domain";
 import { summarize } from "@/lib/rules/engine";
@@ -27,6 +31,12 @@ export default async function Page({
   const data = await records();
   const s = data.sessions.find((s) => s.id === id);
   if (!s) notFound();
+  const { user } = await authenticated();
+  const invitations = await (await ownerWitnessStore(user)).invitations(id);
+  const signoffs = (data.witnessSignoffs ?? [])
+    .filter((w) => w.sessionId === id)
+    .sort((a, b) => b.signedAt.localeCompare(a.signedAt))
+    .map((w) => ({ ...w, current: witnessCurrent(w, s) }));
   const total = summarize(s);
   const assessments = data.assessments.filter((a) => a.sessionId === id);
   return (
@@ -174,6 +184,12 @@ export default async function Page({
         </div>
         {s.notes && <p className="notes">{s.notes}</p>}
       </section>
+      <WitnessPanel
+        sessionId={id}
+        results={s.results}
+        signoffs={signoffs}
+        invitations={invitations}
+      />
       <section className="card">
         <h2>{tr("details.assessments")}</h2>
         <p className="muted">{tr("details.assessmentHelp")}</p>

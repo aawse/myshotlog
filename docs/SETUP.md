@@ -162,6 +162,12 @@ Vercels tillfälliga filsystem ska inte användas som lokal databas. GitHub-lagr
 
 Rapporterade adresser och routes innehåller endast sidkategorier: pass- och vapen-ID:n ersätts med `[id]`, och frågeparametrar samt fragment tas bort. OAuth-callbacks, foto-/API-adresser och okända sidor rapporteras inte. Filtreringen gäller Speed Insights; Web Analytics behåller sin befintliga integration. Den befintliga CSP:n stödjer scriptet och insamling via samma origin. Kontrollera mätningarna i dashboarden efter deployment.
 
+### Vittnesintyg utan inloggning
+
+Vittnesfunktionen använder samma privata Git-repository, origin, tillåtelselista och `AUTH_SESSION_SECRET` som resten av appen. Inga nya tjänster eller miljövariabler behövs. Rotering av sessionshemligheten gör befintliga inbjudningar ogiltiga. Använd den stabila produktionsdomänen; vittnet måste kunna öppna `/witness/` och posta till `/api/witness/` utan extra skyddsinloggning hos hostingplattformen.
+
+Vittnessidor skickar inga Analytics- eller Speed Insights-händelser. Namn, PNG-namnteckning och resultatögonblicksbild lagras i den privata journalen. Se [användning och livscykel](WITNESSES.md).
+
 ## Annan Git-server eller lokal databas
 
 För egen server, ange `GIT_DATABASE_PROVIDER=git` och `GIT_DATABASE_REMOTE` till ett SSH-/HTTPS-remote eller en absolut sökväg till ett bare repository. Ange också branch och prefix. GitHub OAuth-konfigurationen behövs även med denna lagringsadapter.

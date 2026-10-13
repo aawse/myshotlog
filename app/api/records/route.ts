@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
           "recordingContexts",
           "quickEntries",
           "photos",
+          "witnessSignoffs",
         ].includes(part)
       )
         return response({ error: swText("api.invalidExportPart") }, 400);
@@ -91,6 +92,7 @@ export async function GET(request: NextRequest) {
                 | "sessions"
                 | "assessments"
                 | "quickEntries"
+                | "witnessSignoffs"
                 | "photos"
             ] ?? [])
         )

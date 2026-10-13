@@ -1,4 +1,6 @@
 import { it, expect } from "vitest";
+import { GitJournalStore } from "../lib/git-database/store";
+import { exportRecords, parseImport } from "../lib/portability";
 import { t } from "../lib/i18n";
 import sharp from "sharp";
 import {
@@ -209,4 +211,30 @@ it("keeps a series sign-off current when other series change, while a session si
   expect(reviewSession(next, result.id)).toEqual(a);
   expect(reviewSession(next, null)).not.toEqual(b);
   expect(profile.birthYear).not.toBeNull();
+});
+
+it("backs up and imports sign-offs without live invitations, then removes them with the session", async () => {
+  const f = fixture();
+  const invite = await f.store.create(session.id, null);
+  await f.store.sign(invite.token, "Witness", "en", await signature());
+  const journal = new GitJournalStore(f.db, owner, prefix);
+  const data = await journal.records();
+  expect(data.witnessSignoffs).toHaveLength(1);
+  const backup = exportRecords({
+    ...data,
+    firearms: [await import("./fixtures").then((m) => m.firearm)],
+  });
+  const parsed = parseImport(backup);
+  expect(parsed.witnessSignoffs).toHaveLength(1);
+  expect(JSON.stringify(backup)).not.toContain(invite.token);
+  const otherOwner = "20000000-0000-4000-8000-000000000002";
+  const imported = new GitJournalStore(f.db, otherOwner, prefix);
+  await imported.mutate("import", backup);
+  expect((await imported.records()).witnessSignoffs).toEqual(
+    data.witnessSignoffs,
+  );
+  await journal.mutate("delete-session", { id: session.id });
+  expect(
+    [...f.files.keys()].filter((path) => path.startsWith(f.path + "/witness-")),
+  ).toEqual([]);
 });

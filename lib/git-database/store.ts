@@ -1,3 +1,5 @@
+import { witnessSchema, invitationSchema } from "../witness/model";
+import { validateSignoff } from "../witness/store";
 import { swText } from "@/lib/i18n";
 import { createHash } from "node:crypto";
 import { z } from "../validation";
@@ -146,13 +148,19 @@ export class GitJournalStore {
       sessions: [],
       assessments: [],
       quickEntries: [],
+      witnessSignoffs: [],
     };
     for (const [path, content] of snapshot.files) {
       if (!path.startsWith(this.path + "/")) continue;
       const name = path.slice(this.path.length + 1);
       if (name === "profile.json")
         records.profile = profileFile.parse(JSON.parse(content)).entry;
-      else if (/^firearms\/[^/]+\.json$/.test(name)) {
+      else if (/^witness-signoffs\/[^/]+\.json$/.test(name)) {
+        const entry = witnessSchema.parse(JSON.parse(content));
+        if (path !== this.path + "/witness-signoffs/" + entry.id + ".json")
+          throw new Error("Corrupt witness file");
+        records.witnessSignoffs!.push(entry);
+      } else if (/^firearms\/[^/]+\.json$/.test(name)) {
         const file = firearmFile.parse(JSON.parse(content));
         if (path !== this.entryPath("firearms", file.entry.id))
           throw new Error("Corrupt firearm file");
@@ -247,9 +255,15 @@ export class GitJournalStore {
         payload = { ...p, session: patchSession(p.session) };
       else if (action === "session") payload = patchSession(payload);
     }
+    const importedWitnesses = new Map<
+      string,
+      import("../witness/model").WitnessSignoff
+    >();
     const importedPhotos = new Map<string, PhotoAsset>();
     if (action === "import") {
       const data = parseImport(payload);
+      for (const value of data.witnessSignoffs)
+        importedWitnesses.set(value.id, await validateSignoff(value));
       try {
         for (const photo of data.photos)
           importedPhotos.set(photo.id, await validatePhotoAsset(photo));
@@ -520,6 +534,11 @@ export class GitJournalStore {
             );
             imported++;
           }
+        for (const entry of importedWitnesses.values()) {
+          const path = this.path + "/witness-signoffs/" + entry.id + ".json";
+          if (!snapshot.files.has(path))
+            put(path, entry, "MyShotLog: import witness sign-off " + entry.id);
+        }
       } else if (action === "delete-records") {
         z.object({ confirm: z.literal("RADERA") })
           .strict()
@@ -561,6 +580,29 @@ export class GitJournalStore {
           if (change.content === null) nextFiles.delete(change.path);
           else nextFiles.set(change.path, change.content);
         }
+      const retainedSessions = new Set(
+        this.decode({ ...snapshot, files: nextFiles }).sessions.map(
+          (s) => s.id,
+        ),
+      );
+      for (const [path, content] of snapshot.files) {
+        const isGrant = path.startsWith(this.path + "/witness-invitations/");
+        const isSignoff = path.startsWith(this.path + "/witness-signoffs/");
+        if (!isGrant && !isSignoff) continue;
+        const value = (isGrant ? invitationSchema : witnessSchema).parse(
+          JSON.parse(content),
+        );
+        if (
+          action === "delete-records" ||
+          !retainedSessions.has(value.sessionId)
+        ) {
+          entries.push({
+            message: "MyShotLog: remove witness record " + value.id,
+            changes: [{ path, content: null }],
+          });
+          nextFiles.delete(path);
+        }
+      }
       const previousIds = photoIds(records),
         nextIds = photoIds(this.decode({ ...snapshot, files: nextFiles }));
       for (const id of prepared.keys())

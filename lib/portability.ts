@@ -1,5 +1,6 @@
 import { swText, t, type Language } from "@/lib/i18n";
 import { z } from "./validation";
+import { witnessSchema } from "./witness/model";
 import { photoAssetSchema } from "./photos/schema";
 import {
   seriesConditions,
@@ -141,11 +142,20 @@ export const exportSchema = z
     firearms: z.array(firearmSchema).max(1000),
     sessions: z.array(sessionSchema).max(10000),
     recordingContexts: z.array(recordingContextSchema).max(100000),
+    witnessSignoffs: z.array(witnessSchema).max(10000).default([]),
     quickEntries: z.array(quickEntrySchema).max(10000).default([]),
     photos: z.array(photoAssetSchema).max(10000).default([]),
   })
   .strict()
   .superRefine((data, c) => {
+    if (
+      new Set(data.witnessSignoffs.map((w) => w.id)).size !==
+        data.witnessSignoffs.length ||
+      data.witnessSignoffs.some(
+        (w) => !data.sessions.some((s) => s.id === w.sessionId),
+      )
+    )
+      c.addIssue({ code: "custom", message: swText("import.duplicates") });
     // The legacy validator covers all shared references without retaining evaluations.
     const shared = legacyExportSchema.safeParse({
       format: "skytte",
@@ -199,6 +209,7 @@ export function exportRecords(
     recordingContexts: contexts,
     quickEntries: records.quickEntries ?? [],
     photos: records.photos ?? [],
+    witnessSignoffs: records.witnessSignoffs ?? [],
   };
 }
 export function parseImport(value: unknown) {

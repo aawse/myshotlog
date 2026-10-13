@@ -1252,3 +1252,102 @@ progress {
 .photo-pending {
   visibility: hidden;
 }
+
+.witness-page {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 24px 18px 48px;
+}
+.witness-page header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.witness-page header h1 {
+  flex: 1 1 300px;
+}
+.witness-panel select {
+  min-width: 180px;
+}
+.witness-link {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.witness-qr {
+  display: block;
+  width: 360px;
+  max-width: 100%;
+  height: auto;
+  margin: 16px auto;
+}
+.witness-pending {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0;
+}
+.witness-signoff {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  margin-top: 20px;
+}
+.witness-signature {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.witness-result {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.witness-result dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.witness-result dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.witness-form {
+  display: grid;
+  gap: 18px;
+}
+.witness-form canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 3;
+  background: white;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  touch-action: none;
+  cursor: crosshair;
+}
+.witness-confirm {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+}
+.witness-confirm input {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  margin-top: 2px;
+}
+.witness-review {
+  overflow-wrap: anywhere;
+}

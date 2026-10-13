@@ -20,6 +20,7 @@ import {
   type WitnessSignoff,
 } from "./model";
 export class WitnessUnavailable extends Error {}
+export class WitnessSignatureInvalid extends Error {}
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
 export const reviewDigest = (review: WitnessReview) =>
@@ -53,7 +54,7 @@ export function witnessClaims(
   validPath(parsed.data.prefix);
   return parsed.data;
 }
-export async function validateSignature(input: unknown) {
+async function decodeSignature(input: unknown) {
   const signature = signatureSchema.parse(input);
   const buffer = Buffer.from(signature.data, "base64");
   if (
@@ -90,6 +91,13 @@ export async function validateSignature(input: unknown) {
     ...signature,
     data: clean.toString("base64"),
   });
+}
+export async function validateSignature(input: unknown) {
+  try {
+    return await decodeSignature(input);
+  } catch {
+    throw new WitnessSignatureInvalid();
+  }
 }
 export class WitnessStore {
   private path: string;
@@ -203,6 +211,7 @@ export class WitnessStore {
       grant.id !== claims.id ||
       grant.status !== "pending" ||
       grant.tokenHash !== hash(token) ||
+      reviewDigest(grant.snapshot) !== grant.digest ||
       Date.parse(grant.expiresAt) !== claims.exp ||
       Date.parse(grant.expiresAt) <= this.clock() ||
       reviewDigest(

@@ -12,7 +12,8 @@ Svensk träningsjournal för personligt pistolskytte, byggd med Next.js och Reac
 - Mobilanpassad **Snabbserie** som sparas direkt och senare kan kopplas till ett pass med samma datum och gren. Nätanslutning krävs.
 - Ett valfritt tavelfoto per serie. Välj en bild; formatet avgör automatiskt om den kan användas direkt eller behöver konverteras och optimeras i webbläsaren före uppladdning.
 - Konfigurerbar läscache i serverminnet för snabbare journal- och fotohämtning; skrivningar tömmer berörda poster.
-- JSON-export/import med profil, vapen, råresultat, seriens födelseuppgifter, okopplade serier och foton. Bedömningar exporteras inte; vid import beräknas de med reglerna för passdatumet. CSV exporterar resultat från pass till kalkylblad.
+- JSON-export/import med profil, vapen, råresultat, seriens födelseuppgifter, okopplade serier, foton och vittnesintyg. Bedömningar exporteras inte; vid import beräknas de med reglerna för passdatumet. CSV exporterar resultat från pass till kalkylblad.
+- Valfria vittnesintyg för en serie eller ett helt pass. Dela en engångslänk eller QR-kod; vittnet skriver sitt namn och ritar en namnteckning utan konto. Intyget gäller resultaten som visades vid underskriften och ändrar inte märkesbedömningen. Se [vittnesfunktionen](docs/WITNESSES.md).
 - Vercel Web Analytics och Speed Insights via rotlayouten; aktiveras för projektet i Vercels dashboard. Speed Insights rapporterar sidkategorier utan journal-ID:n, frågeparametrar eller fragment.
 
 Appen används för personlig resultatuppföljning. Serier behöver inga signaturer eller verifieringar. Regelunderlag och begränsningar finns i [regeldokumentationen](docs/RULES.md).

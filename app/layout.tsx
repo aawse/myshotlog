@@ -1,7 +1,6 @@
 import { LanguageProvider } from "@/components/language-provider";
 import { getI18n } from "@/lib/i18n-server";
-import { PerformanceInsights } from "@/components/performance-insights";
-import { Analytics } from "@vercel/analytics/next";
+import { AppTelemetry } from "@/components/app-telemetry";
 import { connection } from "next/server";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -29,8 +28,7 @@ export default async function Layout({
       <body>
         <LanguageProvider language={language}>
           {children}
-          <Analytics />
-          {process.env.VERCEL === "1" && <PerformanceInsights />}
+          <AppTelemetry speedEnabled={process.env.VERCEL === "1"} />
         </LanguageProvider>
       </body>
     </html>

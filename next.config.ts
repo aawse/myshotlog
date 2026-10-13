@@ -16,6 +16,13 @@ const config: NextConfig = {
           },
         ],
       },
+      {
+        source: "/witness/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      },
     ];
   },
 };

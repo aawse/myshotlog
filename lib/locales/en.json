@@ -459,6 +459,7 @@
   "witness.inviteTitle": "Witness shooting results",
   "witness.language": "Witness page language",
   "witness.link": "Witness link",
+  "witness.linkHelp": "Share or copy the link now. It will not be shown again after reloading this page.",
   "witness.loading": "Loading witness information…",
   "witness.name": "Witness name",
   "witness.noLink": "Open the witness link or scan the QR code shown by the owner.",

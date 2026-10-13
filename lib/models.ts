@@ -1,3 +1,4 @@
+import type { WitnessSignoff } from "./witness/model";
 import { swText } from "@/lib/i18n";
 import { z } from "./validation";
 import { photoIdSchema, type PhotoAsset } from "./photos/schema";
@@ -347,4 +348,5 @@ export type Records = {
   assessments: Assessment[];
   quickEntries?: QuickEntry[];
   photos?: PhotoAsset[];
+  witnessSignoffs?: WitnessSignoff[];
 };

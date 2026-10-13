@@ -459,6 +459,7 @@
   "witness.inviteTitle": "Intyga skytteresultat",
   "witness.language": "Vittnessidans språk",
   "witness.link": "Länk till vittnet",
+  "witness.linkHelp": "Dela eller kopiera länken nu. Den visas inte igen efter att sidan har laddats om.",
   "witness.loading": "Vittnesuppgifterna hämtas…",
   "witness.name": "Vittnets namn",
   "witness.noLink": "Öppna vittneslänken eller skanna QR-koden som ägaren visar.",

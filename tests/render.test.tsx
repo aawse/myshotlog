@@ -13,6 +13,12 @@ vi.mock("../lib/data", () => ({ records: vi.fn() }));
 vi.mock("../lib/auth/server", () => ({
   configured: () => true,
   currentUser: async () => ({ id: "test" }),
+  authenticated: async () => ({
+    user: { id: "test", githubId: "1", login: "test" },
+  }),
+}));
+vi.mock("../lib/witness/server", () => ({
+  ownerWitnessStore: async () => ({ invitations: async () => [] }),
 }));
 vi.mock("../app/auth/actions", () => ({ signOut: async () => {} }));
 import { records } from "../lib/data";

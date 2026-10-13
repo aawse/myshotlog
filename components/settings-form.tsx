@@ -48,15 +48,23 @@ export function SettingsForm({ profile }: { profile: Profile }) {
         }
         return items;
       };
-      const [profile, firearms, sessions, contexts, quickEntries, photos] =
-        await Promise.all([
-          read("profile"),
-          all("firearms"),
-          all("sessions"),
-          format === "json" ? all("recordingContexts") : [],
-          all("quickEntries"),
-          format === "json" ? all("photos") : [],
-        ]);
+      const [
+        profile,
+        firearms,
+        sessions,
+        contexts,
+        quickEntries,
+        photos,
+        witnessSignoffs,
+      ] = await Promise.all([
+        read("profile"),
+        all("firearms"),
+        all("sessions"),
+        format === "json" ? all("recordingContexts") : [],
+        all("quickEntries"),
+        format === "json" ? all("photos") : [],
+        format === "json" ? all("witnessSignoffs") : [],
+      ]);
       const data: Records = {
         profile,
         firearms,
@@ -64,6 +72,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
         assessments: [],
         quickEntries,
         photos,
+        witnessSignoffs,
       };
       const blob = new Blob(
         [
