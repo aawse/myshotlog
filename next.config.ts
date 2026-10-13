@@ -4,7 +4,7 @@ const config: NextConfig = {
   trailingSlash: true,
   outputFileTracingIncludes: {
     "/api/sessions/*/pdf": [
-      "./lib/pdf/assets/*.ttf",
+      "./lib/fonts/DidactGothic-Regular.ttf",
       "./public/brand/MyShotLog-logo.svg",
     ],
   },

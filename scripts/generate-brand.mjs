@@ -4,9 +4,10 @@ import fontkit from "@pdf-lib/fontkit";
 import sharp from "sharp";
 import { fileURLToPath } from "node:url";
 
-const green = "#315d43",
-  ink = "#233329",
-  gold = "#bc9864";
+const design = JSON.parse(
+  await readFile(new URL("../lib/brand/design.json", import.meta.url), "utf8"),
+);
+const { green, ink, gold } = design.colours;
 const font = fontkit.create(
   await readFile(
     new URL("../lib/fonts/DidactGothic-Regular.ttf", import.meta.url),
@@ -63,14 +64,19 @@ const white = await sharp(
   .png()
   .toBuffer();
 await sharp({
-  create: { width: 1100, height: 740, channels: 4, background: "#f5f6f1" },
+  create: {
+    width: 1100,
+    height: 740,
+    channels: 4,
+    background: design.colours.background,
+  },
 })
   .composite([
     { input: lockup, left: 80, top: 45 },
     { input: icon, left: 100, top: 315 },
     {
       input: Buffer.from(
-        '<svg width="1100" height="290"><rect width="1100" height="290" fill="#233329"/></svg>',
+        '<svg width="1100" height="290"><rect width="1100" height="290" fill="${ink}"/></svg>',
       ),
       left: 0,
       top: 450,

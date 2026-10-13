@@ -105,6 +105,14 @@ it.each(["sv", "en"] as const)(
         page.node.Resources()!.lookup(PDFName.of("XObject"), PDFDict).keys()
           .length,
       ).toBeGreaterThanOrEqual(3);
+      // Printed text must use the same embedded family as the app and website.
+      const fonts = page.node.Resources()!.lookup(PDFName.of("Font"), PDFDict);
+      for (const key of fonts.keys()) {
+        const face = fonts.lookup(key, PDFDict);
+        expect(
+          face.lookup(PDFName.of("BaseFont"), PDFName).decodeText(),
+        ).toMatch(/^DidactGothic-Regular/);
+      }
       const annotations = page.node.lookup(PDFName.of("Annots"), PDFArray);
       const annotation = annotations.lookup(0, PDFDict);
       expect(

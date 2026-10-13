@@ -19,6 +19,8 @@ Svensk träningsjournal för personligt pistolskytte, byggd med Next.js och Reac
 
 Appen används för personlig resultatuppföljning. Serier behöver inga signaturer eller verifieringar. Regelunderlag och begränsningar finns i [regeldokumentationen](docs/RULES.md).
 
+Designen delas med den publika webbplatsen och PDF-utskrifterna. Se [varumärkes- och designsynkronisering](docs/BRANDING.md) för uppdateringar och kontroll av typsnitt, färger och logotyper.
+
 ## Lokal utveckling
 
 Installera **Node.js 24** och **Git**. Samma npm-kommandon används på Windows, macOS och Linux; WSL krävs inte. Kör från projektets rot:

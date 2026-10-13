@@ -15,14 +15,14 @@ import { sessionSeriesRatings } from "@/lib/session-medals";
 import { seriesConditions } from "@/lib/models";
 import { translator } from "@/lib/i18n";
 import { caliberName, disciplineName, targetName } from "@/lib/i18n-domain";
+import design from "@/lib/brand/design.json";
 import { witnessCurrent } from "@/lib/witness/model";
 
 // Assets only: generated PDFs and journal contents are never cached or written to disk.
 let assets: Promise<Buffer[]> | undefined;
 function loadAssets() {
   return (assets ??= Promise.all([
-    readFile(path.join(process.cwd(), "lib/pdf/assets/DejaVuSans.ttf")),
-    readFile(path.join(process.cwd(), "lib/pdf/assets/DejaVuSans-Bold.ttf")),
+    readFile(path.join(process.cwd(), "lib/fonts", design.font.file)),
     readFile(path.join(process.cwd(), "public/brand/MyShotLog-logo.svg")).then(
       (bytes) => sharp(bytes).resize({ width: 600 }).png().toBuffer(),
     ),
@@ -40,9 +40,10 @@ export async function createSessionPdf(
   const { tr, language, locale } = translator(data.profile.language);
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
-  const [regularBytes, boldBytes, logoBytes] = await loadAssets();
-  const regular = await doc.embedFont(regularBytes, { subset: true });
-  const bold = await doc.embedFont(boldBytes, { subset: true });
+  const [fontBytes, logoBytes] = await loadAssets();
+  const regular = await doc.embedFont(fontBytes, { subset: true });
+  // Didact Gothic has one regular face; use size and colour for print hierarchy.
+  const emphasis = regular;
   const logo = await doc.embedPng(logoBytes);
   const qr = await doc.embedPng(
     await QRCode.toBuffer(sessionUrl, {
@@ -52,10 +53,17 @@ export async function createSessionPdf(
       width: 300,
     }),
   );
-  const ink = rgb(0.14, 0.2, 0.16),
-    green = rgb(0.19, 0.36, 0.26),
-    muted = rgb(0.38, 0.43, 0.4),
-    line = rgb(0.86, 0.89, 0.86);
+  function colour(value: string) {
+    return rgb(
+      parseInt(value.slice(1, 3), 16) / 255,
+      parseInt(value.slice(3, 5), 16) / 255,
+      parseInt(value.slice(5, 7), 16) / 255,
+    );
+  }
+  const ink = colour(design.colours.ink),
+    green = colour(design.colours.green),
+    muted = colour(design.colours.muted),
+    line = colour(design.colours.line);
   const width = 515,
     left = 40,
     bottom = 108;
@@ -79,10 +87,10 @@ export async function createSessionPdf(
       height: (150 * logo.height) / logo.width,
     });
     page.drawText(tr("print.title"), {
-      x: 365,
+      x: left + width - emphasis.widthOfTextAtSize(tr("print.title"), 16),
       y: 799,
       size: 16,
-      font: bold,
+      font: emphasis,
       color: green,
     });
     page.drawLine({
@@ -139,7 +147,7 @@ export async function createSessionPdf(
   function heading(value: string) {
     ensure(45);
     y -= 10;
-    text(value, 13, bold, green);
+    text(value, 13, emphasis, green);
     y -= 4;
   }
   function field(label: string, value: string) {
@@ -167,22 +175,25 @@ export async function createSessionPdf(
       y: y - 12,
       width,
       height: 26,
-      color: rgb(0.92, 0.95, 0.92),
+      color: colour(design.colours.pale),
     });
-    [0, 210, 257, 327, 419].forEach((x, i) =>
+    [0, 252, 322, 414, width - 5].forEach((x, i) =>
       page.drawText(cols[i], {
-        x: left + x + 5,
+        x:
+          i === 0
+            ? left + 5
+            : left + x - emphasis.widthOfTextAtSize(cols[i], 8),
         y: y - 2,
         size: 8,
-        font: bold,
+        font: emphasis,
         color: green,
       }),
     );
     y -= 32;
   }
   newPage();
-  text(date + (session.time ? " · " + session.time : ""), 22, bold, green);
-  text(session.location || tr("common.noLocation"), 16, bold);
+  text(date + (session.time ? " · " + session.time : ""), 22, emphasis, green);
+  text(session.location || tr("common.noLocation"), 16, emphasis);
   y -= 8;
   if (data.profile.displayName)
     field(tr("print.shooter"), data.profile.displayName);
@@ -245,7 +256,7 @@ export async function createSessionPdf(
           })
         : "",
     ].filter(Boolean);
-    const labelLines = lines(r.label, 195, bold, 10);
+    const labelLines = lines(r.label, 195, emphasis, 10);
     const detailLines = details.flatMap((value) =>
       lines(value, width - 10, regular, 8),
     );
@@ -260,7 +271,7 @@ export async function createSessionPdf(
         x: left + 5,
         y: y - i * 14,
         size: 10,
-        font: bold,
+        font: emphasis,
         color: ink,
       }),
     );
@@ -270,9 +281,9 @@ export async function createSessionPdf(
       (r.hits ?? "-") + " / " + (r.figures ?? "-"),
       medal ? tr(`level.${medal}`) : "-",
     ];
-    [210, 257, 327, 419].forEach((x, i) =>
+    [252, 322, 414, width - 5].forEach((x, i) =>
       page.drawText(cells[i], {
-        x: left + x + 5,
+        x: left + x - regular.widthOfTextAtSize(cells[i], 10),
         y,
         size: 10,
         font: regular,
@@ -321,18 +332,18 @@ export async function createSessionPdf(
         data.profile.timezone +
         ")",
       11,
-      bold,
+      emphasis,
     );
     text(
       w.resultId ? w.snapshot.results[0].label : tr("witness.scopeSession"),
       10,
-      bold,
+      emphasis,
     );
     text(
       tr(current ? "witness.current" : "witness.changed"),
       9,
       regular,
-      current ? green : rgb(0.65, 0.17, 0.14),
+      current ? green : colour(design.colours.danger),
     );
     // The original attestation is kept in the language actually signed.
     text(w.statement, 9);
@@ -347,7 +358,7 @@ export async function createSessionPdf(
     });
     y -= signature.height + 15;
     if (!current) {
-      text(tr("print.original"), 9, bold);
+      text(tr("print.original"), 9, emphasis);
       text(
         [
           w.snapshot.date,
@@ -421,7 +432,7 @@ export async function createSessionPdf(
       x: left,
       y: 76,
       size: 9,
-      font: bold,
+      font: emphasis,
       color: green,
     });
     p.drawText(

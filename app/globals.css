@@ -1,15 +1,6 @@
+@import "./brand.css";
+
 :root {
-  --bg: #f6f8f5;
-  --ink: #233329;
-  --muted: #647164;
-  --line: #d9e0d9;
-  --green: #315d43;
-  --green-light: #e9efe6;
-  --gold: #bc9864;
-  --white: #fff;
-  font-family: var(--font-didact-gothic), Arial, sans-serif;
-  color: var(--ink);
-  background: var(--bg);
   font-size: 14px;
 }
 * {
@@ -31,10 +22,10 @@ textarea {
 button,
 .button {
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   background: var(--green);
   color: white;
-  font-weight: 600;
+  font-weight: var(--weight-emphasis);
   padding: 13px 19px;
   display: inline-flex;
   align-items: center;
@@ -61,13 +52,13 @@ button:disabled {
   color: var(--muted);
   padding: 8px 0;
   border: none;
-  font-weight: 400;
+  font-weight: var(--weight-body);
 }
 .danger {
-  color: #a44736;
+  color: var(--danger);
 }
 .danger-button {
-  background: #a44736;
+  background: var(--danger);
 }
 .shell {
   display: flex;
@@ -75,7 +66,7 @@ button:disabled {
 }
 .sidebar {
   width: 236px;
-  background: #fcfdfb;
+  background: var(--surface);
   border-right: 1px solid var(--line);
   position: fixed;
   inset: 0 auto 0 0;
@@ -98,7 +89,7 @@ button:disabled {
 .brand:focus-visible {
   outline: 2px solid var(--green);
   outline-offset: 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
 }
 .nav-caption {
   font-size: 9px;
@@ -116,7 +107,7 @@ button:disabled {
   gap: 13px;
   padding: 13px 12px;
   color: #5c695e;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
 }
 .sidebar nav a:hover {
   background: var(--green-light);
@@ -169,7 +160,7 @@ button:disabled {
 .eyebrow {
   display: block;
   font-size: 9px;
-  font-weight: 700;
+  font-weight: var(--weight-emphasis);
   letter-spacing: 1.7px;
   color: var(--muted);
   margin-bottom: 11px;
@@ -177,14 +168,14 @@ button:disabled {
 h1 {
   font-size: 30px;
   letter-spacing: -0.02em;
-  font-weight: 400;
+  font-weight: var(--weight-body);
   margin: 0 0 9px;
   line-height: 1.2;
 }
 h2 {
   font-size: 19px;
   letter-spacing: -0.01em;
-  font-weight: 400;
+  font-weight: var(--weight-body);
   margin: 0 0 12px;
 }
 h3 {
@@ -202,7 +193,7 @@ p {
 .hero-panel {
   background: #e9eee5;
   border: 1px solid #e0e7da;
-  border-radius: 4px;
+  border-radius: var(--radius-panel);
   position: relative;
   overflow: hidden;
   min-height: 240px;
@@ -229,7 +220,7 @@ p {
   align-items: center;
   gap: 12px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: var(--weight-emphasis);
   margin-top: 17px;
 }
 .target-art {
@@ -296,7 +287,7 @@ p {
 .card {
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-panel);
   padding: 25px;
   margin-bottom: 22px;
 }
@@ -326,7 +317,7 @@ p {
 .stat strong {
   font-variant-numeric: tabular-nums;
   font-size: 30px;
-  font-weight: 550;
+  font-weight: var(--weight-body);
   letter-spacing: -0.02em;
 }
 .stat small {
@@ -356,7 +347,7 @@ p {
   align-items: center;
   background: #f2f4ef;
   padding: 5px 9px;
-  border-radius: 5px;
+  border-radius: var(--radius-control);
   font-size: 10px;
   font-weight: 500;
   color: #6c7965;
@@ -414,7 +405,7 @@ tbody tr:last-child td {
 }
 .row-title {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: var(--weight-emphasis);
 }
 .subline {
   display: block;
@@ -428,7 +419,7 @@ tbody tr:last-child td {
   gap: 7px;
   font-size: 12px;
   color: var(--green);
-  font-weight: 600;
+  font-weight: var(--weight-emphasis);
 }
 .empty {
   text-align: center;
@@ -520,7 +511,7 @@ textarea {
   width: 100%;
   background: white;
   border: 1px solid #dbe1d6;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   padding: 11px 12px;
   color: var(--ink);
   min-height: 42px;
@@ -541,7 +532,7 @@ textarea {
   align-items: flex-start;
   line-height: 1.7;
   font-size: 11px;
-  font-weight: 400;
+  font-weight: var(--weight-body);
 }
 .checkbox input {
   width: 17px;
@@ -552,13 +543,13 @@ textarea {
 }
 .result-entry {
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   margin: 20px 0;
   padding: 20px;
 }
 legend {
   padding: 0 8px;
-  font-weight: 600;
+  font-weight: var(--weight-emphasis);
   font-size: 12px;
 }
 details {
@@ -575,7 +566,7 @@ summary {
   border: 1px solid #d8e0ce;
   color: #566d45;
   padding: 15px 18px;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   line-height: 1.7;
   font-size: 12px;
   margin: 16px 0;
@@ -607,7 +598,7 @@ summary {
   min-width: 220px;
   border: 1px solid var(--line);
   padding-left: 13px;
-  border-radius: 4px;
+  border-radius: var(--radius-control);
 }
 .search input {
   border: none;
@@ -675,13 +666,13 @@ pre {
 .medal {
   display: block;
   font-size: 50px;
-  color: #aa9164;
+  color: var(--medal-gold);
 }
 .medal.silver {
-  color: #a6ada5;
+  color: var(--medal-silver);
 }
 .medal.bronze {
-  color: #ae8163;
+  color: var(--medal-bronze);
 }
 .qualification-grid label {
   margin: 18px 0;
@@ -908,13 +899,13 @@ progress {
   color: var(--ink);
 }
 .series-medal.gold {
-  color: #a27b32;
+  color: var(--medal-gold);
 }
 .series-medal.silver {
-  color: #7c868f;
+  color: var(--medal-silver);
 }
 .series-medal.bronze {
-  color: #a86e45;
+  color: var(--medal-bronze);
 }
 
 .session-list-row {
@@ -960,7 +951,7 @@ progress {
   overflow-y: auto;
   background: white;
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   box-shadow: 0 8px 22px #23332920;
 }
 .location-suggestions button {
@@ -972,8 +963,8 @@ progress {
   background: white;
   color: var(--ink);
   border: 0;
-  border-radius: 4px;
-  font-weight: 400;
+  border-radius: var(--radius-control);
+  font-weight: var(--weight-body);
 }
 .location-suggestions button:hover,
 .location-suggestions button[aria-selected="true"] {
@@ -1010,7 +1001,7 @@ progress {
 .quick-score-grid input {
   min-height: 76px;
   font-size: 32px;
-  font-weight: 700;
+  font-weight: var(--weight-emphasis);
   text-align: center;
 }
 .quick-score input {
@@ -1063,7 +1054,7 @@ progress {
 }
 .quick-series-choice small {
   color: var(--muted);
-  font-weight: 400;
+  font-weight: var(--weight-body);
   line-height: 1.5;
 }
 .quick-remove {
@@ -1123,7 +1114,7 @@ progress {
 .photo-label {
   display: block;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: var(--weight-emphasis);
   margin-bottom: 12px;
 }
 .photo-actions {
@@ -1144,8 +1135,8 @@ progress {
   max-width: 320px;
   height: 240px;
   object-fit: contain;
-  background: #f5f6f3;
-  border-radius: 8px;
+  background: var(--bg);
+  border-radius: var(--radius-overlay);
   margin-bottom: 12px;
 }
 .series-target-photo {
@@ -1153,8 +1144,8 @@ progress {
   width: 120px;
   height: 90px;
   object-fit: contain;
-  background: #f5f6f3;
-  border-radius: 4px;
+  background: var(--bg);
+  border-radius: var(--radius-control);
   margin-top: 10px;
 }
 
@@ -1208,7 +1199,7 @@ progress {
   max-height: calc(100dvh - 24px);
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-overlay);
   color: var(--ink);
   background: var(--white);
 }
@@ -1277,7 +1268,7 @@ progress {
   margin: 20px 0;
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-overlay);
 }
 .witness-qr {
   display: block;
@@ -1305,7 +1296,7 @@ progress {
   height: auto;
   background: white;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-overlay);
   margin: 12px 0;
 }
 .witness-result {
@@ -1319,7 +1310,7 @@ progress {
 }
 .witness-result dd {
   margin: 4px 0 0;
-  font-weight: 600;
+  font-weight: var(--weight-emphasis);
   overflow-wrap: anywhere;
 }
 .witness-form {
@@ -1333,7 +1324,7 @@ progress {
   aspect-ratio: 8 / 3;
   background: white;
   border: 2px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   touch-action: none;
   cursor: crosshair;
 }
@@ -1361,7 +1352,7 @@ progress {
 }
 .assessment-cross {
   display: inline-flex;
-  color: #b42318;
+  color: var(--danger);
 }
 
 /* Align recorded values on a consistent edge, like a shooting protocol. */
