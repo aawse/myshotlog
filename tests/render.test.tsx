@@ -157,6 +157,8 @@ it("shows earned points and medal/cross icons without threshold comparisons", as
     </LanguageProvider>,
   );
   expect(html).toContain("45 poäng");
+  expect(html).not.toContain("Delprestation uppfylld");
+  expect(html).not.toContain("Kraven ej uppfyllda");
   expect(html).not.toContain("45 av minst 34 poäng");
   expect(html).toContain('class="series-medal bronze"');
   expect(html).toContain('class="series-medal silver"');
@@ -172,4 +174,5 @@ it("shows earned points and medal/cross icons without threshold comparisons", as
     await Details({ params: Promise.resolve({ id: session.id }) }),
   );
   expect(failed.match(/class="assessment-cross"/g)).toHaveLength(3);
+  expect(failed).not.toContain("Kraven ej uppfyllda");
 });

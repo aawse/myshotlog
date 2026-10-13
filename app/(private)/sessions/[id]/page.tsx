@@ -25,8 +25,6 @@ export default async function Page({
   const labels = {
     "not-applicable": tr("assessment.notApplicable"),
     "not-evaluated": tr("assessment.notEvaluated"),
-    "not-met": tr("assessment.notMet"),
-    met: tr("assessment.met"),
   };
   const data = await records();
   const s = data.sessions.find((s) => s.id === id);
@@ -202,11 +200,10 @@ export default async function Page({
                 : result.points - (result.penaltyPoints ?? 0);
             return (
               <div className="assessment" key={a.id}>
-                <span
-                  className={"pill " + (a.status === "met" ? "success" : "")}
-                >
-                  {labels[a.status]}
-                </span>
+                {(a.status === "not-evaluated" ||
+                  a.status === "not-applicable") && (
+                  <span className="pill">{labels[a.status]}</span>
+                )}
                 <strong>
                   <span className="calculation-grade">
                     {a.status === "met" ? (
