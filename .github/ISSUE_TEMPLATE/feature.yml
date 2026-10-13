@@ -1,0 +1,31 @@
+name: Improvement suggestion
+description: Suggest an improvement to MyShotLog. Swedish and English are welcome.
+title: "[Feature] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem you want to solve, your proposal and any alternatives. More detail makes the suggestion easier to assess. Search existing issues first.
+        Issues are public. Keep passwords, tokens, private repository details and personal journal records out of the report.
+        Report security vulnerabilities privately to security@aaw.se.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: App version, browser and device
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional details and alternatives
+      description: Add context and alternatives. For a long in-app report, paste the copied full report here.

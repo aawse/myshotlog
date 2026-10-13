@@ -1,0 +1,40 @@
+name: Bug report
+description: Describe a problem with MyShotLog. Swedish and English are welcome.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide as much detail as possible: reproduction steps, expected and actual behavior, frequency, and relevant error messages. Search existing issues first.
+        Issues are public. Do not include passwords, tokens, private repository details, birth dates, journal exports or identifiable target photos. Redact screenshots before attaching them.
+        Report security vulnerabilities privately to security@aaw.se.
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened?
+      description: Describe the issue, its frequency and any error messages.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open…\n2. Select…\n3. The problem appears…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: App version, browser and device
+      description: Include the deployed commit, browser version, operating system and whether you use a phone or computer. No installation URL or account ID is needed.
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional details
+      description: Add redacted screenshots and relevant context. For a long in-app report, paste the copied full report here.
