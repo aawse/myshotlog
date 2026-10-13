@@ -1,0 +1,281 @@
+import "server-only";
+import { createHash } from "node:crypto";
+import { z } from "@/lib/validation";
+import type { UpdateStatus, UpdateErrorCode } from "./model";
+export const upstreamRepository = "aawse/myshotlog";
+const sha = z.string().regex(/^[a-f0-9]{40}$/);
+const repository = z
+  .string()
+  .regex(/^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/);
+const branchName = z
+  .string()
+  .min(1)
+  .max(200)
+  .refine(
+    (value) =>
+      !/[\s~^:?*\[\\]/.test(value) &&
+      !value.includes("..") &&
+      !value.startsWith("-") &&
+      !value.endsWith("/") &&
+      !value.endsWith(".lock"),
+  );
+export class UpdateError extends Error {
+  constructor(
+    public readonly code: UpdateErrorCode,
+    public readonly status = 503,
+  ) {
+    super(code);
+  }
+}
+export type UpdateConfig = {
+  repository: string;
+  branch?: string;
+  deployedSha: string;
+  deployedBranch?: string;
+  token?: string;
+  admins?: string[];
+  preview: boolean;
+};
+export function updateConfig(): UpdateConfig | null {
+  const inferred =
+    process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG
+      ? process.env.VERCEL_GIT_REPO_OWNER +
+        "/" +
+        process.env.VERCEL_GIT_REPO_SLUG
+      : undefined;
+  const repo = process.env.GITHUB_CODE_REPOSITORY || inferred;
+  const deployed =
+    process.env.MYSHOTLOG_DEPLOYED_COMMIT || process.env.VERCEL_GIT_COMMIT_SHA;
+  if (!repo || !deployed) return null;
+  if (
+    !repository.safeParse(repo).success ||
+    !sha.safeParse(deployed).success ||
+    repo.toLowerCase() ===
+      (process.env.GIT_DATABASE_REPOSITORY ?? "").toLowerCase()
+  )
+    throw new UpdateError("configuration");
+  const branch = process.env.GITHUB_CODE_BRANCH || undefined;
+  if (branch && !branchName.safeParse(branch).success)
+    throw new UpdateError("configuration");
+  const admins = process.env.GITHUB_UPDATE_ADMIN_IDS?.split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  if (admins?.some((id) => !/^[1-9][0-9]{0,19}$/.test(id)))
+    throw new UpdateError("configuration");
+  return {
+    repository: repo,
+    branch,
+    deployedSha: deployed,
+    deployedBranch: process.env.VERCEL_GIT_COMMIT_REF,
+    token: process.env.GITHUB_CODE_TOKEN || undefined,
+    admins,
+    preview: process.env.VERCEL_ENV === "preview",
+  };
+}
+const metadataSchema = z.object({
+  full_name: repository,
+  default_branch: branchName,
+  fork: z.boolean(),
+  owner: z.object({ id: z.number().int().positive() }),
+  parent: z
+    .object({ full_name: repository, default_branch: branchName })
+    .optional(),
+});
+const compareSchema = z.object({
+  ahead_by: z.number().int().nonnegative(),
+  commits: z.array(
+    z.object({ sha, commit: z.object({ message: z.string() }) }),
+  ),
+});
+export class GitHubUpdates {
+  constructor(
+    readonly config: UpdateConfig,
+    readonly request: typeof fetch = fetch,
+  ) {}
+  private async api(route: string, body?: unknown) {
+    let response: Response;
+    try {
+      response = await this.request("https://api.github.com/repos/" + route, {
+        method: body ? "POST" : "GET",
+        headers: {
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2026-03-10",
+          ...(this.config.token
+            ? { Authorization: "Bearer " + this.config.token }
+            : {}),
+          ...(body ? { "Content-Type": "application/json" } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        cache: "no-store",
+        redirect: "error",
+        signal: AbortSignal.timeout(12000),
+      });
+    } catch {
+      throw new UpdateError("unavailable");
+    }
+    if (!response.ok) {
+      if (response.status === 409 && body)
+        throw new UpdateError("conflict", 409);
+      if ([401, 403].includes(response.status))
+        throw new UpdateError("permissions", 403);
+      if (response.status === 422 && body)
+        throw new UpdateError("conflict", 409);
+      throw new UpdateError("unavailable");
+    }
+    if (response.status === 204) return {};
+    try {
+      return await response.json();
+    } catch {
+      throw new UpdateError("unavailable");
+    }
+  }
+  async inspect(githubId: string): Promise<UpdateStatus & { ownerId: string }> {
+    try {
+      const [forkMetadata, upstreamMetadata] = await Promise.all([
+        this.api(this.config.repository),
+        this.api(upstreamRepository),
+      ]);
+      const meta = metadataSchema.parse(forkMetadata);
+      if (meta.full_name.toLowerCase() !== this.config.repository.toLowerCase())
+        throw new UpdateError("configuration");
+      const upstream = metadataSchema.parse(upstreamMetadata);
+      const branch = this.config.branch ?? meta.default_branch;
+      const [forkHead, upstreamHead] = await Promise.all([
+        this.api(
+          this.config.repository + "/branches/" + encodeURIComponent(branch),
+        ),
+        this.api(
+          upstreamRepository +
+            "/branches/" +
+            encodeURIComponent(upstream.default_branch),
+        ),
+      ]);
+      const head = z.object({ commit: z.object({ sha }) }).parse(forkHead)
+        .commit.sha;
+      const upstreamSha = z
+        .object({ commit: z.object({ sha }) })
+        .parse(upstreamHead).commit.sha;
+      const compare = async (base: string) =>
+        base === upstreamSha
+          ? { ahead_by: 0, commits: [] }
+          : compareSchema.parse(
+              await this.api(
+                this.config.repository +
+                  "/compare/" +
+                  encodeURIComponent(base + "..." + upstreamSha) +
+                  "?per_page=100",
+              ),
+            );
+      const [running, fork] = await Promise.all([
+        compare(this.config.deployedSha),
+        head === this.config.deployedSha
+          ? Promise.resolve(undefined)
+          : compare(head),
+      ]);
+      const validFork =
+        meta.fork &&
+        meta.parent?.full_name.toLowerCase() === upstreamRepository;
+      const owner = this.config.admins?.length
+        ? this.config.admins.includes(githubId)
+        : String(meta.owner.id) === githubId;
+      const preview =
+        this.config.preview ||
+        Boolean(
+          this.config.deployedBranch && this.config.deployedBranch !== branch,
+        );
+      const block: UpdateStatus["block"] = !validFork
+        ? "fork"
+        : preview
+          ? "preview"
+          : !owner
+            ? "owner"
+            : !this.config.token
+              ? "token"
+              : undefined;
+      return {
+        ownerId: String(meta.owner.id),
+        configured: true,
+        repository: meta.full_name,
+        branch,
+        deployedSha: this.config.deployedSha,
+        upstreamSha,
+        forkSha: head,
+        upstreamAhead: running.ahead_by,
+        forkAhead: (fork ?? running).ahead_by,
+        canSync: !block,
+        block,
+        checkedAt: new Date().toISOString(),
+        commits: running.commits
+          .slice(-5)
+          .reverse()
+          .map((c) => ({
+            sha: c.sha,
+            message: c.commit.message.split("\n")[0].slice(0, 240),
+          })),
+      };
+    } catch (error) {
+      if (error instanceof UpdateError) throw error;
+      throw new UpdateError("unavailable");
+    }
+  }
+  async sync(githubId: string, expectedSha: string) {
+    const status = await this.inspect(githubId);
+    if (!status.canSync)
+      throw new UpdateError(
+        status.block === "owner" ? "forbidden" : "configuration",
+        403,
+      );
+    if (status.upstreamSha !== expectedSha)
+      throw new UpdateError("changed", 409);
+    if (!status.forkAhead) return { synced: true, changed: false };
+    // GitHub's non-forcing fork merge preserves local commits and reports conflicts.
+    await this.api(this.config.repository + "/merges", {
+      base: status.branch,
+      head: expectedSha,
+    });
+    return { synced: true, changed: true };
+  }
+}
+// Cache public code metadata, never tokens or user permissions in responses.
+let snapshot:
+  | {
+      key: string;
+      until: number;
+      promise: Promise<UpdateStatus & { ownerId: string }>;
+    }
+  | undefined;
+export async function updateStatus(
+  githubId: string,
+  config = updateConfig(),
+): Promise<UpdateStatus> {
+  if (!config)
+    return {
+      configured: false,
+      upstreamAhead: 0,
+      forkAhead: 0,
+      canSync: false,
+      block: "configuration",
+      commits: [],
+    };
+  const key = createHash("sha256").update(JSON.stringify(config)).digest("hex");
+  if (!snapshot || snapshot.key !== key || snapshot.until < Date.now()) {
+    const promise = new GitHubUpdates(config).inspect("");
+    snapshot = { key, until: Date.now() + 300000, promise };
+    promise.catch(() => {
+      if (snapshot?.promise === promise) snapshot = undefined;
+    });
+  }
+  const { ownerId, ...base } = await snapshot.promise;
+  const owner = config.admins?.length
+    ? config.admins.includes(githubId)
+    : ownerId === githubId;
+  if (base.block !== "owner") return base;
+  return {
+    ...base,
+    canSync: owner && Boolean(config.token),
+    block: owner ? (config.token ? undefined : "token") : "owner",
+  };
+}
+export function clearUpdateCache() {
+  snapshot = undefined;
+}
