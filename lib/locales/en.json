@@ -118,7 +118,6 @@
   "discipline.sra": "SRA",
   "domain.appendix": "Appendix 1 §5.1.1.1",
   "domain.optical": "A optical",
-  "domain.otherGroup": "Other / program-specific",
   "domain.separateRules": "Separate rules",
   "error.loadHeading": "The journal could not be loaded",
   "error.loadHelp": "Check your connection and the server's Git repository and branch configuration.",

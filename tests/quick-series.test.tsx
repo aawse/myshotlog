@@ -13,7 +13,7 @@ import {
 } from "../lib/git-database/types";
 import { exportRecords, parseImport } from "../lib/portability";
 import { quickEntryInputSchema } from "../lib/models";
-import { profile, session, result } from "./fixtures";
+import { profile, session } from "./fixtures";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh() {}, push() {} }),
 }));

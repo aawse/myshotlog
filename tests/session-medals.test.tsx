@@ -162,13 +162,9 @@ it("preserves the dated evaluator's grade with captured birth information and de
   const historical = conclusion(result.id, "gold", "met", {
     input: { birthDate: null, birthYear: 1970 },
   });
-  const assessments = recordSeries(
-    scored,
-    scored.results[0],
-    profile,
-    [historical],
-    false,
-  ).map((a) => ({
+  const assessments = recordSeries(scored, scored.results[0], profile, [
+    historical,
+  ]).map((a) => ({
     ...a,
     id: crypto.randomUUID(),
     createdAt: "2026-10-10T12:00:00Z",

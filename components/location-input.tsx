@@ -1,6 +1,6 @@
 "use client";
 import { useI18n } from "@/components/language-provider";
-import React, { useId, useState } from "react";
+import { useId, useState } from "react";
 import { matchingLocations } from "../lib/locations";
 export function LocationInput({
   value,

@@ -1,4 +1,3 @@
-import React from "react";
 import { it, expect, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 vi.mock("next/navigation", () => ({

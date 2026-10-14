@@ -118,7 +118,6 @@
   "discipline.sra": "SRA",
   "domain.appendix": "Bilaga 1 §5.1.1.1",
   "domain.optical": "A optisk",
-  "domain.otherGroup": "Övrig / programspecifik",
   "domain.separateRules": "Separat regelverk",
   "error.loadHeading": "Journalen kunde inte laddas",
   "error.loadHelp": "Kontrollera anslutningen och att serverns Git-repository och branch är korrekt konfigurerade.",

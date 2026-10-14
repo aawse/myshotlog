@@ -80,20 +80,3 @@ export const disciplineIds = disciplines.map((d) => d.id) as [
 export function discipline(id: string) {
   return disciplines.find((d) => d.id === id)!;
 }
-export const weaponGroups = [
-  "A",
-  swText("domain.optical"),
-  "B",
-  "C",
-  "R",
-  "M1",
-  "M2",
-  "M3",
-  "M4",
-  "M5",
-  "M6",
-  "M7",
-  "M8",
-  "M9",
-  swText("domain.otherGroup"),
-] as const;

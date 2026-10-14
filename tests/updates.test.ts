@@ -104,7 +104,7 @@ it("reads upstream and compares pinned fork-network commits without the fork tok
     `https://api.github.com/repos/aawse/myshotlog/compare/tester:${deployed}...aawse:${upstream}?per_page=100`,
     `https://api.github.com/repos/aawse/myshotlog/compare/tester:${fork}...aawse:${upstream}?per_page=100`,
   ]);
-  for (const [url, init] of request.mock.calls) {
+  for (const [, init] of request.mock.calls) {
     const authorization = new Headers(init?.headers).get("Authorization");
     expect(authorization).toBe(null);
   }

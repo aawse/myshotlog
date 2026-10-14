@@ -91,7 +91,7 @@ describe("SPSF 2026 normal badge path", () => {
       );
   });
   it("separates annual counts and weapon groups", () => {
-    const p = [...Array(3)].map((_, i) => ({
+    const p = [...Array(3)].map(() => ({
       ...session,
       id: crypto.randomUUID(),
       results: [{ ...result, id: crypto.randomUUID() }],
@@ -231,15 +231,14 @@ it("personal series need no supervisor, confirmation or signature", () => {
 });
 it("checks all three levels for every combination of confirmation and evidence, including legacy callers", () => {
   for (const conditionsConfirmed of [true, false])
-    for (const evidence of ["", "personal note"])
-      for (const version of [1, 2] as const) {
-        const evaluated = evaluate(
-          session,
-          { ...result, conditionsConfirmed, evidence },
-          profile,
-          rules,
-        );
-        expect(evaluated).toHaveLength(3);
-        expect(evaluated.map((a) => a.status)).toEqual(["met", "met", "met"]);
-      }
+    for (const evidence of ["", "personal note"]) {
+      const evaluated = evaluate(
+        session,
+        { ...result, conditionsConfirmed, evidence },
+        profile,
+        rules,
+      );
+      expect(evaluated).toHaveLength(3);
+      expect(evaluated.map((a) => a.status)).toEqual(["met", "met", "met"]);
+    }
 });

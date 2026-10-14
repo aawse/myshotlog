@@ -13,7 +13,6 @@ export function recordSeries(
   result: Result,
   profile: Profile,
   history: Assessment[],
-  _isNew: boolean,
   catalog: readonly RuleVersion[] = rules,
 ) {
   const previous = history.find(

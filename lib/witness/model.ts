@@ -82,7 +82,6 @@ export const invitationSchema = z
     status: z.enum(["pending", "cancelled", "signed"]),
   })
   .strict();
-export type WitnessInvitation = z.infer<typeof invitationSchema>;
 export function reviewSession(
   input: Session,
   resultId: string | null,

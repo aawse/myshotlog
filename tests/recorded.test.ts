@@ -12,20 +12,20 @@ it("calculates legacy sessions without saved assessments or physical verificatio
     conditionsConfirmed: false,
     evidence: "",
   };
-  expect(
-    recordSeries(session, raw, profile, [], false).map((a) => a.status),
-  ).toEqual(["met", "met", "met"]);
+  expect(recordSeries(session, raw, profile, []).map((a) => a.status)).toEqual([
+    "met",
+    "met",
+    "met",
+  ]);
 });
 it("uses the ruleset for the session date rather than saved blocked conclusions", () => {
-  const previous = recordSeries(session, result, profile, [], true).map(
-    (a) => ({
-      ...a,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      status: "not-evaluated" as const,
-      input: { birthYear: 1990 },
-    }),
-  );
+  const previous = recordSeries(session, result, profile, []).map((a) => ({
+    ...a,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    status: "not-evaluated" as const,
+    input: { birthYear: 1990 },
+  }));
   const next = {
     ...rules[0],
     id: "2027-update",
@@ -34,10 +34,7 @@ it("uses the ruleset for the session date rather than saved blocked conclusions"
     precision: { A: [33, 39, 44], B: [34, 40, 46], C: [35, 41, 47] },
   } as (typeof rules)[0];
   const old = { ...rules[0], until: "2027-01-01" };
-  const before = recordSeries(session, result, profile, previous, false, [
-    old,
-    next,
-  ]);
+  const before = recordSeries(session, result, profile, previous, [old, next]);
   expect(before[2].ruleVersion).toBe(old.id);
   expect(before[2].status).toBe("met");
   const after = recordSeries(
@@ -45,7 +42,6 @@ it("uses the ruleset for the session date rather than saved blocked conclusions"
     result,
     profile,
     previous,
-    false,
     [old, next],
   );
   expect(after[2].ruleVersion).toBe(next.id);
@@ -58,19 +54,16 @@ it("uses captured birth information where available and profile fallback for leg
     { ...result, points: 45 },
     profile,
     [],
-    true,
   ).map((a) => ({
     ...a,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   })) as Assessment[];
   expect(
-    recordSeries(session, { ...result, points: 45 }, older, legacy, false)[2]
-      .status,
+    recordSeries(session, { ...result, points: 45 }, older, legacy)[2].status,
   ).toBe("not-met");
   expect(
-    recordSeries(session, { ...result, points: 45 }, older, [], false)[2]
-      .status,
+    recordSeries(session, { ...result, points: 45 }, older, [])[2].status,
   ).toBe("met");
 });
 it("uses ordinary thresholds when birth data is missing", () => {
@@ -79,7 +72,6 @@ it("uses ordinary thresholds when birth data is missing", () => {
     result,
     { ...profile, birthYear: null, birthDate: null },
     [],
-    false,
   );
   expect(a[2].status).toBe("met");
   expect(a[2].reason).toContain("Utan åldersavdrag");

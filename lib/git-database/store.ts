@@ -203,7 +203,6 @@ export class GitJournalStore {
           result,
           records.profile,
           previous ? [previous] : [],
-          false,
         ).map((assessment) => ({
           ...assessment,
           id: assessmentId(session.id, result.id, assessment.level),
@@ -437,7 +436,6 @@ export class GitJournalStore {
         const previous = records.assessments.filter(
           (a) => a.sessionId === entry.id,
         );
-        const existing = records.sessions.find((s) => s.id === entry.id);
         const assessments: Assessment[] = entry.results.flatMap((result) =>
           recordSeries(
             entry,
@@ -450,8 +448,6 @@ export class GitJournalStore {
                 }
               : records.profile,
             previous,
-            !existing?.results.some((r) => r.id === result.id) &&
-              !previous.some((a) => a.resultId === result.id),
           ).map((a) => ({
             ...a,
             id: crypto.randomUUID(),

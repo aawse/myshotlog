@@ -96,13 +96,13 @@ it("selects firearm defaults for new sessions, preserves result IDs and supports
   ).toThrow();
 });
 it("moving conditions to the session keeps existing assessment snapshots unchanged", () => {
-  const old = recordSeries(session, result, profile, [], true).map((a) => ({
+  const old = recordSeries(session, result, profile, []).map((a) => ({
     ...a,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   }));
   const s = sessionSchema.parse({ ...sessionSetup(session), revision: 2 });
-  const after = recordSeries(s, s.results[0], profile, old, false);
+  const after = recordSeries(s, s.results[0], profile, old);
   expect(after[2].input).toEqual(old[2].input);
   expect(after[2].ruleVersion).toBe(old[2].ruleVersion);
   expect(after[2].status).toBe(old[2].status);

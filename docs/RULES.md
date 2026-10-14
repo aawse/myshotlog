@@ -25,7 +25,7 @@ Formulären sparar resultat som skytten eller funktionären redan har fastställ
 
 ## Personlig serieberäkning
 
-Motorn använder regelkatalogen i `lib/rules/versions.json` och väljer version efter passdatum, med exklusivt slutdatum. Referens: bilaga 1 §5.1.1–5.1.1.1, tryckta sidor 452–453 (PDF-sidor 454–455). Ingen verifiering, signatur, skjutledare eller ombedömningsfunktion används. Alla vyer räknar direkt från resultaten; tidigare ”ej bedömd”-statusar används inte.
+Motorn använder regelkatalogen i `lib/rules/versions.json` och väljer version efter passdatum, med exklusivt slutdatum. Referens: bilaga 1 §5.1.1–5.1.1.1, tryckta sidor 452–453 (PDF-sidor 454–455). Beräkningen är oberoende av vittnessignaturer och kräver varken verifiering eller skjutledare. Ingen ombedömningsfunktion används. Alla vyer räknar direkt från resultaten; tidigare ”ej bedömd”-statusar används inte.
 
 Precision: fem skott och heltalspoäng 0–50, minus registrerat poängavdrag, jämförs med brons/silver/guld för A/B/C. Mål, avstånd och tid kan lagras men är inga spärrar för personlig poängklassificering. Åldersavdrag baseras på föregående kalenderår: 1 poäng från 55 år och 2 poäng från 65 år. Tidigare sparade födelseuppgifter används om de finns, annars profilen. Utan födelseuppgifter används ordinarie gränser utan avdrag. Tillämpning kräver sex skott och registrerade träffar/tid.
 

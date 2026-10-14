@@ -9,6 +9,8 @@ npm run format:check
 npm run build
 ```
 
+Typkontrollen avvisar oanvända lokala deklarationer och parametrar.
+
 Tester använder fiktiva journaler, mockade provider-svar och lokala temporära bare Git-repositories. Inga riktiga apphemligheter eller anslutningar till datarepot behövs. Ett lokalt test eller bygge verifierar inte den publicerade installationens GitHub-/Vercel-inställningar.
 
 Kontrollerna täcker bland annat:
@@ -35,3 +37,7 @@ Manuell körning finns under **Actions → Tests → Run workflow** när workflo
 ## Kontroll efter publicering
 
 Verifiera separat att GitHub-inloggning fungerar på den konfigurerade origin, att en post och ett foto kan sparas/hämtas och att utloggning, JSON-export och CSV-export fungerar. För Web Analytics ska projektet först aktiveras i Vercel och publiceras om; kontrollera sedan sidvisningar i dashboarden.
+
+## Deterministisk säkerhetskonkurrens
+
+`npm test -- tests/security-store.test.ts` testar engångsflöden mot verklig Git. Testet låser Git-tidsstämplarna och samordnar två samtidiga skrivförsök så att den andra pushen startar efter den första. Inga godtyckliga pauser eller tester som kör om ett misslyckande används. Identiska skrivningar ska ha olika transaktionsmarkerade commitobjekt, och endast en callback får förbruka flödet. Både Git- och GitHub-adaptern använder samma commitmarkör.

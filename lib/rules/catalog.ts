@@ -70,8 +70,3 @@ export const catalogSchema = z
 // Fail closed if edited rule data is invalid. No rule downloading at runtime.
 export const rules: readonly RuleVersion[] = catalogSchema.parse(data);
 export const levels = ["bronze", "silver", "gold"] as const;
-export const levelLabels = {
-  bronze: swText("level.bronze"),
-  silver: swText("level.silver"),
-  gold: swText("level.gold"),
-};
