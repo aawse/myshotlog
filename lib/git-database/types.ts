@@ -19,6 +19,7 @@ export type GitChange = { path: string; content: string | null };
 export type EntryCommit = { message: string; changes: GitChange[] };
 export type CommitReceipt = { head: string | null; commits: string[] };
 export interface GitDatabase {
+  currentHead?(): Promise<string | null>;
   snapshot(prefix: string): Promise<GitSnapshot>;
   // Optional bounded cache for display/export reads; never use for transactions.
   readSnapshot?(prefix: string): Promise<GitSnapshot>;

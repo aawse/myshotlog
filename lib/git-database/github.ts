@@ -30,6 +30,47 @@ type Options = {
   fetch?: typeof fetch;
 };
 export class GitHubDatabase implements GitDatabase {
+  private blobs = new Map<string, string>();
+  private blobBytes = 0;
+  private pendingBlobs = new Map<string, Promise<string>>();
+  private async readBlob(id: string): Promise<string> {
+    const cached = this.blobs.get(id);
+    if (cached !== undefined) {
+      this.blobs.delete(id);
+      this.blobs.set(id, cached);
+      return cached;
+    }
+    const pending = this.pendingBlobs.get(id);
+    if (pending) return pending;
+    const load = (async () => {
+      const blob = blobSchema.parse(await this.api("/git/blobs/" + id));
+      const value = Buffer.from(
+        blob.content.replace(/\s/g, ""),
+        "base64",
+      ).toString("utf8");
+      const bytes = Buffer.byteLength(value);
+      if (bytes <= 32 * 1024 * 1024) {
+        while (
+          this.blobs.size &&
+          (this.blobBytes + bytes > 32 * 1024 * 1024 ||
+            this.blobs.size >= 10000)
+        ) {
+          const oldest = this.blobs.keys().next().value!;
+          this.blobBytes -= Buffer.byteLength(this.blobs.get(oldest)!);
+          this.blobs.delete(oldest);
+        }
+        this.blobs.set(id, value);
+        this.blobBytes += bytes;
+      }
+      return value;
+    })();
+    if (this.pendingBlobs.size < 64) this.pendingBlobs.set(id, load);
+    try {
+      return await load;
+    } finally {
+      if (this.pendingBlobs.get(id) === load) this.pendingBlobs.delete(id);
+    }
+  }
   private readonly base: string;
   private readonly request: typeof fetch;
   private readonly branch: string;
@@ -124,6 +165,10 @@ export class GitHubDatabase implements GitDatabase {
       return null;
     }
   }
+  async currentHead() {
+    await this.checkPrivate();
+    return this.head();
+  }
   async snapshot(prefix: string): Promise<GitSnapshot> {
     validPath(prefix);
     await this.checkPrivate();
@@ -143,15 +188,7 @@ export class GitHubDatabase implements GitDatabase {
     for (let i = 0; i < entries.length; i += 6)
       await Promise.all(
         entries.slice(i, i + 6).map(async (entry) => {
-          const blob = blobSchema.parse(
-            await this.api("/git/blobs/" + entry.sha),
-          );
-          files.set(
-            entry.path,
-            Buffer.from(blob.content.replace(/\s/g, ""), "base64").toString(
-              "utf8",
-            ),
-          );
+          files.set(entry.path, await this.readBlob(entry.sha));
         }),
       );
     return { head, files };

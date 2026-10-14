@@ -22,6 +22,9 @@ export class ReadCachedDatabase implements GitDatabase {
     private maxEntries = 64,
     private now = Date.now,
   ) {}
+  get currentHead() {
+    return this.source.currentHead?.bind(this.source);
+  }
   snapshot(prefix: string) {
     return this.source.snapshot(prefix);
   }

@@ -1,3 +1,8 @@
+import {
+  recordingSchema,
+  capturedProfile,
+  type RecordingContext,
+} from "../sync/model";
 import { witnessSchema, invitationSchema } from "../witness/model";
 import { validateSignoff } from "../witness/store";
 import { swText } from "@/lib/i18n";
@@ -185,8 +190,14 @@ export class GitJournalStore {
     records.assessments.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     return records;
   }
-  async records() {
-    const records = this.decode(await this.readSnapshot(this.path));
+  async syncSnapshot() {
+    const snapshot = await this.provider.snapshot(this.path);
+    return { head: snapshot.head, records: await this.records(snapshot) };
+  }
+  async records(snapshot?: GitSnapshot) {
+    const records = this.decode(
+      snapshot ?? (await this.readSnapshot(this.path)),
+    );
     records.sessions = records.sessions.map(sessionSetup);
     // Preserve the first historical assessment per series, including captured birth
     // information, without scanning the entire journal for every evaluation.
@@ -212,7 +223,13 @@ export class GitJournalStore {
     );
     return records;
   }
-  async mutate(action: string, payload: unknown, photoDrafts: unknown[] = []) {
+  async mutate(
+    action: string,
+    payload: unknown,
+    photoDrafts: unknown[] = [],
+    context?: RecordingContext,
+  ) {
+    const recording = context ? recordingSchema.parse(context) : undefined;
     const drafts = z.array(photoDraftSchema).max(10).parse(photoDrafts);
     if (new Set(drafts.map((p) => p.id)).size !== drafts.length)
       throw new InvalidRecord(swText("store.duplicatePhotos"));
@@ -311,9 +328,13 @@ export class GitJournalStore {
             throw new DatabaseConflict();
           const entry = quickEntrySchema.parse({
             ...input,
-            recordedAt: new Date().toISOString(),
-            birthDate: records.profile.birthDate,
-            birthYear: records.profile.birthYear,
+            recordedAt: recording?.recordedAt ?? new Date().toISOString(),
+            birthDate: recording
+              ? recording.birthDate
+              : records.profile.birthDate,
+            birthYear: recording
+              ? recording.birthYear
+              : records.profile.birthYear,
             ruleVersion:
               rules.find((r) => r.from <= input.date && input.date < r.until)
                 ?.id ?? null,
@@ -446,13 +467,16 @@ export class GitJournalStore {
                   birthDate: quick.find((q) => q.id === result.id)!.birthDate,
                   birthYear: quick.find((q) => q.id === result.id)!.birthYear,
                 }
-              : records.profile,
+              : recording
+                ? capturedProfile(records.profile, recording)
+                : records.profile,
             previous,
           ).map((a) => ({
             ...a,
             id: crypto.randomUUID(),
             createdAt:
               quick.find((q) => q.id === result.id)?.recordedAt ??
+              recording?.recordedAt ??
               new Date().toISOString(),
           })),
         );
