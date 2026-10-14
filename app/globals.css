@@ -1526,3 +1526,24 @@ body:has(.issue-dialog[open]) {
   border-radius: var(--radius-control);
   font-size: 12px;
 }
+
+.repository-accounts {
+  list-style: none;
+  padding: 0;
+}
+.repository-accounts li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.repository-accounts small {
+  display: block;
+  margin-top: 4px;
+}
+.repository-accounts li > div {
+  min-width: 0;
+}

@@ -1,3 +1,4 @@
+import { RepositoryAccess } from "@/components/repository-access";
 import { InstallationCheck } from "@/components/installation-check";
 import { AppUpdates } from "@/components/app-updates";
 import { getI18n } from "@/lib/i18n-server";
@@ -21,6 +22,7 @@ export default async function Page() {
       ) : (
         <p role="alert">{tr("installation.journalUnavailable")}</p>
       )}
+      <RepositoryAccess />
       <InstallationCheck />
       <AppUpdates />
     </>
