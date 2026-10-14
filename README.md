@@ -11,7 +11,8 @@ Svensk träningsjournal för personligt pistolskytte, byggd med Next.js och Reac
 - Födelsedatum i profilen för precisionens åldersavdrag. Sparade födelseuppgifter används när de finns i seriens underlag; annars används profilen.
 - Mobilanpassad **Snabbserie** som sparas direkt och senare kan kopplas till ett pass med samma datum och gren. Nätanslutning krävs.
 - Ett valfritt tavelfoto per serie. Välj en bild; formatet avgör automatiskt om den kan användas direkt eller behöver konverteras och optimeras i webbläsaren före uppladdning.
-- Konfigurerbar läscache i serverminnet för snabbare journal- och fotohämtning; skrivningar tömmer berörda poster.
+- Lokal IndexedDB-cache med köade sparningar, batchsynkning, commit-kontroll och konfliktgranskning. En öppen app kan läsa och spara offline; synkstatus visar vad som nått GitHub.
+- Konfigurerbar servercache och återanvändning av immutabla Git-blobbar för snabbare läsningar.
 - JSON-export/import med profil, vapen, råresultat, seriens födelseuppgifter, okopplade serier, foton och vittnesintyg. Bedömningar exporteras inte; vid import beräknas de med reglerna för passdatumet. CSV exporterar resultat från pass till kalkylblad.
 - Valfria vittnesintyg för en serie eller ett helt pass. Dela en engångslänk eller QR-kod; vittnet skriver sitt namn och ritar en namnteckning utan konto. Intyget gäller resultaten som visades vid underskriften och ändrar inte märkesbedömningen. Se [vittnesfunktionen](docs/WITNESSES.md).
 - PDF-utskrift från passets sida med tydligt datum och plats, resultat, regelversioner och vittnesnamn samt namnteckningar. Tidigare intyg efter en ändring märks och visar de ursprungliga uppgifterna. Tavelfoton ingår inte. QR-koden länkar till passet och kräver vanlig inloggning. PDF-filen skapas i minnet och sparas inte i Git eller på serverns disk.
@@ -58,7 +59,7 @@ Se även [validering, prestanda och SEO, 13 oktober 2026](docs/VALIDATION-2026-1
 
 ## Språk och UI-texter
 
-Alla fasta UI-texter finns i `lib/locales/sv.json` och `lib/locales/en.json`, med samma nycklar i båda filerna. Profilens `language` i `profile.json` styr både serverrenderade sidor och interaktiva formulär. Ändra språk under **Inställningar → Din profil → Språk** och spara profilen. Befintliga profiler utan språkfält använder svenska; webbläsarens språk ersätter inte profilvalet.
+Alla fasta UI-texter finns i `lib/locales/sv.json` och `lib/locales/en.json`, med samma nycklar i båda filerna. Profilens `language` i den lokala journalvyn styr UI:t och synkas till `profile.json`. Serverns skal använder en kontobunden språkledtråd utan att läsa Git. Ändra språk under **Inställningar → Din profil → Språk** och spara profilen. Befintliga profiler utan språkfält använder svenska; webbläsarens språk ersätter inte profilvalet.
 
 Återanvänd befintliga nycklar för samma text och låt CSS styra casing i rubriker och enheter. Testerna kontrollerar att filerna saknar dubbla nycklar och dubbla texter, även varianter som bara skiljer i casing.
 
@@ -80,6 +81,7 @@ Befintliga WebP-foton förblir läsbara och bevaras i JSON-export/import. Nya up
 
 - [Installation, GitHub-ID och Vercel](docs/SETUP.md)
 - [Arkitektur och lagring](docs/ARCHITECTURE.md)
+- [Lokal lagring, synkning och återhämtning](docs/BROWSER-SYNC.md)
 - [Regelkällor och nya upplagor](docs/RULES.md)
 - [Tester och kontroller](docs/TESTING.md)
 - [Säkerhetsgranskning och åtgärder](docs/SECURITY-AUDIT-2026-10-12.md)

@@ -41,3 +41,9 @@ Verifiera separat att GitHub-inloggning fungerar på den konfigurerade origin, a
 ## Deterministisk säkerhetskonkurrens
 
 `npm test -- tests/security-store.test.ts` testar engångsflöden mot verklig Git. Testet låser Git-tidsstämplarna och samordnar två samtidiga skrivförsök så att den andra pushen startar efter den första. Inga godtyckliga pauser eller tester som kör om ett misslyckande används. Identiska skrivningar ska ha olika transaktionsmarkerade commitobjekt, och endast en callback får förbruka flödet. Både Git- och GitHub-adaptern använder samma commitmarkör.
+
+## Browser-synkning
+
+`sync.test.ts` verifierar batchpublicering, en commit per post, replay utan dubbla commits, konflikter utan delpublicering, samtidiga branchändringar och fångad födelseinformation. `sync-api.test.ts` kontrollerar autentisering, origin, scope, oförändrat head, validering och hemlighetsfria fel. `sync-controller.test.ts` verifierar lokal lagringskvittens, offlinekö, återöppning, samtidiga sparningar, nätverksfel, konfliktval, kvotfel, kontobundna backuper och samordning av flikar.
+
+Browser-verifiering ska använda fiktiva konton och ett repository i minnet. Kontrollera riktig IndexedDB, native navigering, foton och overlay offline, lokal snabbserie som kopplas till pass, återupptagning efter stängd flik, förlorat svar efter publicering, födelsekorrigering efter lokal registrering, båda konfliktvalen, språkbyte, nekad browserkvot och byte av konto. Använd aldrig en verklig journal för sådana tester.

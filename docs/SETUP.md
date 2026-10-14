@@ -288,7 +288,7 @@ Actions är fästa vid commit-SHA:n. Dependabot kontrollerar GitHub Actions varj
 
 ## Språk i profilen
 
-Appen har svenska och engelska. Under **Inställningar → Din profil → Språk** väljer användaren **Svenska** eller **English** och sparar profilen. Valet lagras som `language: "sv"` eller `language: "en"` i användarens `profile.json` i Git-databasen och gäller hela webbplatsen efter sparandet. Svenska är standard om fältet saknas. Ingen extra miljövariabel eller webbläsarinställning behövs. Inloggningssidor utan en autentiserad profil använder svenska.
+Appen har svenska och engelska. Under **Inställningar → Din profil → Språk** väljer användaren **Svenska** eller **English** och sparar profilen. Valet sparas först lokalt och synkroniseras som `language: "sv"` eller `language: "en"` i användarens `profile.json` i Git-databasen. Det gäller hela appens UI direkt efter den lokala sparningen. Svenska är standard om fältet saknas. Ingen extra miljövariabel eller webbläsarinställning behövs. Inloggningssidor utan en autentiserad profil använder svenska.
 
 Egna namn, vapenuppgifter, platser, program, seriebeteckningar och anteckningar översätts inte. JSON-export bevarar profilens språkval; CSV använder valt språk för rubrikerna. Fasta UI-texter underhålls i `lib/locales/sv.json` och `lib/locales/en.json`; lägg till samma nyckel med en svensk och en engelsk text vid nya kontroller.
 
@@ -317,3 +317,7 @@ Kontrollen visar konto, numeriskt GitHub-ID och effektiv behörighetsnivå. Äga
 Listan är en ögonblicksbild av konton som token kan se och ska inte tolkas som en fullständig säkerhetsgaranti. GitHub-appar, deploy keys, väntande inbjudningar och tidigare kloner eller säkerhetskopior ingår inte. Alla med läsåtkomst till datarepositoryt kan läsa **alla journaler och Git-historiken** där, oavsett appens inloggningslista (`GITHUB_ALLOWED_USER_IDS`). Kontrollerna hämtas på begäran utan cache, begränsas per inloggad användare och serverinstans och visar tydligt om endast en del av listan kunde hämtas (högst 1 000 medarbetarposter, 15 sekunders total API-tidsgräns). Git-adaptern kräver manuell granskning hos leverantören.
 
 GitHubs aktuella API-behörigheter och begränsningar finns i [List repository collaborators](https://docs.github.com/en/rest/collaborators/collaborators#list-repository-collaborators).
+
+## Browser-cache och väntande sparningar
+
+Funktionen är aktiv utan nya installationssteg. Profil, vapen, pass och snabbserier sparas först i webbläsaren och synkas sedan i batcher till det privata datarepositoryt. Kontrollera statusen **Alla ändringar sparade på GitHub** innan du byter enhet eller rensar webbläsarens data. **Synka nu** och **Ladda ned väntande ändringar** finns högst upp i den inloggade appen. Cachen finns kvar efter utloggning och separeras per konto och lagringskonfiguration. En öppen app kan läsa och spara offline; inloggning och omladdning kräver anslutning. [Läs om konflikter, återhämtning och gränser](BROWSER-SYNC.md).
