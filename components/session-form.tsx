@@ -2,7 +2,7 @@
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useJournalRouter } from "./journal-navigation";
 import { disciplineName, targetName } from "@/lib/i18n-domain";
 import { targets } from "@/lib/options";
 import { Plus, Trash2 } from "lucide-react";
@@ -44,7 +44,7 @@ export function SessionForm({
 }) {
   const { tr, language } = useI18n();
 
-  const router = useRouter();
+  const router = useJournalRouter();
   const [session, setSession] = useState<Session>(() =>
     initial
       ? sessionSetup(initial)
@@ -90,6 +90,7 @@ export function SessionForm({
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const saving = useRef(false);
+  const baseline = useRef(initial ? sessionSetup(initial) : null);
   const [photos, setPhotos] = useState<Record<string, PhotoDraft>>({});
   const [processingPhotos, setProcessingPhotos] = useState<
     Record<string, boolean>
@@ -142,6 +143,7 @@ export function SessionForm({
             session.results.some((r) => r.id === id && r.photoId === photo.id),
           )
           .map(([, photo]) => photo),
+        [{ kind: "session", id: saved.id, value: baseline.current }],
       );
       router.replace("/sessions/");
       router.refresh();
@@ -218,6 +220,7 @@ export function SessionForm({
           <label>
             {tr("session.firearm")}
             <select
+              aria-label={tr("session.firearm")}
               value={session.firearmId ?? ""}
               onChange={(e) => {
                 const f = firearms.find((f) => f.id === e.target.value);

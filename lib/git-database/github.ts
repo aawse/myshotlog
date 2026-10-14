@@ -50,6 +50,11 @@ export class GitHubDatabase implements GitDatabase {
       ).toString("utf8");
       const bytes = Buffer.byteLength(value);
       if (bytes <= 32 * 1024 * 1024) {
+        const previous = this.blobs.get(id);
+        if (previous !== undefined) {
+          this.blobBytes -= Buffer.byteLength(previous);
+          this.blobs.delete(id);
+        }
         while (
           this.blobs.size &&
           (this.blobBytes + bytes > 32 * 1024 * 1024 ||

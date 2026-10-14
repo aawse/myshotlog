@@ -1,7 +1,11 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { z } from "../validation";
-import { GitJournalStore, InvalidRecord } from "../git-database/store";
+import {
+  GitJournalStore,
+  InvalidRecord,
+  RecordNotFound,
+} from "../git-database/store";
 import {
   DatabaseConflict,
   type GitDatabase,
@@ -60,6 +64,7 @@ export class SyncConflict extends Error {
   constructor(
     public readonly operation: string,
     public readonly current: Target[],
+    public readonly acknowledged: string[] = [],
   ) {
     super("conflict");
   }
@@ -81,6 +86,7 @@ export async function synchronize(
       .record(z.uuid(), z.string().regex(/^[a-f0-9]{64}$/))
       .parse(JSON.parse(base.files.get(receiptPath) ?? "{}"));
     const acknowledged: string[] = [];
+    const confirmed: string[] = [];
     for (const operation of operations) {
       const digest = createHash("sha256")
         .update(canonical(operation))
@@ -89,20 +95,30 @@ export async function synchronize(
         if (receipts[operation.id] !== digest)
           throw new InvalidRecord("sync.operationChanged");
         acknowledged.push(operation.id);
+        confirmed.push(operation.id);
         continue;
       }
       const records = await store.records();
       const payload = normalizePayload(operation.action, operation.payload);
       const current = targetsFor(operation.action, payload, records);
       if (!sameTargets(operation.base, current))
-        throw new SyncConflict(operation.id, current);
+        throw new SyncConflict(operation.id, current, confirmed);
       const before = staged.entries.length;
-      await store.mutate(
-        operation.action,
-        payload,
-        operation.photos,
-        operation.recording,
-      );
+      try {
+        await store.mutate(
+          operation.action,
+          payload,
+          operation.photos,
+          operation.recording,
+        );
+      } catch (error) {
+        if (
+          error instanceof DatabaseConflict ||
+          error instanceof RecordNotFound
+        )
+          throw new SyncConflict(operation.id, current, confirmed);
+        throw error;
+      }
       receipts[operation.id] = digest;
       const receipt = {
         path: receiptPath,

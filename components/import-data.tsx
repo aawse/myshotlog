@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useJournalRouter } from "./journal-navigation";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "./language-provider";
 import { LoadingIndicator } from "./loading-indicator";
@@ -15,7 +15,7 @@ export function ImportData({
   returnToDashboard?: boolean;
 }) {
   const { tr, language } = useI18n();
-  const router = useRouter();
+  const router = useJournalRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [failed, setFailed] = useState(false);

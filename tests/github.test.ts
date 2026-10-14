@@ -259,3 +259,27 @@ it("makes identical publication attempts distinct even with the same parent and 
       /^Update authentication security state\n\nMyShotLog-Transaction: [a-f0-9-]{36}\n$/,
     );
 });
+
+it("reuses immutable blobs across head changes but rechecks private repository access", async () => {
+  const round = [
+    { private: true },
+    { object: { sha: a } },
+    { sha: a, tree: { sha: b } },
+    { sha: b, tree: [{ path: "users/a/profile.json", type: "blob", sha: c }] },
+  ];
+  const { db, request } = provider([
+    ...round,
+    { encoding: "base64", content: Buffer.from("fixture").toString("base64") },
+    ...round,
+  ]);
+  await db.snapshot("users/a");
+  await db.snapshot("users/a");
+  expect(
+    request.mock.calls.filter(([url]) => String(url).includes("/git/blobs/")),
+  ).toHaveLength(1);
+  expect(
+    request.mock.calls.filter(([url]) =>
+      String(url).endsWith("/repos/owner/private"),
+    ),
+  ).toHaveLength(2);
+});

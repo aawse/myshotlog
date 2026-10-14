@@ -1,4 +1,5 @@
 "use client";
+import { ensureSynchronized } from "./mutate";
 import { useState } from "react";
 import { Download } from "lucide-react";
 import { useI18n } from "./language-provider";
@@ -12,6 +13,7 @@ export function SessionPrint({ id, date }: { id: string; date: string }) {
     setError(false);
     let url: string | undefined;
     try {
+      await ensureSynchronized();
       const response = await fetch("/api/sessions/" + id + "/pdf/", {
         cache: "no-store",
       });

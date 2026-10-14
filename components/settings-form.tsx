@@ -1,25 +1,33 @@
 "use client";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "./language-provider";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { useJournalRouter } from "./journal-navigation";
 import { todayInTimezone, type Profile } from "@/lib/models";
 import type { Records } from "@/lib/models";
 import { ImportData } from "./import-data";
-import { mutate } from "./mutate";
+import { mutate, ensureSynchronized } from "./mutate";
 export function SettingsForm({ profile }: { profile: Profile }) {
   const { tr, language, setLanguage } = useI18n();
   const [p, setP] = useState(profile),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
     [confirm, setConfirm] = useState("");
-  const router = useRouter();
-  useEffect(() => setP(profile), [profile]);
+  const router = useJournalRouter();
+  const baseline = useRef(profile);
   async function act(action: string, payload: unknown) {
     setBusy(true);
     setMessage("");
     try {
-      await mutate(action, payload);
+      await mutate(
+        action,
+        payload,
+        [],
+        action === "profile"
+          ? [{ kind: "profile", id: null, value: baseline.current }]
+          : [],
+      );
+      if (action === "profile") baseline.current = p;
       if (action === "profile") setLanguage(p.language);
       setMessage(tr("profile.saved"));
       router.refresh();
@@ -33,6 +41,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     setBusy(true);
     setMessage(tr("profile.preparingExport"));
     try {
+      await ensureSynchronized();
       const { csv, exportRecords } = await import("@/lib/portability");
       const read = async (part: string, offset = 0) => {
         const res = await fetch(`/api/records/?part=${part}&offset=${offset}`);
@@ -140,6 +149,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
           <label>
             {tr("profile.language")}
             <select
+              aria-label={tr("profile.language")}
               value={p.language}
               onChange={(e) =>
                 setP({ ...p, language: e.target.value as "sv" | "en" })

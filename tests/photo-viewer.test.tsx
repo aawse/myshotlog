@@ -1,3 +1,6 @@
+vi.mock("../components/browser-photo", () => ({
+  useBrowserPhoto: (source: string) => source,
+}));
 import { beforeEach, expect, it, vi } from "vitest";
 import {
   Children,

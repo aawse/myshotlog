@@ -6,7 +6,7 @@ import Link from "next/link";
 import { PhotoViewer } from "./photo-viewer";
 import { TargetPhotoInput } from "./target-photo-input";
 import type { PhotoDraft } from "@/lib/photos/schema";
-import { useRouter } from "next/navigation";
+import { useJournalRouter } from "./journal-navigation";
 import { Plus, Zap, Check, Trash2 } from "lucide-react";
 import { disciplineName } from "@/lib/i18n-domain";
 import { disciplines, discipline } from "@/lib/disciplines";
@@ -30,7 +30,7 @@ export function QuickSeries({
 }) {
   const { tr, language } = useI18n();
 
-  const router = useRouter();
+  const router = useJournalRouter();
   const [date, setDate] = useState(today);
   const [sport, setSport] = useState<Session["discipline"]>("precision");
   const [shots, setShots] = useState("5");

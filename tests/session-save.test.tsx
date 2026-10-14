@@ -27,6 +27,9 @@ vi.mock("react", async (importOriginal) => ({
     (hooks.refs[hooks.refIndex - 1] = { current: initial }),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
+vi.mock("../components/journal-navigation", () => ({
+  useJournalRouter: () => router,
+}));
 vi.mock("../components/language-provider", async () => {
   const { translator } = await import("../lib/i18n");
   return { useI18n: () => translator("sv") };

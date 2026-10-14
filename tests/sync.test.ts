@@ -218,3 +218,35 @@ it("keeps journals and receipts scoped to the authenticated owner", async () => 
   const other = new GitJournalStore(db, "20000000-0000-4000-8000-000000000002");
   expect((await other.records()).firearms).toEqual([]);
 });
+
+it("reports only already committed operations as acknowledged when a later retry conflicts", async () => {
+  const db = new MemoryDatabase(),
+    first = operation("firearm", firearm);
+  await synchronize(db, owner, prefix, [first]);
+  const data = await new GitJournalStore(db, owner).records(),
+    second = operation("firearm", { ...firearm, model: "Second" }, data);
+  await new GitJournalStore(db, owner).mutate("firearm", {
+    ...firearm,
+    model: "Other device",
+  });
+  try {
+    await synchronize(db, owner, prefix, [first, second]);
+    throw new Error("Expected conflict");
+  } catch (error) {
+    expect(error).toBeInstanceOf(SyncConflict);
+    expect((error as SyncConflict).acknowledged).toEqual([first.id]);
+  }
+});
+
+it("returns a reviewable conflict for stale session revisions even if the supplied base matches", async () => {
+  const db = new MemoryDatabase(),
+    store = new GitJournalStore(db, owner);
+  await store.mutate("firearm", firearm);
+  await store.mutate("session", session);
+  const data = await store.records(),
+    before = db.count;
+  await expect(
+    synchronize(db, owner, prefix, [operation("session", session, data)]),
+  ).rejects.toBeInstanceOf(SyncConflict);
+  expect(db.count).toBe(before);
+});

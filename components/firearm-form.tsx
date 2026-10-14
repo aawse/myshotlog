@@ -1,8 +1,8 @@
 "use client";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { useJournalRouter } from "./journal-navigation";
 import { calibers } from "@/lib/options";
 import { disciplineName, caliberName } from "@/lib/i18n-domain";
 import { disciplines } from "@/lib/disciplines";
@@ -11,7 +11,8 @@ import { mutate } from "./mutate";
 export function FirearmForm({ initial }: { initial?: Firearm }) {
   const { tr, language } = useI18n();
 
-  const router = useRouter();
+  const router = useJournalRouter();
+  const baseline = useRef(initial ?? null);
   const [f, setF] = useState<Firearm>(
     () =>
       initial ?? {
@@ -33,7 +34,12 @@ export function FirearmForm({ initial }: { initial?: Firearm }) {
     e.preventDefault();
     setBusy(true);
     try {
-      await mutate("firearm", f);
+      await mutate(
+        "firearm",
+        f,
+        [],
+        [{ kind: "firearm", id: f.id, value: baseline.current }],
+      );
       router.push("/firearms/");
       router.refresh();
     } catch (e) {

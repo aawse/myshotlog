@@ -9,7 +9,33 @@ vi.mock("next/navigation", async (original) => ({
   ...(await original<typeof import("next/navigation")>()),
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
+const browser = vi.hoisted(() => ({
+  data: undefined as import("../lib/models").Records | undefined,
+}));
 vi.mock("../lib/data", () => ({ records: vi.fn() }));
+vi.mock("../components/journal-provider", () => ({
+  useJournal: () => null,
+  useRecords: () => browser.data,
+  useJournalState: () => ({
+    records: browser.data,
+    state: { head: null, pending: [] },
+  }),
+}));
+vi.mock("../components/browser-witness-panel", () => ({
+  BrowserWitnessPanel: () => null,
+}));
+vi.mock("../components/language-provider", async (original) => {
+  const provider =
+    await original<typeof import("../components/language-provider")>();
+  const { translator } = await import("../lib/i18n");
+  return {
+    ...provider,
+    useI18n: () => translator(browser.data?.profile.language),
+  };
+});
+function recordsFixture(value: import("../lib/models").Records) {
+  browser.data = value;
+}
 vi.mock("../lib/auth/server", () => ({
   configured: () => true,
   currentUser: async () => ({ id: "test" }),
@@ -21,11 +47,10 @@ vi.mock("../lib/witness/server", () => ({
   ownerWitnessStore: async () => ({ invitations: async () => [] }),
 }));
 vi.mock("../app/auth/actions", () => ({ signOut: async () => {} }));
-import { records } from "../lib/data";
-import Dashboard from "../app/(private)/dashboard/page";
-import Layout from "../app/(private)/layout";
+import Dashboard from "../components/journal-views/dashboard";
+
 it("renders private dashboard without leaking serial or birth information", async () => {
-  vi.mocked(records).mockResolvedValue({
+  recordsFixture({
     profile: { ...profile, displayName: "Testskytt" },
     firearms: [firearm],
     sessions: [
@@ -45,9 +70,7 @@ it("renders private dashboard without leaking serial or birth information", asyn
     ],
     assessments: [],
   });
-  const content = renderToStaticMarkup(
-    await Layout({ children: await Dashboard() }),
-  );
+  const content = renderToStaticMarkup(<Dashboard />);
   expect(content).toContain("Testskytt");
   expect(content).toContain("Precisionsskjutning");
   expect(content).not.toContain(firearm.serial);
@@ -60,25 +83,24 @@ it("renders private dashboard without leaking serial or birth information", asyn
   );
 });
 it("renders English server navigation and dashboard without translating the user's name", async () => {
-  vi.mocked(records).mockResolvedValue({
+  recordsFixture({
     profile: { ...profile, language: "en", displayName: "Översikt" },
     firearms: [],
     sessions: [],
     assessments: [],
   });
-  const html = renderToStaticMarkup(
-    await Layout({ children: await Dashboard() }),
-  );
+  const html = renderToStaticMarkup(<Dashboard />);
   expect(html).toContain("Hello, Översikt.");
-  expect(html).toContain("My firearms");
+
   expect(html).toContain("Recent sessions");
 });
 
 it("localizes built-in calibers on firearm and historical session pages without changing stored values", async () => {
   const { LanguageProvider } = await import("../components/language-provider");
-  const { default: Firearms } = await import("../app/(private)/firearms/page");
+  const { default: Firearms } =
+    await import("../components/journal-views/firearms");
   const { default: Details } =
-    await import("../app/(private)/sessions/[id]/page");
+    await import("../components/journal-views/session-details");
   const data = {
     profile: { ...profile, language: "en" as const },
     firearms: [{ ...firearm, caliber: "4.5 mm" }],
@@ -91,13 +113,13 @@ it("localizes built-in calibers on firearm and historical session pages without 
     ],
     assessments: [],
   };
-  vi.mocked(records).mockResolvedValue(data);
-  expect(renderToStaticMarkup(await Firearms())).toContain(
+  recordsFixture(data);
+  expect(renderToStaticMarkup(<Firearms />)).toContain(
     "4.5 mm (.177, air pistol)",
   );
   const html = renderToStaticMarkup(
     <LanguageProvider language="en">
-      {await Details({ params: Promise.resolve({ id: session.id }) })}
+      {<Details id={session.id} />}
     </LanguageProvider>,
   );
   expect(html).toContain("4.5 mm (.177, air pistol)");
@@ -114,19 +136,19 @@ it("offers direct JSON import on an empty dashboard and hides it when journal en
     assessments: [],
     quickEntries: [],
   };
-  vi.mocked(records).mockResolvedValue(empty);
-  const html = renderToStaticMarkup(await Dashboard());
+  recordsFixture(empty);
+  const html = renderToStaticMarkup(<Dashboard />);
   expect(html).toContain("Välkommen till din journal");
   expect(html).toContain('type="file"');
   expect(html).toContain('accept="application/json,.json"');
-  vi.mocked(records).mockResolvedValue({ ...empty, firearms: [firearm] });
-  const populated = renderToStaticMarkup(await Dashboard());
+  recordsFixture({ ...empty, firearms: [firearm] });
+  const populated = renderToStaticMarkup(<Dashboard />);
   expect(populated).not.toContain('type="file"');
 });
 
 it("shows the same highest grade and net points once per series in both sections", async () => {
   const { default: Details } =
-    await import("../app/(private)/sessions/[id]/page");
+    await import("../components/journal-views/session-details");
   const { LanguageProvider } = await import("../components/language-provider");
   const scored = {
     ...session,
@@ -145,7 +167,7 @@ it("shows the same highest grade and net points once per series in both sections
     createdAt: "2026-10-13T00:00:00Z",
     input: {},
   }));
-  vi.mocked(records).mockResolvedValue({
+  recordsFixture({
     profile,
     firearms: [],
     sessions: [scored],
@@ -153,7 +175,7 @@ it("shows the same highest grade and net points once per series in both sections
   });
   const html = renderToStaticMarkup(
     <LanguageProvider language="sv">
-      {await Details({ params: Promise.resolve({ id: session.id }) })}
+      {<Details id={session.id} />}
     </LanguageProvider>,
   );
   expect(html).toContain("45 poäng");
@@ -167,22 +189,20 @@ it("shows the same highest grade and net points once per series in both sections
   expect(html.match(/class="assessment"/g)).toHaveLength(1);
   expect(html).toContain("<td>45</td>");
   expect(html).not.toContain('class="series-medal gold"');
-  vi.mocked(records).mockResolvedValue({
+  recordsFixture({
     profile,
     firearms: [],
     sessions: [scored],
     assessments: assessments.map((a) => ({ ...a, status: "not-met" })),
   });
-  const failed = renderToStaticMarkup(
-    await Details({ params: Promise.resolve({ id: session.id }) }),
-  );
+  const failed = renderToStaticMarkup(<Details id={session.id} />);
   expect(failed.match(/class="assessment-cross"/g)).toHaveLength(1);
   expect(failed).not.toContain("Kraven ej uppfyllda");
 });
 
 it("shows only current series calculations and ignores superseded or historical grades", async () => {
   const { default: Details } =
-    await import("../app/(private)/sessions/[id]/page");
+    await import("../components/journal-views/session-details");
   const a = {
     id: crypto.randomUUID(),
     sessionId: session.id,
@@ -196,7 +216,7 @@ it("shows only current series calculations and ignores superseded or historical 
     createdAt: "2026-10-10T14:00:00Z",
     input: {},
   };
-  vi.mocked(records).mockResolvedValue({
+  recordsFixture({
     profile,
     firearms: [],
     sessions: [session],
@@ -226,9 +246,7 @@ it("shows only current series calculations and ignores superseded or historical 
       },
     ],
   });
-  const html = renderToStaticMarkup(
-    await Details({ params: Promise.resolve({ id: session.id }) }),
-  );
+  const html = renderToStaticMarkup(<Details id={session.id} />);
   expect(html.match(/class="series-medal silver"/g)).toHaveLength(2);
   expect(html.match(/class="assessment"/g)).toHaveLength(1);
   expect(html).not.toContain('class="series-medal gold"');

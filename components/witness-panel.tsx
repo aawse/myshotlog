@@ -1,4 +1,5 @@
 "use client";
+import { ensureSynchronized, refreshJournal } from "./mutate";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "./language-provider";
@@ -33,6 +34,7 @@ export function WitnessPanel({
     setError("");
     setCopied(false);
     try {
+      await ensureSynchronized();
       const response = await fetch("/api/witness/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,6 +57,7 @@ export function WitnessPanel({
         });
         setLink({ url, invitation: data.invitation, qr });
       } else if (id === link?.invitation.id) setLink(null);
+      await refreshJournal();
       router.refresh();
     } catch {
       setError(tr("witness.error"));

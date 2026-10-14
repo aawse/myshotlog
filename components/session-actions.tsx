@@ -2,12 +2,12 @@
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useJournalRouter } from "./journal-navigation";
 import { mutate } from "./mutate";
 export function SessionActions({ id }: { id: string }) {
   const { tr, language } = useI18n();
 
-  const router = useRouter();
+  const router = useJournalRouter();
   const [confirm, setConfirm] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
+import { useBrowserPhoto } from "./browser-photo";
 import { useI18n } from "./language-provider";
 import { LoadingIndicator } from "./loading-indicator";
 export function PhotoViewer({
@@ -20,6 +21,7 @@ export function PhotoViewer({
     "loading",
   );
   const [attempt, setAttempt] = useState(0);
+  const source = useBrowserPhoto(src, attempt);
   useEffect(() => {
     if (!open) return;
     const modal = dialog.current;
@@ -43,14 +45,18 @@ export function PhotoViewer({
           setOpen(true);
         }}
       >
-        <Image
-          src={src}
-          alt={tr("details.photoAlt")}
-          className={preview ? "target-photo-preview" : "series-target-photo"}
-          width={preview ? 320 : 120}
-          height={preview ? 240 : 90}
-          unoptimized
-        />
+        {source ? (
+          <Image
+            src={source}
+            alt={tr("details.photoAlt")}
+            className={preview ? "target-photo-preview" : "series-target-photo"}
+            width={preview ? 320 : 120}
+            height={preview ? 240 : 90}
+            unoptimized
+          />
+        ) : (
+          <LoadingIndicator label={tr("photo.loading")} />
+        )}
       </button>
       <dialog
         ref={dialog}
@@ -75,10 +81,10 @@ export function PhotoViewer({
             </button>
           </header>
           <div className="photo-overlay-image">
-            {open && status !== "error" && (
+            {open && source && status !== "error" && (
               <img
                 key={attempt}
-                src={src}
+                src={source}
                 alt={tr("details.photoAlt")}
                 className={
                   status === "loaded"

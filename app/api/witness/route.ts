@@ -1,3 +1,4 @@
+import { limitUpdates } from "@/lib/updates/rate-limit";
 import { z } from "@/lib/validation";
 import { authenticated, AuthenticationRequired } from "@/lib/auth/server";
 import { oauthConfig } from "@/lib/auth/github";
@@ -91,5 +92,28 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError || error instanceof SyntaxError)
       return respond({ error: "input" }, 400);
     return respond({ error: "storage" }, 503);
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const { user } = await authenticated();
+    limitUpdates(user.id + ":witness-read");
+    const sessionId = z
+      .uuid()
+      .parse(new URL(request.url).searchParams.get("sessionId"));
+    return respond({
+      invitations: await (await ownerWitnessStore(user)).invitations(sessionId),
+    });
+  } catch (error) {
+    return respond(
+      {
+        error:
+          error instanceof AuthenticationRequired
+            ? "authentication"
+            : "unavailable",
+      },
+      error instanceof AuthenticationRequired ? 401 : 503,
+    );
   }
 }
