@@ -215,6 +215,7 @@
   "issues.fullReportReference": "Se den fullständiga rapporten i Additional details nedan.",
   "issues.heading": "Hjälp oss förbättra MyShotLog",
   "issues.intro": "Beskriv ett problem eller föreslå en förbättring. Rapporten öppnas på GitHub, där du granskar och skickar den med ditt eget konto.",
+  "issues.loading": "Öppnar felrapport…",
   "issues.longReport": "Rapporten är för lång för en webblänk. Kopiera hela rapporten eller markera texten nedan. Öppna utkastet och klistra in rapporten i Additional details på GitHub. Alla detaljer bevaras.",
   "issues.openDraft": "Öppna utkast på GitHub",
   "issues.privacy": "Rapporter på GitHub är offentliga. Ta bort lösenord, tokens, privata repositoryuppgifter och personliga journaldata. Kontrollera skärmbilder innan du bifogar dem.",

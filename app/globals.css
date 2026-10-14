@@ -1479,3 +1479,50 @@ body:has(.issue-dialog[open]) {
     grid-template-columns: 1fr;
   }
 }
+
+.issue-quick-control {
+  min-height: 72px;
+}
+.issue-quick-button {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--white);
+  color: var(--muted);
+  box-shadow: 0 2px 8px #23332914;
+  font-size: 12px;
+  font-weight: 400;
+}
+.issue-quick-button:hover {
+  color: var(--green);
+  background: var(--pale);
+}
+@media (max-width: 560px) {
+  .issue-quick-button {
+    padding: 10px;
+  }
+  .issue-quick-button span {
+    display: none;
+  }
+}
+
+.issue-quick-loading {
+  position: fixed;
+  right: 16px;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 30;
+  padding: 10px 14px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  font-size: 12px;
+}

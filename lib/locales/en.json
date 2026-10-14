@@ -215,6 +215,7 @@
   "issues.fullReportReference": "See the full report in Additional details below.",
   "issues.heading": "Help improve MyShotLog",
   "issues.intro": "Describe a problem or suggest an improvement. Your report opens on GitHub, where you review and submit it using your own account.",
+  "issues.loading": "Opening issue report…",
   "issues.longReport": "The report is too long for a web link. Copy the full report or select the text below. Open the draft and paste it into Additional details on GitHub. All details are preserved.",
   "issues.openDraft": "Open draft on GitHub",
   "issues.privacy": "GitHub issues are public. Remove passwords, tokens, private repository details and personal journal data. Check screenshots before attaching them.",

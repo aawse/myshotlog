@@ -53,9 +53,6 @@ export default async function PrivateLayout({
             </Link>
           </nav>
           <div className="sidebar-bottom">
-            <Link href="/settings/#support" className="text-button">
-              {tr("issues.report")}
-            </Link>
             <span className="private-tag">{tr("nav.private")}</span>
             <p>{tr("nav.motto")}</p>
             <form action={signOut}>

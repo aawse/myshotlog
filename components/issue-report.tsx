@@ -1,15 +1,23 @@
 "use client";
-import { useRef, useState } from "react";
-import { Bug, ArrowUpRight, X, Copy } from "lucide-react";
-import { useI18n } from "./language-provider";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight, X, Copy } from "lucide-react";
+import { translator, type Language } from "@/lib/i18n";
 import {
   browserFamily,
   issueDraft,
   issueRepository,
   type IssueFields,
 } from "@/lib/issues";
-export function IssueReport() {
-  const { tr, language } = useI18n();
+export function IssueReport({
+  open,
+  onClose,
+  pageLanguage,
+}: {
+  open: boolean;
+  onClose: () => void;
+  pageLanguage: Language;
+}) {
+  const { tr, language } = translator(pageLanguage);
   const dialog = useRef<HTMLDialogElement>(null);
   const initialized = useRef(false);
   const reportArea = useRef<HTMLDivElement>(null);
@@ -26,7 +34,8 @@ export function IssueReport() {
     [copied, setCopied] = useState(false),
     [copyFailed, setCopyFailed] = useState(false),
     [error, setError] = useState(false);
-  function open() {
+  useEffect(() => {
+    if (!open) return;
     if (!initialized.current) {
       initialized.current = true;
       setFields((previous) => ({
@@ -43,8 +52,12 @@ export function IssueReport() {
           .join("\n"),
       }));
     }
-    dialog.current?.showModal();
-  }
+    const modal = dialog.current;
+    modal?.showModal();
+    return () => {
+      if (modal?.open) modal.close();
+    };
+  }, [open]);
   function change(key: keyof IssueFields, value: string) {
     setFields((previous) => ({ ...previous, [key]: value }));
     setPrepared(undefined);
@@ -53,24 +66,10 @@ export function IssueReport() {
     setError(false);
   }
   return (
-    <section className="card update-panel" id="support">
-      <h2>{tr("issues.heading")}</h2>
-      <p className="muted">{tr("issues.intro")}</p>
-      <div className="actions">
-        <button type="button" className="secondary" onClick={open}>
-          <Bug size={18} aria-hidden="true" />
-          {tr("issues.report")}
-        </button>
-        <a
-          href={issueRepository + "/issues"}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {tr("issues.existing")}
-        </a>
-      </div>
+    <>
       <dialog
         ref={dialog}
+        onClose={onClose}
         className="issue-dialog"
         aria-labelledby="issue-heading"
         aria-describedby="issue-help"
@@ -86,6 +85,16 @@ export function IssueReport() {
             <X size={20} aria-hidden="true" />
           </button>
         </header>
+        <p className="muted">{tr("issues.intro")}</p>
+        <p className="small">
+          <a
+            href={issueRepository + "/issues"}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {tr("issues.existing")}
+          </a>
+        </p>
         <p id="issue-help" className="muted">
           {tr("issues.detailHelp")}
         </p>
@@ -247,6 +256,6 @@ export function IssueReport() {
           </div>
         )}
       </dialog>
-    </section>
+    </>
   );
 }
