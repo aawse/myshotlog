@@ -1,3 +1,4 @@
+import { commitMessage } from "./commit-message";
 import { swText } from "@/lib/i18n";
 import { z } from "../validation";
 import {
@@ -197,7 +198,7 @@ export class GitHubDatabase implements GitDatabase {
       ).sha;
       parent = z.object({ sha }).parse(
         await this.api("/git/commits", "POST", {
-          message: entry.message,
+          message: commitMessage(entry.message),
           tree: baseTree,
           parents: [parent],
           author: { name: "MyShotLog", email: "journal@myshotlog.invalid" },

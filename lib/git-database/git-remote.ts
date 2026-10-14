@@ -1,3 +1,4 @@
+import { commitMessage } from "./commit-message";
 import { swText } from "@/lib/i18n";
 import { spawn } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
@@ -178,7 +179,7 @@ export class GitRemoteDatabase implements GitDatabase {
           await this.git(
             directory,
             ["commit-tree", tree, ...(parent ? ["-p", parent] : [])],
-            entry.message + "\n",
+            commitMessage(entry.message),
           )
         ).trim();
         commits.push(parent);

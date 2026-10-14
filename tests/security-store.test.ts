@@ -1,4 +1,4 @@
-import { it, expect, vi } from "vitest";
+import { afterEach, it, expect, vi } from "vitest";
 import {
   GitSecurityStore,
   InvalidOAuthFlow,
@@ -11,6 +11,7 @@ import {
   type GitSnapshot,
   type EntryCommit,
 } from "../lib/git-database/types";
+afterEach(() => vi.unstubAllEnvs());
 function fixture() {
   let head = 0,
     now = 1000;
@@ -161,10 +162,58 @@ it("persists one-time flow consumption through real Git and retains journal data
         () => 1000,
       );
     await instance().registerFlow("state", 1600, "client");
-    const outcomes = await Promise.allSettled([
-      instance().consumeFlow("state", 1600, "client"),
-      instance().consumeFlow("state", 1600, "client"),
-    ]);
+    // Force identical Git timestamps and a specific interleaving: both callbacks
+    // prepare their commits before the first push, then the second push starts
+    // after the first finishes. Do not depend on machine speed or wall-clock luck.
+    vi.stubEnv("GIT_AUTHOR_DATE", "2000-01-01T00:00:00Z");
+    vi.stubEnv("GIT_COMMITTER_DATE", "2000-01-01T00:00:00Z");
+    const first = provider(),
+      second = provider();
+    type Transport = {
+      git(directory: string, args: string[], input?: string): Promise<string>;
+    };
+    let ready!: () => void, committed!: () => void;
+    const bothPrepared = new Promise<void>((resolve) => {
+      ready = resolve;
+    });
+    const firstCommitted = new Promise<void>((resolve) => {
+      committed = resolve;
+    });
+    const firstTransport = first as unknown as Transport;
+    const secondTransport = second as unknown as Transport;
+    const firstGit = firstTransport.git.bind(first),
+      secondGit = secondTransport.git.bind(second);
+    vi.spyOn(firstTransport, "git").mockImplementation(
+      async (directory, args, input) => {
+        if (args[0] !== "push") return firstGit(directory, args, input);
+        await bothPrepared;
+        try {
+          return await firstGit(directory, args, input);
+        } finally {
+          committed();
+        }
+      },
+    );
+    vi.spyOn(secondTransport, "git").mockImplementation(
+      async (directory, args, input) => {
+        if (args[0] !== "push") return secondGit(directory, args, input);
+        ready();
+        await firstCommitted;
+        return secondGit(directory, args, input);
+      },
+    );
+    const stores = [first, second].map(
+      (db) =>
+        new GitSecurityStore(
+          db,
+          "journal/security/test",
+          "s".repeat(32),
+          () => 1000,
+        ),
+    );
+    const outcomes = await Promise.allSettled(
+      stores.map((store) => store.consumeFlow("state", 1600, "client")),
+    );
     expect(outcomes.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     expect(outcomes.find((r) => r.status === "rejected")).toMatchObject({
       reason: expect.any(InvalidOAuthFlow),

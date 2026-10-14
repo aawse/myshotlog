@@ -230,3 +230,32 @@ it("retries concurrent initialization and does not hide bootstrap permission fai
     request.mock.calls.some(([, options]) => options.method === "PUT"),
   ).toBe(false);
 });
+it("makes identical publication attempts distinct even with the same parent and tree", async () => {
+  const round = [
+    { sha: a, tree: { sha: b } },
+    { sha: c },
+    { sha: d },
+    { object: { sha: d } },
+  ];
+  const { db, request } = provider([...round, ...round]);
+  const snapshot = { head: a, files: new Map<string, string>() };
+  const entries = [
+    {
+      message: "Update authentication security state",
+      changes: [{ path: "security/state.json", content: "{}" }],
+    },
+  ];
+  await db.publish(snapshot, entries);
+  await db.publish(snapshot, entries);
+  const commits = request.mock.calls
+    .filter(([url]) => String(url).endsWith("/git/commits"))
+    .map(([, init]) => JSON.parse(String(init.body)));
+  expect(commits).toHaveLength(2);
+  expect(commits[0].parents).toEqual(commits[1].parents);
+  expect(commits[0].tree).toBe(commits[1].tree);
+  expect(commits[0].message).not.toBe(commits[1].message);
+  for (const commit of commits)
+    expect(commit.message).toMatch(
+      /^Update authentication security state\n\nMyShotLog-Transaction: [a-f0-9-]{36}\n$/,
+    );
+});
