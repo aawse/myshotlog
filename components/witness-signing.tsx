@@ -4,6 +4,11 @@ import { useI18n } from "./language-provider";
 import { LoadingIndicator } from "./loading-indicator";
 import { WitnessReviewView } from "./witness-review";
 import type { WitnessReview, WitnessPhoto } from "@/lib/witness/model";
+import {
+  readWitnessMemory,
+  writeWitnessMemory,
+  type WitnessMemory,
+} from "@/lib/witness/browser-memory";
 export function WitnessSigning() {
   const { tr, language, setLanguage } = useI18n();
   const [token, setToken] = useState(""),
@@ -17,6 +22,16 @@ export function WitnessSigning() {
     [drawn, setDrawn] = useState(false);
   const canvas = useRef<HTMLCanvasElement>(null),
     pointer = useRef<number | null>(null);
+  const [remember, setRemember] = useState(true);
+  const [memoryError, setMemoryError] = useState(false);
+  const remembered = useRef<WitnessMemory | null>(null);
+  const canvasGeneration = useRef(0);
+  useEffect(() => {
+    const stored = readWitnessMemory();
+    remembered.current = stored.witness;
+    setRemember(stored.remember);
+    if (stored.witness) setName(stored.witness.name);
+  }, []);
   const initLanguage = useRef(setLanguage);
   const inviteToken = useRef("");
   const [failure, setFailure] = useState<
@@ -67,6 +82,7 @@ export function WitnessSigning() {
     };
   }, []);
   function reset() {
+    canvasGeneration.current += 1;
     const context = canvas.current?.getContext("2d");
     if (context) {
       context.fillStyle = "#fff";
@@ -76,8 +92,36 @@ export function WitnessSigning() {
     pointer.current = null;
   }
   useEffect(() => {
-    if (review) reset();
-  }, [review]);
+    if (!review || loading || saved) return;
+    reset();
+    const signature = remembered.current?.signature;
+    if (!signature) return;
+    const generation = canvasGeneration.current;
+    let active = true;
+    const image = new Image();
+    image.onload = () => {
+      if (!active || generation !== canvasGeneration.current) return;
+      if (image.naturalWidth !== 800 || image.naturalHeight !== 300) {
+        remembered.current = null;
+        writeWitnessMemory(null);
+        return;
+      }
+      const context = canvas.current?.getContext("2d");
+      if (context) {
+        context.drawImage(image, 0, 0);
+        setDrawn(true);
+      }
+    };
+    image.onerror = () => {
+      if (!active || generation !== canvasGeneration.current) return;
+      remembered.current = null;
+      writeWitnessMemory(null);
+    };
+    image.src = `data:image/png;base64,${signature.data}`;
+    return () => {
+      active = false;
+    };
+  }, [review, loading, saved]);
   function position(event: PointerEvent<HTMLCanvasElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
     return {
@@ -89,6 +133,7 @@ export function WitnessSigning() {
     if (busy || pointer.current !== null || event.button !== 0) return;
     const context = event.currentTarget.getContext("2d");
     if (!context) return;
+    canvasGeneration.current += 1;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     pointer.current = event.pointerId;
@@ -101,7 +146,7 @@ export function WitnessSigning() {
     context.lineJoin = "round";
   }
   function move(event: PointerEvent<HTMLCanvasElement>) {
-    if (pointer.current !== event.pointerId) return;
+    if (busy || pointer.current !== event.pointerId) return;
     const context = event.currentTarget.getContext("2d");
     if (!context) return;
     const point = position(event);
@@ -111,6 +156,7 @@ export function WitnessSigning() {
   }
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setFailure(null);
     if (!confirmed || !drawn || !name.trim()) {
       setFailure("drawRequired");
@@ -120,6 +166,15 @@ export function WitnessSigning() {
     if (!image) return;
     setBusy(true);
     try {
+      const witness: WitnessMemory = {
+        name: name.trim(),
+        signature: {
+          mediaType: "image/png",
+          width: 800,
+          height: 300,
+          data: image.toDataURL("image/png").split(",")[1],
+        },
+      };
       const response = await fetch("/api/witness/", {
         method: "POST",
         credentials: "omit",
@@ -127,15 +182,10 @@ export function WitnessSigning() {
         body: JSON.stringify({
           action: "sign",
           token,
-          name: name.trim(),
+          name: witness.name,
           language,
           confirmed: true,
-          signature: {
-            mediaType: "image/png",
-            width: 800,
-            height: 300,
-            data: image.toDataURL("image/png").split(",")[1],
-          },
+          signature: witness.signature,
         }),
       });
       if (!response.ok) {
@@ -147,6 +197,10 @@ export function WitnessSigning() {
               : "error",
         );
         return;
+      }
+      if (remember) {
+        setMemoryError(!writeWitnessMemory(witness));
+        remembered.current = witness;
       }
       setSaved(true);
       setToken("");
@@ -251,6 +305,46 @@ export function WitnessSigning() {
           )}
           {failure && <p role="alert">{tr(`witness.${failure}`)}</p>}
         </>
+      )}
+      {!loading && (
+        <section className="card witness-form">
+          <label className="witness-confirm">
+            <input
+              type="checkbox"
+              checked={remember}
+              disabled={busy}
+              onChange={(event) => {
+                const enabled = event.target.checked;
+                setRemember(enabled);
+                setMemoryError(false);
+                if (!enabled) {
+                  remembered.current = null;
+                  setMemoryError(!writeWitnessMemory(null));
+                }
+              }}
+            />
+            <span>{tr("witness.remember")}</span>
+          </label>
+          <p className="muted small">{tr("witness.memoryHelp")}</p>
+          <button
+            type="button"
+            className="secondary"
+            disabled={busy}
+            onClick={() => {
+              remembered.current = null;
+              setRemember(false);
+              setName("");
+              reset();
+              setConfirmed(false);
+              setMemoryError(!writeWitnessMemory(null));
+            }}
+          >
+            {tr("witness.forget")}
+          </button>
+          {memoryError && (
+            <p role="status">{tr("witness.memoryUnavailable")}</p>
+          )}
+        </section>
       )}
     </main>
   );

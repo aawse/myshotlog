@@ -25,3 +25,9 @@ Vittnessidor har `no-store`, `no-referrer` och `noindex` och laddar inga Analyti
 JSON-export/import bevarar intyg, namnteckningar och de råresultat som intygades. Levande inbjudningar eller deras tokens exporteras inte. Befintliga säkerhetskopior utan intyg går fortfarande att importera. Import validerar snapshot-hash och bilddata; intyg kopieras utan ny signering eller ändrad tidsstämpel. Märkesbedömning görs fortfarande separat med reglerna för passdatumet. CSV innehåller råresultat, inte namnteckningar.
 
 När ett pass eller hela journalen raderas tas dess intyg och inbjudningar bort från aktuell lagring. Tidigare versioner, namn och namnteckningar finns kvar i Git-historiken och eventuella kopior, precis som övriga journaluppgifter. JSON-import har fortfarande gränsen 3 MB; använd Git-backup för större journaler.
+
+## Kom ihåg vittnet på enheten
+
+Efter ett sparat intyg kan vittnessidan komma ihåg vittnets namn och PNG-namnteckning i webbläsarens lokala lagring på samma webbplats. Nästa inbjudan fyller i uppgifterna, men vittnet måste fortfarande granska och bekräfta de valda resultaten varje gång. Inbjudningstokens, resultat och bekräftelse sparas aldrig i detta webbläsarminne. Misslyckade bevittningar sparar inga nya uppgifter.
+
+Vittnet kan stänga av **Kom ihåg mitt namn och min signatur på denna enhet** för att ta bort de sparade uppgifterna, eller välja **Glöm sparat vittne** för att även tömma formuläret. Kontrollerna finns kvar efter signering och på vittnessidan utan inbjudan. Använd dem innan en delad enhet lämnas över till någon annan. Inställningen sparas lokalt. Att rensa webbläsarens webbplatsdata tar också bort uppgifterna. Om webbläsarlagring blockeras eller är full fungerar bevittning fortfarande utan att uppgifterna sparas i webbläsaren. Detta minne är separat från intygen i ägarens journal; att glömma vittnet tar inte bort sparade intyg.
