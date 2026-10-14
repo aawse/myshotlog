@@ -95,3 +95,7 @@ Välj den diskreta **Rapportera ett problem**-knappen längst ned till höger p�
 Rapporten hålls bara i webbläsarens minne och sparas inte i journalen eller på appservern. Appen förifyller endast den publika byggcommitens korta SHA och webbläsarfamilj; du kan ändra eller ta bort båda. Installationens adress, privata repositorynamn, konto-ID:n, miljövärden och journaldata samlas inte in. För mycket långa rapporter visas hela texten för kopiering; klistra in den i **Additional details** i GitHubs formulär. Vid nekad clipboardåtkomst kan du kopiera texten manuellt.
 
 GitHub-ärenden är offentliga. Granska skärmbilder och ta bort hemligheter och personliga uppgifter innan du skickar. Säkerhetsbrister rapporteras privat till `security@aaw.se`. Repositoryts formulär finns i `.github/ISSUE_TEMPLATE/bug.yml` och `feature.yml` och accepterar svenska och engelska. Mallarna blir tillgängliga när de publiceras på repositoryts standardbranch.
+
+## Åtkomstgranskning
+
+Under **Inställningar → Vem har åtkomst till dina data?** kan du granska GitHub-konton och behörigheter till datarepositoryt med din befintliga token. Publik åtkomst och ofullständiga kontolistor visas tydligt. Repositoryåtkomst gäller samtliga lagrade journaler och deras historik och är separat från appens inloggningslista. Se [åtkomstgranskning och begränsningar](docs/SETUP.md#granska-åtkomst-till-personliga-data).

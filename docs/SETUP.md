@@ -307,3 +307,13 @@ Kontrollen gör endast läsanrop; inga poster eller testcommits skapas och hemli
 ## Hjälp och felrapporter
 
 Appens diskreta **Rapportera ett problem**-knapp finns längst ned till höger på alla sidor och öppnar ett formulär för fel eller förbättringar. Beskriv så utförligt som möjligt och öppna det förifyllda GitHub-utkastet med **Fortsätt på GitHub**. Du skickar det först när du själv skapar ärendet på GitHub. Granska rapporten innan du publicerar den; inkludera inga tokens eller personliga journaluppgifter. För rapporter som är för långa för länken får du hela texten att kopiera till GitHubs **Additional details**. Funktionen behöver inga nya installationssteg eller extra behörigheter. Se [README](../README.md#rapportera-problem-och-föreslå-förbättringar).
+
+## Granska åtkomst till personliga data
+
+Öppna **Inställningar → Vem har åtkomst till dina data? → Kontrollera repositoryåtkomst**. Kontrollen använder den befintliga datarepository-token och gör enbart läsanrop till GitHubs metadata- och medarbetar-API. Inga nya miljövariabler eller behörigheter behövs för den rekommenderade fine-grained token med **Metadata: Read** (automatiskt inkluderad). Tokenägaren måste ha skriv-, underhålls- eller administratörsåtkomst; för organisationsrepositoryn krävs även organisationsmedlemskap. Om GitHub nekar anropet visas att listan inte kunde verifieras, aldrig att ingen annan har åtkomst.
+
+Kontrollen visar konto, numeriskt GitHub-ID och effektiv behörighetsnivå. Ägaren av ett personligt repository inkluderas även om GitHub utelämnar denne från medarbetarlistan. Organisationsåtkomst kan ärvas via team eller standardbehörigheter; källan visas inte av detta API. Publika repositoryn markeras tydligt eftersom vem som helst kan läsa dem; interna repositoryn kan läsas av andra företagsmedlemmar. Granska och ändra behörigheterna via länken till GitHub.
+
+Listan är en ögonblicksbild av konton som token kan se och ska inte tolkas som en fullständig säkerhetsgaranti. GitHub-appar, deploy keys, väntande inbjudningar och tidigare kloner eller säkerhetskopior ingår inte. Alla med läsåtkomst till datarepositoryt kan läsa **alla journaler och Git-historiken** där, oavsett appens inloggningslista (`GITHUB_ALLOWED_USER_IDS`). Kontrollerna hämtas på begäran utan cache, begränsas per inloggad användare och serverinstans och visar tydligt om endast en del av listan kunde hämtas (högst 1 000 medarbetarposter, 15 sekunders total API-tidsgräns). Git-adaptern kräver manuell granskning hos leverantören.
+
+GitHubs aktuella API-behörigheter och begränsningar finns i [List repository collaborators](https://docs.github.com/en/rest/collaborators/collaborators#list-repository-collaborators).
