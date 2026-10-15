@@ -1,3 +1,4 @@
+import { netPoints, hitFactor } from "../result-metrics";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import fontkit from "@pdf-lib/fontkit";
@@ -199,6 +200,8 @@ export async function createSessionPdf(
     field(tr("print.shooter"), data.profile.displayName);
   field(tr("session.sport"), disciplineName(language, session.discipline));
   if (session.program) field(tr("session.program"), session.program);
+  if (session.ruleReference)
+    field(tr("session.ruleReference"), session.ruleReference);
   field(
     tr("session.context"),
     tr(
@@ -235,6 +238,23 @@ export async function createSessionPdf(
     );
     const details = [
       conditions(seriesConditions(session, r)),
+      r.elapsedSeconds !== undefined
+        ? tr("session.elapsedSeconds") + ": " + r.elapsedSeconds + " s"
+        : "",
+      r.matchPercent !== undefined
+        ? tr("session.matchPercent") + ": " + r.matchPercent + "%"
+        : "",
+      r.placement !== undefined
+        ? tr("session.placement") + ": " + r.placement
+        : "",
+      hitFactor(r, session.discipline) !== undefined
+        ? tr("session.hitFactor") +
+          ": " +
+          hitFactor(r, session.discipline)!.toFixed(4)
+        : "",
+      r.dryFire ? tr("session.dryFire") : "",
+      r.scoreText ?? "",
+      r.status ? tr(`resultStatus.${r.status}`) : "",
       r.scoring
         ? tr(
             r.scoring === "points"
@@ -277,7 +297,7 @@ export async function createSessionPdf(
     );
     const cells = [
       String(r.shots),
-      r.points != null ? String(r.points - (r.penaltyPoints ?? 0)) : "-",
+      r.points != null ? String(netPoints(r, session.discipline)) : "-",
       (r.hits ?? "-") + " / " + (r.figures ?? "-"),
       medal ? tr(`level.${medal}`) : "-",
     ];
@@ -388,6 +408,16 @@ export async function createSessionPdf(
             r.label,
             r.shots + " " + tr("session.shots"),
             r.points != null ? r.points + " " + tr("session.points") : "",
+            r.elapsedSeconds !== undefined
+              ? tr("session.elapsedSeconds") + ": " + r.elapsedSeconds + " s"
+              : "",
+            r.matchPercent !== undefined ? r.matchPercent + "%" : "",
+            r.placement !== undefined
+              ? tr("session.placement") + ": " + r.placement
+              : "",
+            r.dryFire ? tr("session.dryFire") : "",
+            r.scoreText ?? "",
+            r.status ? tr(`resultStatus.${r.status}`) : "",
             r.hits != null ? r.hits + " " + tr("session.hits") : "",
             r.figures != null ? r.figures + " " + tr("session.figures") : "",
             conditions(r),

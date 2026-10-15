@@ -16,6 +16,7 @@ const loaders = {
   newFirearm: () => import("./journal-views/firearm-new"),
   quick: () => import("./journal-views/quick"),
   qualifications: () => import("./journal-views/qualifications"),
+  training: () => import("./journal-views/training"),
   settings: () => import("./journal-views/settings"),
 };
 const Dashboard = lazy(loaders.dashboard),
@@ -28,7 +29,8 @@ const Dashboard = lazy(loaders.dashboard),
   NewFirearm = lazy(loaders.newFirearm),
   Quick = lazy(loaders.quick),
   Qualifications = lazy(loaders.qualifications),
-  Settings = lazy(loaders.settings);
+  Settings = lazy(loaders.settings),
+  Training = lazy(loaders.training);
 export function JournalScreens({ fallback }: { fallback: React.ReactNode }) {
   const path = (usePathname() ?? "").replace(/\/$/, ""),
     query = useSearchParams();
@@ -55,7 +57,7 @@ export function JournalScreens({ fallback }: { fallback: React.ReactNode }) {
         </a>
       </section>
     );
-  if (path !== "/settings" && !records)
+  if (path !== "/settings" && path !== "/training" && !records)
     return status === "loading" || status === "syncing" ? (
       loading
     ) : (
@@ -73,6 +75,7 @@ export function JournalScreens({ fallback }: { fallback: React.ReactNode }) {
   else if (path === "/firearms") view = <Firearms />;
   else if (path === "/firearms/new") view = <NewFirearm />;
   else if (path === "/quick") view = <Quick />;
+  else if (path === "/training") view = <Training />;
   else if (path === "/settings") view = <Settings />;
   else if (path === "/qualifications")
     view = (

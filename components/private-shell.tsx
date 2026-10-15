@@ -12,6 +12,7 @@ import {
   Target,
   Settings,
   ShieldCheck,
+  BookOpen,
 } from "lucide-react";
 import { SyncStatus } from "./sync-status";
 import { JournalScreens } from "./journal-screens";
@@ -72,6 +73,9 @@ export function PrivateShell({ children }: { children: React.ReactNode }) {
             <Link href="/qualifications/">
               <ShieldCheck size={19} /> {tr("nav.qualifications")}
             </Link>
+            <Link href="/training/">
+              <BookOpen size={19} /> {tr("training.title")}
+            </Link>
             <Link href="/settings/">
               <Settings size={19} /> {tr("nav.settings")}
             </Link>
@@ -95,7 +99,7 @@ export function PrivateShell({ children }: { children: React.ReactNode }) {
         </aside>
         <div className="workspace">
           <header className="topbar">
-            <span>{tr("nav.sport")}</span>
+            <span>{tr("nav.caption")}</span>
             <span className="private-tag">
               <ShieldCheck size={14} /> {tr("nav.onlyYou")}
             </span>

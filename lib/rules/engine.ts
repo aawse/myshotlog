@@ -1,3 +1,4 @@
+import { netPoints } from "../result-metrics";
 import { swText, t } from "../i18n";
 import {
   resultSchema,
@@ -35,8 +36,18 @@ export function evaluate(
       resultId: result.id,
       revision: session.revision,
       level,
-      ruleVersion: rule?.id ?? "unsupported",
-      source: rule ? rule.source + " — " + rule.reference : "",
+      ruleVersion:
+        session.discipline.startsWith("ipsc-") ||
+        ["nordic-steel", "dmr", "custom"].includes(session.discipline)
+          ? session.ruleReference || "manual"
+          : (rule?.id ?? "unsupported"),
+      source:
+        session.discipline.startsWith("ipsc-") ||
+        ["nordic-steel", "dmr", "custom"].includes(session.discipline)
+          ? ""
+          : rule
+            ? rule.source + " — " + rule.reference
+            : "",
       input: {
         date: session.date,
         group: session.group,
@@ -175,12 +186,12 @@ export function progress(
 export function summarize(session: Session) {
   return session.results.reduce(
     (a, r) => ({
-      points: a.points + (r.points ?? 0) - (r.penaltyPoints ?? 0),
+      points: a.points + (netPoints(r, session.discipline) ?? 0),
       hits: a.hits + (r.hits ?? 0),
       figures: a.figures + (r.figures ?? 0),
       seconds:
         a.seconds +
-        (seriesConditions(session, r).seconds ?? 0) +
+        (r.elapsedSeconds ?? seriesConditions(session, r).seconds ?? 0) +
         (r.penaltySeconds ?? 0),
       shots: a.shots + r.shots,
       x: a.x + (r.x ?? 0),

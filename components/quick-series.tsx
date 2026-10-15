@@ -39,6 +39,9 @@ export function QuickSeries({
   const [figures, setFigures] = useState("");
   const [x, setX] = useState("");
   const [notes, setNotes] = useState("");
+  const [label, setLabel] = useState("");
+  const [elapsed, setElapsed] = useState("");
+  const [dryFire, setDryFire] = useState(false);
   const [photo, setPhoto] = useState<PhotoDraft>();
   const [photoBusy, setPhotoBusy] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -97,6 +100,9 @@ export function QuickSeries({
       figures,
       x,
       notes,
+      label,
+      elapsed,
+      dryFire,
       photoId: photo?.id,
     });
     if (pending.current?.key !== key)
@@ -104,11 +110,13 @@ export function QuickSeries({
     const id = pending.current.id;
     const result: Result = {
       id,
-      label: tr("common.seriesLabel"),
+      label: label.trim() || tr("common.seriesLabel"),
+      ...(sport === "custom" && dryFire ? { dryFire: true } : {}),
+      ...(elapsed !== "" ? { elapsedSeconds: Number(elapsed) } : {}),
       ...(photo ? { photoId: photo.id } : {}),
       type: sport === "application" ? "application" : "score",
       shots: Number(shots),
-      ...(["points", "dynamic"].includes(kind) && points !== ""
+      ...(["points", "dynamic", "open"].includes(kind) && points !== ""
         ? { points: Number(points) }
         : {}),
       ...(kind !== "points" && hits !== "" ? { hits: Number(hits) } : {}),
@@ -132,6 +140,7 @@ export function QuickSeries({
       setX("");
       setNotes("");
       setPhoto(undefined);
+      setElapsed("");
       scoreInput.current?.focus();
     }
   }
@@ -168,6 +177,9 @@ export function QuickSeries({
                 onChange={(e) => {
                   const id = e.target.value as Session["discipline"];
                   setSport(id);
+                  setDryFire(false);
+                  setLabel("");
+                  setElapsed("");
                   setShots(id === "application" ? "6" : "5");
                   setPoints("");
                   setHits("");
@@ -183,13 +195,50 @@ export function QuickSeries({
               </select>
             </label>
           </div>
+          {sport === "custom" && (
+            <label>
+              {tr("session.customEvent")}
+              <input
+                required
+                value={label}
+                maxLength={120}
+                onChange={(e) => setLabel(e.target.value)}
+              />
+            </label>
+          )}
+          {["time", "dynamic", "open"].includes(kind) && (
+            <label>
+              {tr("session.elapsedSeconds")}
+              <input
+                type="number"
+                min="0.01"
+                step="any"
+                value={elapsed}
+                onChange={(e) => setElapsed(e.target.value)}
+              />
+            </label>
+          )}
+          {sport === "custom" && (
+            <label>
+              <input
+                type="checkbox"
+                checked={dryFire}
+                onChange={(e) => {
+                  setDryFire(e.target.checked);
+                  setShots(e.target.checked ? "0" : "5");
+                  setHits("");
+                }}
+              />
+              {tr("session.dryFire")}
+            </label>
+          )}
           <div className="quick-score-grid">
             <label>
               {tr("quick.shots")}
               <input
                 type="number"
                 inputMode="numeric"
-                min="1"
+                min={sport === "custom" && dryFire ? "0" : "1"}
                 max="1000"
                 step="1"
                 required
@@ -197,7 +246,7 @@ export function QuickSeries({
                 onChange={(e) => setShots(e.target.value)}
               />
             </label>
-            {["points", "dynamic"].includes(kind) && (
+            {["points", "dynamic", "open"].includes(kind) && (
               <label className="quick-score">
                 {tr("session.points")}
                 <input
@@ -224,7 +273,7 @@ export function QuickSeries({
                   min="0"
                   max={Number(shots)}
                   step="1"
-                  required={kind !== "dynamic"}
+                  required={!["dynamic", "open"].includes(kind)}
                   placeholder="–"
                   value={hits}
                   onChange={(e) => setHits(e.target.value)}

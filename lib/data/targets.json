@@ -38,5 +38,21 @@
   {
     "value": "other",
     "labelKey": "target.other"
+  },
+  {
+    "value": "ipsc",
+    "labelKey": "target.ipsc"
+  },
+  {
+    "value": "steel",
+    "labelKey": "target.steel"
+  },
+  {
+    "value": "rifle",
+    "labelKey": "target.rifle"
+  },
+  {
+    "value": "clay",
+    "labelKey": "target.clay"
   }
 ]

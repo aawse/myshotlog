@@ -54,5 +54,29 @@
   {
     "value": "4.5 mm",
     "labelKey": "caliber.air"
+  },
+  {
+    "value": "5.56x45 mm",
+    "labelKey": "caliber.556"
+  },
+  {
+    "value": "7.62x51 mm",
+    "labelKey": "caliber.762"
+  },
+  {
+    "value": ".22 WMR",
+    "labelKey": "caliber.22wmr"
+  },
+  {
+    "value": "12/70",
+    "labelKey": "caliber.1270"
+  },
+  {
+    "value": "12/76",
+    "labelKey": "caliber.1276"
+  },
+  {
+    "value": "20/70",
+    "labelKey": "caliber.2070"
   }
 ]

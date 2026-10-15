@@ -31,6 +31,11 @@ export function WitnessReviewView({
           ? `${review.firearm.make} ${review.firearm.model} · ${caliberName(language, review.firearm.caliber)}`
           : tr("common.borrowedFirearm")}
       </p>
+      {review.ruleReference && (
+        <p>
+          {tr("session.ruleReference")}: {review.ruleReference}
+        </p>
+      )}
       {review.results.map((result) => (
         <section className="witness-result" key={result.id}>
           <h3>{result.label}</h3>
@@ -46,6 +51,45 @@ export function WitnessReviewView({
               <dt>{tr("session.shots")}</dt>
               <dd>{result.shots}</dd>
             </div>
+            {result.elapsedSeconds !== undefined && (
+              <div>
+                <dt>{tr("session.elapsedSeconds")}</dt>
+                <dd>
+                  {result.elapsedSeconds}
+                  {" s"}
+                </dd>
+              </div>
+            )}
+            {result.matchPercent !== undefined && (
+              <div>
+                <dt>{tr("session.matchPercent")}</dt>
+                <dd>{result.matchPercent}%</dd>
+              </div>
+            )}
+            {result.placement !== undefined && (
+              <div>
+                <dt>{tr("session.placement")}</dt>
+                <dd>{result.placement}</dd>
+              </div>
+            )}
+            {result.scoreText && (
+              <div>
+                <dt>{tr("session.scoreText")}</dt>
+                <dd>{result.scoreText}</dd>
+              </div>
+            )}
+            {result.status && (
+              <div>
+                <dt>{tr("session.resultStatus")}</dt>
+                <dd>{tr(`resultStatus.${result.status}`)}</dd>
+              </div>
+            )}
+            {result.dryFire && (
+              <div>
+                <dt>{tr("session.dryFire")}</dt>
+                <dd>✓</dd>
+              </div>
+            )}
             {result.points !== undefined && (
               <div>
                 <dt>{tr("session.points")}</dt>

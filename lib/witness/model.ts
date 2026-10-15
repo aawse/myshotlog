@@ -17,6 +17,7 @@ export const reviewSchema = z
     location: z.string().max(200),
     discipline: z.enum(disciplineIds),
     program: z.string().max(120),
+    ruleReference: z.string().max(200).optional(),
     group: z.string().max(100),
     context: z.enum(["practice", "competition"]),
     firearm: z
@@ -98,6 +99,7 @@ export function reviewSession(
     location: session.location,
     discipline: session.discipline,
     program: session.program,
+    ...(session.ruleReference ? { ruleReference: session.ruleReference } : {}),
     group: session.group,
     context: session.context,
     firearm: session.firearmSnapshot

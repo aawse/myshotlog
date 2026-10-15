@@ -246,6 +246,12 @@ export function csv(sessions: Records["sessions"], language: Language = "sv") {
       t(language, "csv.seconds"),
       t(language, "session.penaltyPoints"),
       t(language, "csv.penaltySeconds"),
+      t(language, "session.elapsedSeconds"),
+      t(language, "session.matchPercent"),
+      t(language, "session.placement"),
+      t(language, "session.scoreText"),
+      t(language, "session.resultStatus"),
+      t(language, "session.dryFire"),
     ],
   ];
   for (const s of sessions)
@@ -264,6 +270,12 @@ export function csv(sessions: Records["sessions"], language: Language = "sv") {
         String(seriesConditions(s, r).seconds ?? ""),
         String(r.penaltyPoints ?? ""),
         String(r.penaltySeconds ?? ""),
+        String(r.elapsedSeconds ?? ""),
+        String(r.matchPercent ?? ""),
+        String(r.placement ?? ""),
+        r.scoreText ?? "",
+        r.status ?? "",
+        r.dryFire ? "true" : "",
       ]);
   return "\uFEFF" + rows.map((row) => row.map(quote).join(";")).join("\r\n");
 }

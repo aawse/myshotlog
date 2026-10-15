@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useJournal } from "./journal-provider";
 export function journalPath(path: string) {
-  return /^\/(?:dashboard|quick|settings|qualifications|sessions(?:\/[0-9a-f-]+(?:\/edit)?|\/new)?|firearms(?:\/[0-9a-f-]+|\/new)?)\/?$/i.test(
+  return /^\/(?:dashboard|quick|training|settings|qualifications|sessions(?:\/[0-9a-f-]+(?:\/edit)?|\/new)?|firearms(?:\/[0-9a-f-]+|\/new)?)\/?$/i.test(
     path,
   );
 }

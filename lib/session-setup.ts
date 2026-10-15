@@ -35,6 +35,16 @@ export function changeDiscipline(
   return {
     ...session,
     discipline: id,
+    ruleReference:
+      id.startsWith("ipsc-") &&
+      session.date >= "2026-01-01" &&
+      session.date < "2027-01-01"
+        ? "IPSC 2026"
+        : id === "nordic-steel" && session.date >= "2024-04-01"
+          ? "Nordic Steel Challenge 2024-04"
+          : id === "dmr" && session.date >= "2024-01-01"
+            ? "SDSSF DMR 2024 v1.1"
+            : undefined,
     program:
       session.program === swText("session.defaultProgram") ||
       session.program === t(language, "session.defaultProgram") ||
@@ -46,7 +56,9 @@ export function changeDiscipline(
       ...r,
       type: id === "application" ? "application" : "score",
       shots: id === "application" && r.shots === 5 ? 6 : r.shots,
-      points: ["points", "dynamic"].includes(kind) ? (r.points ?? 0) : r.points,
+      points: ["points", "dynamic", "open"].includes(kind)
+        ? (r.points ?? 0)
+        : r.points,
       hits: kind !== "points" ? (r.hits ?? 0) : r.hits,
     })),
   };

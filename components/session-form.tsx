@@ -59,7 +59,9 @@ export function SessionForm({
           location: "",
           discipline: quickEntries[0]?.discipline ?? "precision",
           program: quickEntries[0]
-            ? disciplineName(language, quickEntries[0].discipline)
+            ? quickEntries[0].discipline === "custom"
+              ? quickEntries[0].result.label
+              : disciplineName(language, quickEntries[0].discipline)
             : tr("session.defaultProgram"),
           seconds:
             quickEntries[0] && quickEntries[0].discipline !== "precision"
@@ -114,6 +116,7 @@ export function SessionForm({
       <input
         type="number"
         min="0"
+        max={key === "matchPercent" ? 100 : undefined}
         step={["shots", "hits", "figures", "x"].includes(key) ? "1" : "any"}
         required={required}
         value={(r[key] as number | undefined) ?? ""}
@@ -209,7 +212,11 @@ export function SessionForm({
             </select>
           </label>
           <label>
-            {tr("session.program")}
+            {tr(
+              session.discipline === "custom"
+                ? "session.customEvent"
+                : "session.program",
+            )}
             <input
               required
               maxLength={120}
@@ -217,6 +224,19 @@ export function SessionForm({
               onChange={(e) => patch({ program: e.target.value })}
             />
           </label>
+          {["dynamic", "open"].includes(kind) && (
+            <label>
+              {tr("session.ruleReference")}
+              <input
+                maxLength={200}
+                value={session.ruleReference ?? ""}
+                onChange={(e) =>
+                  patch({ ruleReference: e.target.value || undefined })
+                }
+              />
+              <span className="muted">{tr("session.ruleReferenceHelp")}</span>
+            </label>
+          )}
           <label>
             {tr("session.firearm")}
             <select
@@ -284,7 +304,11 @@ export function SessionForm({
               type="number"
               min="0"
               step="any"
-              required={["time", "dynamic"].includes(kind)}
+              required={
+                ["running", "ski", "falling", "sra"].includes(
+                  session.discipline,
+                ) && session.results.some((r) => r.elapsedSeconds === undefined)
+              }
               value={session.seconds ?? ""}
               onChange={(e) =>
                 patch({
@@ -368,8 +392,24 @@ export function SessionForm({
                   onChange={(e) => resultPatch(r.id, { label: e.target.value })}
                 />
               </label>
+              {session.discipline === "custom" && (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={r.dryFire ?? false}
+                    onChange={(e) =>
+                      resultPatch(r.id, {
+                        dryFire: e.target.checked || undefined,
+                        shots: e.target.checked ? 0 : 5,
+                        hits: undefined,
+                      })
+                    }
+                  />
+                  {tr("session.dryFire")}
+                </label>
+              )}
               {field(tr("quick.shots"), "shots", r, true)}
-              {["points", "field", "dynamic"].includes(kind) &&
+              {["points", "field", "dynamic", "open"].includes(kind) &&
                 field(
                   kind === "field"
                     ? tr("session.pointTargets")
@@ -379,13 +419,64 @@ export function SessionForm({
                   kind === "points",
                 )}
               {kind !== "points" &&
-                field(tr("session.hits"), "hits", r, kind !== "dynamic")}
+                field(
+                  tr("session.hits"),
+                  "hits",
+                  r,
+                  !["dynamic", "open"].includes(kind),
+                )}
               {kind === "field" && field(tr("quick.figures"), "figures", r)}
               {kind === "points" && field(tr("session.innerTens"), "x", r)}
-              {["points", "field", "dynamic"].includes(kind) &&
+              {["points", "field", "dynamic", "open"].includes(kind) &&
                 field(tr("session.penaltyPoints"), "penaltyPoints", r)}
-              {["time", "dynamic"].includes(kind) &&
+              {["time", "dynamic", "open"].includes(kind) &&
                 field(tr("session.penaltyTime"), "penaltySeconds", r)}
+              {["time", "dynamic", "open"].includes(kind) &&
+                field(
+                  tr("session.elapsedSeconds"),
+                  "elapsedSeconds",
+                  r,
+                  kind === "dynamic" &&
+                    session.discipline !== "sra" &&
+                    (!r.status || r.status === "completed"),
+                )}
+              {["dynamic", "open"].includes(kind) && (
+                <>
+                  {field(tr("session.matchPercent"), "matchPercent", r)}
+                  {field(tr("session.placement"), "placement", r)}
+                  <label>
+                    {tr("session.scoreText")}
+                    <input
+                      maxLength={240}
+                      value={r.scoreText ?? ""}
+                      onChange={(e) =>
+                        resultPatch(r.id, {
+                          scoreText: e.target.value || undefined,
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    {tr("session.resultStatus")}
+                    <select
+                      value={r.status ?? "completed"}
+                      onChange={(e) =>
+                        resultPatch(r.id, {
+                          status: e.target.value as Result["status"],
+                        })
+                      }
+                    >
+                      {(["completed", "dnf", "dq", "dns"] as const).map(
+                        (status) => (
+                          <option key={status} value={status}>
+                            {tr(`resultStatus.${status}`)}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </label>
+                </>
+              )}
               {kind === "field" && (
                 <label>
                   {tr("session.scoring")}

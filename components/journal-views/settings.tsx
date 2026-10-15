@@ -1,4 +1,5 @@
 "use client";
+import { RulesCheck } from "@/components/rules-check";
 import { RepositoryAccess } from "@/components/repository-access";
 import { InstallationCheck } from "@/components/installation-check";
 import { AppUpdates } from "@/components/app-updates";
@@ -26,6 +27,7 @@ export default function View() {
       <RepositoryAccess />
       <InstallationCheck />
       <AppUpdates />
+      <RulesCheck />
     </>
   );
 }

@@ -10,6 +10,7 @@ const staticRoutes = new Set([
   "/settings/",
   "/qualifications/",
   "/quick/",
+  "/training/",
 ]);
 
 export function redactPerformanceEvent(

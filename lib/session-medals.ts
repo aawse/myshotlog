@@ -1,3 +1,4 @@
+import { netPoints } from "./result-metrics";
 import type { Session, Assessment } from "./models";
 export type SeriesMedals = {
   gold: number;
@@ -45,7 +46,7 @@ export function sessionSeriesRatings(
       points:
         result.points === undefined
           ? undefined
-          : result.points - (result.penaltyPoints ?? 0),
+          : netPoints(result, session.discipline),
     };
   });
 }

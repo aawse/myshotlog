@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-15",
+  "spsf": {
+    "edition": 21,
+    "year": 2026,
+    "sourcePage": "https://www.pistolskytteforbundet.se/om-pistolskytte/regler/skjuthandboken-och-sakb/",
+    "download": "https://www.pistolskytteforbundet.se/app/uploads/2026/01/SHB_2026_upplaga-21_NY.pdf",
+    "sha256": "ab2c56169b229ce706aa2e588de527cbdef12bb8d7bce5ef62e70fbfd9eeecfc"
+  },
+  "ipsc": "https://www.ipsc.org/ipsc-rules/rule-books/",
+  "sdssf": "https://sdssf.se/press/",
+  "sdssfHandgun": "https://sdssf.se/wp-content/uploads/2026/04/Regler_Sv_2026_utgava_01.pdf",
+  "nordicSteel": "https://sdssf.se/wp-content/uploads/2026/04/Nordic-Steel-Challenge-Competition-Rules-April-2024.pdf"
+}

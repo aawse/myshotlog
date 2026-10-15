@@ -19,7 +19,13 @@ export const resultSchema = z
     label: text(120),
     photoId: photoIdSchema.optional(),
     type: z.enum(["score", "application"]),
-    shots: integer.min(1).max(1000),
+    shots: integer.max(1000),
+    dryFire: z.boolean().optional(),
+    elapsedSeconds: n.optional(),
+    matchPercent: n.max(100).optional(),
+    placement: integer.min(1).optional(),
+    scoreText: text(240).optional(),
+    status: z.enum(["completed", "dnf", "dq", "dns"]).optional(),
     points: n.optional(),
     hits: integer.optional(),
     figures: integer.optional(),
@@ -35,6 +41,18 @@ export const resultSchema = z
   })
   .strict()
   .superRefine((r, c) => {
+    if (r.shots === 0 && !r.dryFire && (!r.status || r.status === "completed"))
+      c.addIssue({
+        code: "custom",
+        path: ["shots"],
+        message: swText("validation.zeroShots"),
+      });
+    if (r.dryFire && r.shots !== 0)
+      c.addIssue({
+        code: "custom",
+        path: ["shots"],
+        message: swText("validation.dryShots"),
+      });
     if (r.hits !== undefined && r.hits > r.shots)
       c.addIssue({
         code: "custom",
@@ -52,15 +70,6 @@ export const resultSchema = z
         code: "custom",
         message: swText("validation.innerTens"),
         path: ["x"],
-      });
-    if (
-      r.penaltyPoints !== undefined &&
-      (r.points === undefined || r.penaltyPoints > r.points)
-    )
-      c.addIssue({
-        code: "custom",
-        message: swText("validation.penalty"),
-        path: ["penaltyPoints"],
       });
   });
 export type Result = z.infer<typeof resultSchema>;
@@ -93,6 +102,7 @@ export const sessionSchema = z
     location: text(200),
     discipline: z.enum(disciplineIds),
     program: text(120).min(1),
+    ruleReference: text(200).optional(),
     distance: n.nullable().optional(),
     seconds: n.nullable().optional(),
     target: text(120).nullable().optional(),
@@ -112,6 +122,42 @@ export const sessionSchema = z
         message: swText("validation.duplicateResults"),
       });
     for (const [i, r] of s.results.entries()) {
+      const kind = discipline(s.discipline).kind;
+      if (
+        r.penaltyPoints !== undefined &&
+        kind !== "dynamic" &&
+        kind !== "open" &&
+        (r.points === undefined || r.penaltyPoints > r.points)
+      )
+        c.addIssue({
+          code: "custom",
+          path: ["results", i, "penaltyPoints"],
+          message: swText("validation.penalty"),
+        });
+      if (r.dryFire && s.discipline !== "custom")
+        c.addIssue({
+          code: "custom",
+          path: ["results", i, "dryFire"],
+          message: swText("validation.dryCustom"),
+        });
+      if (
+        kind === "dynamic" &&
+        s.discipline !== "sra" &&
+        (!r.status || r.status === "completed")
+      ) {
+        if (r.points === undefined && r.hits === undefined)
+          c.addIssue({
+            code: "custom",
+            path: ["results", i],
+            message: swText("validation.score"),
+          });
+        if (!r.elapsedSeconds)
+          c.addIssue({
+            code: "custom",
+            path: ["results", i, "elapsedSeconds"],
+            message: swText("validation.elapsed"),
+          });
+      }
       if (
         [
           "precision",
@@ -157,6 +203,7 @@ export const sessionSchema = z
         });
       if (
         ["running", "ski", "falling", "sra"].includes(s.discipline) &&
+        r.elapsedSeconds === undefined &&
         (s.seconds === null ||
           (s.seconds === undefined && r.seconds === undefined))
       )
@@ -304,15 +351,21 @@ function validateQuick(
   )
     ctx.addIssue({ code: "custom", message: swText("validation.conditions") });
   const kind = discipline(entry.discipline).kind;
+  if (entry.result.dryFire && entry.discipline !== "custom")
+    ctx.addIssue({ code: "custom", message: swText("validation.dryCustom") });
   if (kind === "points" && entry.result.points === undefined)
     ctx.addIssue({ code: "custom", message: swText("validation.points") });
-  if (!["points", "dynamic"].includes(kind) && entry.result.hits === undefined)
+  if (
+    !["points", "dynamic", "open"].includes(kind) &&
+    entry.result.hits === undefined
+  )
     ctx.addIssue({
       code: "custom",
       message: swText("validation.requiredHits"),
     });
   if (
     kind === "dynamic" &&
+    (!entry.result.status || entry.result.status === "completed") &&
     entry.result.hits === undefined &&
     entry.result.points === undefined
   )

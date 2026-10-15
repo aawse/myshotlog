@@ -2,7 +2,7 @@
 import { useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { Bug } from "lucide-react";
+import { MessageSquarePlus } from "lucide-react";
 import { LoadingIndicator } from "./loading-indicator";
 import { useI18n } from "./language-provider";
 import { translator, languageOrDefault } from "@/lib/i18n";
@@ -54,7 +54,7 @@ export function QuickIssueReport() {
           setOpened(true);
         }}
       >
-        <Bug size={20} aria-hidden="true" />
+        <MessageSquarePlus size={20} aria-hidden="true" />
         <span>{tr("issues.report")}</span>
       </button>
       {loaded && (

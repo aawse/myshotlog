@@ -24,7 +24,9 @@ export function ProgressChart({ sessions }: { sessions: Session[] }) {
   const values = rows.map((s) => {
     const t = summarize(s);
     return kind === "points"
-      ? t.points / t.shots
+      ? t.shots
+        ? t.points / t.shots
+        : 0
       : kind === "time" || kind === "dynamic"
         ? t.seconds
         : t.hits;

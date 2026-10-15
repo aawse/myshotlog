@@ -1,4 +1,5 @@
 "use client";
+import { hitFactor } from "@/lib/result-metrics";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
 import Link from "next/link";
@@ -88,6 +89,11 @@ export default function View({ id }: { id: string }) {
               ? tr("details.oldTimes")
               : tr("common.notSpecified")}
         </p>
+        {s.ruleReference && (
+          <p>
+            {tr("session.ruleReference")}: {s.ruleReference}
+          </p>
+        )}
         <div className="table-scroll">
           <table className="series-results">
             <thead>
@@ -143,7 +149,40 @@ export default function View({ id }: { id: string }) {
                         />
                       )}
                     </td>
-                    <td>{points ?? "–"}</td>
+                    <td>
+                      {points ?? "–"}
+                      {r.elapsedSeconds !== undefined && (
+                        <span className="subline">
+                          {tr("session.elapsedSeconds")}: {r.elapsedSeconds}
+                          {" s"}
+                        </span>
+                      )}
+                      {hitFactor(r, s.discipline) !== undefined && (
+                        <span className="subline">
+                          {tr("session.hitFactor")}:{" "}
+                          {hitFactor(r, s.discipline)!.toFixed(4)}
+                        </span>
+                      )}
+                      {r.matchPercent !== undefined && (
+                        <span className="subline">{r.matchPercent}%</span>
+                      )}
+                      {r.placement !== undefined && (
+                        <span className="subline">
+                          {tr("session.placement")}: {r.placement}
+                        </span>
+                      )}
+                      {r.dryFire && (
+                        <span className="subline">{tr("session.dryFire")}</span>
+                      )}
+                      {r.scoreText && (
+                        <span className="subline">{r.scoreText}</span>
+                      )}
+                      {r.status && r.status !== "completed" && (
+                        <span className="subline">
+                          {tr(`resultStatus.${r.status}`)}
+                        </span>
+                      )}
+                    </td>
                     <td>
                       {r.hits ?? "–"} / {r.figures ?? "–"}
                       {r.scoring === "points" && (

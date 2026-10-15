@@ -1,6 +1,6 @@
 import { swText } from "./i18n";
-export const handbookUrl =
-  "https://www.svenskappccupen.se/wp-content/uploads/2026/01/SHB_2026.pdf";
+import sources from "./rules/sources.json";
+export const handbookUrl = sources.spsf.download;
 export const disciplines = [
   {
     id: "precision",
@@ -70,6 +70,84 @@ export const disciplines = [
     name: swText("discipline.application"),
     kind: "hits",
     section: swText("domain.appendix"),
+  },
+  {
+    id: "ipsc-handgun",
+    name: swText("discipline.ipsc-handgun"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "ipsc-22",
+    name: swText("discipline.ipsc-22"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "ipsc-rifle",
+    name: swText("discipline.ipsc-rifle"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "ipsc-shotgun",
+    name: swText("discipline.ipsc-shotgun"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "ipsc-mini-rifle",
+    name: swText("discipline.ipsc-mini-rifle"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "ipsc-pcc",
+    name: swText("discipline.ipsc-pcc"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "ipsc-action-air",
+    name: swText("discipline.ipsc-action-air"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "ipsc-action-air-rifle",
+    name: swText("discipline.ipsc-action-air-rifle"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "ipsc-action-air-pcc",
+    name: swText("discipline.ipsc-action-air-pcc"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "ipsc-combined",
+    name: swText("discipline.ipsc-combined"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "nordic-steel",
+    name: swText("discipline.nordic-steel"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "dmr",
+    name: swText("discipline.dmr"),
+    kind: "dynamic",
+    section: swText("domain.separateRules"),
+  },
+  {
+    id: "custom",
+    name: swText("discipline.custom"),
+    kind: "open",
+    section: swText("domain.separateRules"),
   },
 ] as const;
 export type DisciplineId = (typeof disciplines)[number]["id"];
