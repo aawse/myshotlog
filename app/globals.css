@@ -64,6 +64,7 @@ button:disabled {
 .shell {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 .sidebar {
   width: 236px;
@@ -1745,4 +1746,78 @@ button > svg {
   height: var(--control-height);
   padding: var(--space-8);
   flex-shrink: 0;
+}
+
+/* Keep native browser zoom, accommodate notches and avoid double-tap delays. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+button,
+a.button,
+input,
+select,
+textarea,
+summary {
+  touch-action: manipulation;
+}
+@media (display-mode: standalone) {
+  body {
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+}
+
+.sidebar {
+  padding-top: calc(37px + env(safe-area-inset-top, 0px));
+}
+.content {
+  padding-left: max(44px, env(safe-area-inset-left, 0px));
+  padding-right: max(44px, env(safe-area-inset-right, 0px));
+}
+.workspace > footer {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 1050px) {
+  .sidebar {
+    padding-top: calc(30px + env(safe-area-inset-top, 0px));
+  }
+  .content {
+    padding-inline: max(24px, env(safe-area-inset-left, 0px))
+      max(24px, env(safe-area-inset-right, 0px));
+  }
+}
+@media (max-width: 760px) {
+  .sidebar {
+    padding-top: calc(20px + env(safe-area-inset-top, 0px));
+    padding-inline: max(18px, env(safe-area-inset-left, 0px))
+      max(18px, env(safe-area-inset-right, 0px));
+  }
+  .content,
+  .topbar,
+  .witness-page {
+    padding-inline: max(18px, env(safe-area-inset-left, 0px))
+      max(18px, env(safe-area-inset-right, 0px));
+  }
+  .witness-page {
+    padding-top: calc(24px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (pointer: coarse) {
+  .form input:not([type="checkbox"]):not([type="radio"]),
+  .form select,
+  .form textarea,
+  .filters input,
+  .filters input[type="date"],
+  .filters select,
+  .witness-form input:not([type="checkbox"]):not([type="radio"]),
+  .witness-page select {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .form textarea {
+    min-height: 110px;
+  }
 }

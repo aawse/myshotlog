@@ -4,7 +4,7 @@ import { getI18n } from "@/lib/i18n-server";
 import { AppTelemetry } from "@/components/app-telemetry";
 import { connection } from "next/server";
 import localFont from "next/font/local";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 const didactGothic = localFont({
   src: "../lib/fonts/DidactGothic-Regular.woff2",
@@ -13,11 +13,24 @@ const didactGothic = localFont({
   display: "swap",
   variable: "--font-didact-gothic",
 });
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+  themeColor: "#315d43",
+  colorScheme: "light",
+};
 export async function generateMetadata(): Promise<Metadata> {
   const { tr } = await getI18n();
   return {
     title: tr("site.title"),
     applicationName: "MyShotLog",
+    appleWebApp: {
+      capable: true,
+      title: "MyShotLog",
+      statusBarStyle: "default",
+    },
     robots: { index: false, follow: false, nocache: true },
     description: tr("site.description"),
     icons: {

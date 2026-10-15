@@ -6,3 +6,7 @@ node_modules/
 coverage/
 .DS_Store
 .ds_store
+
+# Browser UI test reports (fictional fixtures only)
+/playwright-report/
+/test-results/

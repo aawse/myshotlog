@@ -57,6 +57,8 @@ const assets = [
     "MyShotLog-logo.png",
     "MyShotLog-icon.svg",
     "MyShotLog-icon.png",
+    "MyShotLog-app-192.png",
+    "MyShotLog-app-512.png",
     "MyShotLog-logo-monochrome.svg",
     "MyShotLog-logo-monochrome.png",
     "MyShotLog-apple-touch-icon.png",

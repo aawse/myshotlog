@@ -111,3 +111,18 @@ Alla SPSF-grenar kan registreras, liksom IPSC, Nordic Steel Challenge, DMR och e
 **Check rule updates** kontrollerar dessutom SPSF, SRA, IPSC och SDSSF var sjätte månad och skapar ett GitHub-ärende med uppdateringsanvisningar när officiella dokument ändras. Det kan även startas manuellt. Se [schemalagd regelkontroll](docs/RULES.md#schemalagd-kontroll-i-github).
 
 Lämna både felrapporter och förbättringsförslag via **Synpunkter** på valfri sida.
+
+## UI-tester och mobil installation
+
+Playwright testar Chromium, Firefox och WebKit på dator samt webbläsarprofiler
+för Android, iPhone och iPad. Kör först `npm run test:ui:install` och sedan
+`npm run test:ui`. Det befintliga Ubuntu-arbetsflödet kör samma tester och sparar
+felrapporter. Testerna använder fiktiva lokala uppgifter; inga riktiga konton
+eller hemligheter behövs. Mobilprofiler är emulering; kamera, installation och
+operativsystem behöver också kontrolleras på riktiga enheter.
+Se [UI-tester och mobil användning](docs/UI-TESTS.md).
+
+Appen kan läggas till på hemskärmen i webbläsare som stöder installation via
+HTTPS och öppnas då i ett eget fönster. Mobilvyer tar hänsyn till skärmens säkra
+kanter och tangentbordets ändrade visningsyta. Nypzoom är fortsatt tillåten.
+Detta tillför ingen service worker eller möjlighet att öppna en ny sida utan nät.

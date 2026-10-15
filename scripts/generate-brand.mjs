@@ -51,6 +51,20 @@ for (const [name, full, mono] of [
       fileURLToPath(new URL(`../public/brand/${name}.png`, import.meta.url)),
     );
 }
+for (const size of [192, 512]) {
+  await sharp(
+    fileURLToPath(
+      new URL("../public/brand/MyShotLog-icon.png", import.meta.url),
+    ),
+  )
+    .resize(size, size)
+    .png()
+    .toFile(
+      fileURLToPath(
+        new URL(`../public/brand/MyShotLog-app-${size}.png`, import.meta.url),
+      ),
+    );
+}
 const main = Buffer.from(svg(true));
 const lockup = await sharp(main).resize({ width: 700 }).png().toBuffer();
 const icon = await sharp(Buffer.from(svg(false)))
