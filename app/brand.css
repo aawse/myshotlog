@@ -17,6 +17,18 @@
   --radius-control: 4px;
   --radius-panel: 4px;
   --radius-overlay: 8px;
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
+  --space-64: 64px;
+  --control-height: 44px;
+  --logo-width: 180px;
+  --logo-width-compact: 160px;
   --weight-body: 400;
   --weight-heading: 400;
   --weight-emphasis: 600;

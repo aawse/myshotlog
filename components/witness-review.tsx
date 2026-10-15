@@ -121,7 +121,7 @@ export function WitnessReviewView({
               </dd>
             </div>
             <div>
-              <dt>{tr("details.target")}</dt>
+              <dt>{tr("session.target")}</dt>
               <dd>{targetName(language, result.target)}</dd>
             </div>
             <div>

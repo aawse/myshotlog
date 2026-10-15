@@ -30,6 +30,12 @@ const vars = {
   "radius-control": design.radius.control + "px",
   "radius-panel": design.radius.panel + "px",
   "radius-overlay": design.radius.overlay + "px",
+  ...Object.fromEntries(
+    design.spacing.map((size) => [`space-${size}`, `${size}px`]),
+  ),
+  "control-height": design.layout.controlHeight + "px",
+  "logo-width": design.layout.logoWidth + "px",
+  "logo-width-compact": design.layout.compactLogoWidth + "px",
   "weight-body": design.weight.body,
   "weight-heading": design.weight.heading,
   "weight-emphasis": design.weight.emphasis,

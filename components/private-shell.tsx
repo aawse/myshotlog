@@ -3,6 +3,7 @@ import { UpdateProvider } from "./update-provider";
 import { UpdateNotice } from "./app-updates";
 import { useI18n } from "./language-provider";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { BrandLogo } from "./brand-logo";
 import { signOut } from "@/app/auth/actions";
 import {
@@ -21,6 +22,13 @@ import { useJournalState } from "./journal-provider";
 export function PrivateShell({ children }: { children: React.ReactNode }) {
   const { tr } = useI18n();
   const { state } = useJournalState();
+  const path = (usePathname() ?? "").replace(/\/$/, "");
+  const current = (section: string) =>
+    path === section
+      ? ("page" as const)
+      : path.startsWith(section + "/")
+        ? ("location" as const)
+        : undefined;
   return (
     <UpdateProvider>
       <div
@@ -58,25 +66,28 @@ export function PrivateShell({ children }: { children: React.ReactNode }) {
           </Link>
           <div className="nav-caption">{tr("nav.caption")}</div>
           <nav>
-            <Link href="/quick/">
+            <Link href="/quick/" aria-current={current("/quick")}>
               <Zap size={19} /> {tr("nav.quick")}
             </Link>
-            <Link href="/dashboard/">
+            <Link href="/dashboard/" aria-current={current("/dashboard")}>
               <LayoutDashboard size={19} /> {tr("nav.dashboard")}
             </Link>
-            <Link href="/sessions/">
+            <Link href="/sessions/" aria-current={current("/sessions")}>
               <NotebookPen size={19} /> {tr("nav.sessions")}
             </Link>
-            <Link href="/firearms/">
+            <Link href="/firearms/" aria-current={current("/firearms")}>
               <Target size={19} /> {tr("nav.firearms")}
             </Link>
-            <Link href="/qualifications/">
+            <Link
+              href="/qualifications/"
+              aria-current={current("/qualifications")}
+            >
               <ShieldCheck size={19} /> {tr("nav.qualifications")}
             </Link>
-            <Link href="/training/">
+            <Link href="/training/" aria-current={current("/training")}>
               <BookOpen size={19} /> {tr("training.title")}
             </Link>
-            <Link href="/settings/">
+            <Link href="/settings/" aria-current={current("/settings")}>
               <Settings size={19} /> {tr("nav.settings")}
             </Link>
           </nav>

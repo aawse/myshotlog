@@ -26,7 +26,8 @@ button,
   background: var(--green);
   color: white;
   font-weight: var(--weight-emphasis);
-  padding: 13px 19px;
+  padding: var(--space-12) var(--space-20);
+  min-height: var(--control-height);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -82,7 +83,7 @@ button:disabled {
 }
 .brand-logo {
   display: block;
-  width: 188px;
+  width: var(--logo-width);
   max-width: 100%;
   height: auto;
 }
@@ -151,6 +152,7 @@ button:disabled {
   padding: 40px 44px;
 }
 .page-heading {
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -184,6 +186,17 @@ h3 {
 p {
   line-height: 1.7;
   margin: 10px 0;
+}
+.page-heading > div:first-child {
+  min-width: 0;
+}
+.page-heading .actions {
+  margin: 0;
+}
+.page-heading h1,
+.card h2,
+.card h3 {
+  overflow-wrap: anywhere;
 }
 .page-heading p {
   color: var(--muted);
@@ -288,14 +301,14 @@ p {
   background: var(--white);
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
-  padding: 25px;
-  margin-bottom: 22px;
+  padding: var(--space-24);
+  margin-bottom: var(--space-24);
 }
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  margin-top: 22px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-16);
+  margin-block: var(--space-24);
 }
 .stat {
   position: relative;
@@ -326,8 +339,17 @@ p {
 }
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1.55fr 1fr;
-  gap: 22px;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: var(--space-24);
+  margin-bottom: var(--space-24);
+}
+.stats > .card,
+.dashboard-grid > .card,
+.firearm-grid > .card,
+.qualification-grid > .card,
+.quick-entry-layout > .card {
+  min-width: 0;
+  margin-bottom: 0;
 }
 .section-heading {
   display: flex;
@@ -488,15 +510,15 @@ footer {
 }
 .form {
   display: grid;
-  gap: 18px;
+  gap: var(--space-16);
 }
 .form .card {
   margin-bottom: 0;
 }
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-16);
 }
 label {
   display: flex;
@@ -509,12 +531,13 @@ input,
 select,
 textarea {
   width: 100%;
+  min-width: 0;
   background: white;
   border: 1px solid #dbe1d6;
   border-radius: var(--radius-control);
   padding: 11px 12px;
   color: var(--ink);
-  min-height: 42px;
+  min-height: var(--control-height);
 }
 textarea {
   min-height: 110px;
@@ -616,7 +639,7 @@ summary {
 .qualification-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: var(--space-24);
 }
 .firearm-card {
   display: block;
@@ -764,7 +787,7 @@ progress {
     border-bottom: 1px solid var(--line);
   }
   .sidebar .brand-logo {
-    width: 180px;
+    width: var(--logo-width-compact);
   }
   .nav-caption,
   .sidebar-bottom {
@@ -777,8 +800,9 @@ progress {
     margin-top: 15px;
   }
   .sidebar nav a {
-    font-size: 10px;
-    padding: 10px 9px;
+    font-size: 12px;
+    min-height: var(--control-height);
+    padding: var(--space-12);
     white-space: nowrap;
     gap: 6px;
   }
@@ -798,7 +822,8 @@ progress {
   }
   .page-heading {
     flex-direction: column;
-    gap: 18px;
+    align-items: stretch;
+    gap: var(--space-16);
   }
   h1 {
     font-size: 27px;
@@ -859,7 +884,7 @@ progress {
     min-width: 490px;
   }
   .form-grid {
-    gap: 15px;
+    gap: var(--space-16);
   }
   .result-entry {
     padding: 14px;
@@ -873,7 +898,7 @@ progress {
   }
   .filters > label {
     flex: 1;
-    min-width: 120px;
+    min-width: 0;
   }
   .filters > select {
     width: 100%;
@@ -1315,7 +1340,7 @@ progress {
 }
 .witness-form {
   display: grid;
-  gap: 18px;
+  gap: var(--space-16);
 }
 .witness-form canvas {
   display: block;
@@ -1335,6 +1360,8 @@ progress {
   gap: 12px;
 }
 .witness-confirm input {
+  min-height: 0;
+  padding: 0;
   width: 22px;
   height: 22px;
   flex: 0 0 22px;
@@ -1598,4 +1625,124 @@ body:has(.issue-dialog[open]) {
   overflow-wrap: anywhere;
   overflow: auto;
   font-size: 12px;
+}
+
+/* Shared rhythm for repeated panels, and legible controls on small screens. */
+.sidebar nav a[aria-current] {
+  background: var(--pale);
+  color: var(--green);
+  box-shadow: inset 3px 0 var(--green);
+}
+.sidebar nav svg,
+.button > svg,
+button > svg {
+  flex-shrink: 0;
+}
+.content > .form:has(+ .card) {
+  margin-bottom: var(--space-24);
+}
+.card > :last-child {
+  margin-bottom: 0;
+}
+.training-panel ul,
+.training-panel ol {
+  line-height: 1.7;
+  padding-inline-start: var(--space-20);
+}
+.training-panel li + li {
+  margin-top: var(--space-8);
+}
+.training-panel a:not(.button) {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.sync-status > details {
+  margin: var(--space-4) 0 0;
+}
+.sync-status > details > summary {
+  padding-block: var(--space-8);
+}
+@media (max-width: 760px) {
+  .form input:not([type="checkbox"]):not([type="radio"]),
+  .form select,
+  .form textarea,
+  .filters input,
+  .filters select,
+  .witness-form input:not([type="checkbox"]):not([type="radio"]),
+  .witness-panel select {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .page-heading > .button {
+    align-self: flex-start;
+  }
+  .stats,
+  .dashboard-grid,
+  .firearm-grid,
+  .qualification-grid,
+  .quick-entry-layout {
+    gap: var(--space-16);
+  }
+  .table-scroll .session-table {
+    min-width: 0;
+  }
+  .session-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .session-table tbody {
+    display: block;
+  }
+  .session-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-8) var(--space-12);
+    padding-block: var(--space-16);
+    border-bottom: 1px solid var(--line);
+  }
+  .session-table tr:last-child {
+    border-bottom: 0;
+  }
+  .session-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .session-table td:not(:last-child) {
+    grid-column: 1;
+  }
+  .session-table td:last-child {
+    grid-column: 2;
+    grid-row: 1 / 4;
+    align-self: center;
+  }
+  .session-table td[colspan] {
+    grid-column: 1 / -1;
+  }
+}
+
+.form > h2 {
+  margin-bottom: 0;
+}
+.settings-sections {
+  gap: var(--space-24);
+}
+
+@media (max-width: 760px) {
+  .form textarea {
+    min-height: 110px;
+  }
+}
+
+.issue-dialog-header > button {
+  width: var(--control-height);
+  height: var(--control-height);
+  padding: var(--space-8);
+  flex-shrink: 0;
 }

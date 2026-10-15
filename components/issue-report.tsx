@@ -35,7 +35,11 @@ export function IssueReport({
     [copyFailed, setCopyFailed] = useState(false),
     [error, setError] = useState(false);
   useEffect(() => {
-    if (!open) return;
+    const modal = dialog.current;
+    if (!open) {
+      if (modal?.open) modal.close();
+      return;
+    }
     if (!initialized.current) {
       initialized.current = true;
       setFields((previous) => ({
@@ -52,11 +56,9 @@ export function IssueReport({
           .join("\n"),
       }));
     }
-    const modal = dialog.current;
-    modal?.showModal();
-    return () => {
-      if (modal?.open) modal.close();
-    };
+    // Removing the dialog clears its top-layer state. Closing it in effect cleanup
+    // fires onClose during Strict Mode's setup/cleanup replay and hides a new report.
+    if (modal && !modal.open) modal.showModal();
   }, [open]);
   function change(key: keyof IssueFields, value: string) {
     setFields((previous) => ({ ...previous, [key]: value }));

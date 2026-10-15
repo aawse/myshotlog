@@ -110,7 +110,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     }
   }
   return (
-    <div className="form">
+    <div className="form settings-sections">
       <form
         className="card form"
         onSubmit={(e) => {

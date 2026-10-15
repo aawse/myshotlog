@@ -13,7 +13,7 @@ export default function View() {
           <p>{tr("training.intro")}</p>
         </div>
       </div>
-      <section className="card">
+      <section className="card training-panel">
         <h2>{tr("resources.title")}</h2>
         <p>{tr("resources.intro")}</p>
         <ul>
@@ -66,7 +66,7 @@ export default function View() {
         </ul>
       </section>
       <RulesCheck />
-      <section className="card">
+      <section className="card training-panel">
         <h2>{tr("training.targets")}</h2>
         <p>{tr("training.targetHelp")}</p>
         <div className="actions">
@@ -86,7 +86,7 @@ export default function View() {
           </a>
         </div>
       </section>
-      <section className="card">
+      <section className="card training-panel">
         <h2>{tr("training.dryTitle")}</h2>
         <p>{tr("training.dryIntro")}</p>
         <ol>

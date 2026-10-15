@@ -85,7 +85,7 @@ export function SessionList({
       )}
       {list.length ? (
         <div className="table-scroll">
-          <table>
+          <table className="session-table" role="table">
             <thead>
               <tr>
                 <th>{tr("sessions.dateHeading")}</th>
