@@ -204,10 +204,79 @@ it("renders numeric quick entry controls and prefills a new pass without exposin
   );
   expect(html).toContain('inputMode="decimal"');
   expect(html).toContain("Okopplade serier");
+  expect(html.match(/Välj skjutprogram/g)).toHaveLength(1);
   const form = renderToStaticMarkup(
     <SessionForm firearms={[]} quickEntries={[q]} />,
   );
   expect(form).toContain('value="46"');
   expect(form).toContain('value="2026-10-10"');
   expect(form).toContain("snabbserier kopplas");
+});
+it("preserves PPC program identity and stage conditions, including idempotent quick saves", async () => {
+  const { store, db } = setup();
+  const id = crypto.randomUUID();
+  const q = {
+    id,
+    date: session.date,
+    discipline: "ppc",
+    presetId: "ppc-p1500",
+    notes: "",
+    result: {
+      id,
+      label: "Match 1 · etapp 1 · 7 yd",
+      type: "score",
+      shots: 12,
+      points: 115,
+      stageDistance: 7,
+      stageDistanceUnit: "yd",
+      stageTimeLimit: 20,
+      stageTarget: "ppc",
+    },
+  };
+  await store.mutate("quick-entry", q);
+  await store.mutate("quick-entry", q);
+  expect(db.commits).toHaveLength(1);
+  await store.mutate("session-with-quick", {
+    ids: [id],
+    session: {
+      ...pass,
+      discipline: "ppc",
+      presetId: q.presetId,
+      program: "P1500",
+      group: "P1500",
+      seconds: null,
+      distance: null,
+      target: "ppc",
+      results: [q.result],
+    },
+  });
+  const saved = (await store.records()).sessions[0];
+  expect(saved.presetId).toBe("ppc-p1500");
+  expect(saved.results[0]).toMatchObject({
+    stageDistance: 7,
+    stageDistanceUnit: "yd",
+    stageTimeLimit: 20,
+    stageTarget: "ppc",
+  });
+});
+it("leaves quick entries intact when a different event program is selected", async () => {
+  const { store } = setup(),
+    q = { ...quick(), presetId: "precision-6" };
+  await store.mutate("quick-entry", q);
+  await expect(
+    store.mutate("session-with-quick", {
+      ids: [q.id],
+      session: { ...pass, presetId: "precision-7", results: [q.result] },
+    }),
+  ).rejects.toBeInstanceOf(InvalidRecord);
+  expect((await store.records()).quickEntries).toHaveLength(1);
+});
+
+it("captures an IPSC rule reference rather than an SPSF assessment version", async () => {
+  const { store } = setup();
+  const q = { ...quick(), discipline: "ipsc-handgun" };
+  await store.mutate("quick-entry", q);
+  expect((await store.records()).quickEntries![0].ruleVersion).toBe(
+    "IPSC 2026",
+  );
 });

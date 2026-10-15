@@ -1,3 +1,4 @@
+import { suggestedRuleReference } from "./events/programs";
 import { swText, t, type Language } from "@/lib/i18n";
 import { discipline, type DisciplineId } from "./disciplines";
 import { sessionSchema, type Session, type Firearm } from "./models";
@@ -35,16 +36,7 @@ export function changeDiscipline(
   return {
     ...session,
     discipline: id,
-    ruleReference:
-      id.startsWith("ipsc-") &&
-      session.date >= "2026-01-01" &&
-      session.date < "2027-01-01"
-        ? "IPSC 2026"
-        : id === "nordic-steel" && session.date >= "2024-04-01"
-          ? "Nordic Steel Challenge 2024-04"
-          : id === "dmr" && session.date >= "2024-01-01"
-            ? "SDSSF DMR 2024 v1.1"
-            : undefined,
+    ruleReference: suggestedRuleReference(id, session.date),
     program:
       session.program === swText("session.defaultProgram") ||
       session.program === t(language, "session.defaultProgram") ||

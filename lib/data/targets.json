@@ -54,5 +54,13 @@
   {
     "value": "clay",
     "labelKey": "target.clay"
+  },
+  {
+    "value": "rapid25",
+    "labelKey": "target.rapid25"
+  },
+  {
+    "value": "national",
+    "labelKey": "target.national"
   }
 ]

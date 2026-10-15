@@ -1,7 +1,12 @@
 "use client";
+import {
+  eventPrograms,
+  applyProgram,
+  programName,
+} from "@/lib/events/programs";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { PhotoViewer } from "./photo-viewer";
 import { TargetPhotoInput } from "./target-photo-input";
@@ -14,7 +19,7 @@ import type { QuickEntry, Session, Result } from "@/lib/models";
 import { mutate } from "./mutate";
 export type QuickSummary = Pick<
   QuickEntry,
-  "id" | "date" | "discipline" | "result" | "notes" | "recordedAt"
+  "id" | "date" | "discipline" | "result" | "notes" | "recordedAt" | "presetId"
 >;
 export function QuickSeries({
   entries,
@@ -24,7 +29,7 @@ export function QuickSeries({
   entries: QuickSummary[];
   sessions: Pick<
     Session,
-    "id" | "date" | "discipline" | "location" | "revision"
+    "id" | "date" | "discipline" | "location" | "revision" | "presetId"
   >[];
   today: string;
 }) {
@@ -42,6 +47,36 @@ export function QuickSeries({
   const [label, setLabel] = useState("");
   const [elapsed, setElapsed] = useState("");
   const [dryFire, setDryFire] = useState(false);
+  const [programId, setProgramId] = useState("");
+  const [programStage, setProgramStage] = useState(0);
+  const [stageUnit, setStageUnit] = useState<"m" | "yd">("yd");
+  const eventChoices = eventPrograms(sport);
+  const presetResults = useMemo(() => {
+    const program = eventPrograms(sport).find((p) => p.id === programId);
+    if (!program) return [];
+    return applyProgram(
+      {
+        id: "",
+        date,
+        time: "",
+        location: "",
+        discipline: sport,
+        program: "",
+        group: "",
+        firearmId: null,
+        firearmSnapshot: null,
+        context: "practice",
+        notes: "",
+        results: [],
+        revision: 0,
+      },
+      program,
+      language,
+      undefined,
+      { unit: stageUnit },
+    ).results;
+  }, [programId, sport, date, language, stageUnit]);
+  const selectedStage = presetResults[programStage];
   const [photo, setPhoto] = useState<PhotoDraft>();
   const [photoBusy, setPhotoBusy] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -60,12 +95,20 @@ export function QuickSeries({
   const matching = sessions.filter(
     (s) =>
       chosen.length > 0 &&
-      chosen.every((q) => q.date === s.date && q.discipline === s.discipline),
+      chosen.every(
+        (q) =>
+          q.date === s.date &&
+          q.discipline === s.discipline &&
+          (!q.presetId || q.presetId === s.presetId),
+      ),
   );
   const compatible =
     chosen.length > 0 &&
     chosen.every(
-      (q) => q.date === chosen[0].date && q.discipline === chosen[0].discipline,
+      (q) =>
+        q.date === chosen[0].date &&
+        q.discipline === chosen[0].discipline &&
+        q.presetId === chosen[0].presetId,
     );
   async function run(
     action: string,
@@ -101,6 +144,9 @@ export function QuickSeries({
       x,
       notes,
       label,
+      programId,
+      programStage,
+      stageUnit,
       elapsed,
       dryFire,
       photoId: photo?.id,
@@ -110,13 +156,23 @@ export function QuickSeries({
     const id = pending.current.id;
     const result: Result = {
       id,
-      label: label.trim() || tr("common.seriesLabel"),
+      label: label.trim() || selectedStage?.label || tr("common.seriesLabel"),
+      ...(selectedStage
+        ? {
+            stageDistance: selectedStage.stageDistance,
+            stageDistanceUnit: selectedStage.stageDistanceUnit,
+            stageTimeLimit: selectedStage.stageTimeLimit,
+            stageTarget: selectedStage.stageTarget,
+          }
+        : {}),
       ...(sport === "custom" && dryFire ? { dryFire: true } : {}),
       ...(elapsed !== "" ? { elapsedSeconds: Number(elapsed) } : {}),
       ...(photo ? { photoId: photo.id } : {}),
       type: sport === "application" ? "application" : "score",
       shots: Number(shots),
-      ...(["points", "dynamic", "open"].includes(kind) && points !== ""
+      ...(sport !== "nordic-steel" &&
+      ["points", "dynamic", "open"].includes(kind) &&
+      points !== ""
         ? { points: Number(points) }
         : {}),
       ...(kind !== "points" && hits !== "" ? { hits: Number(hits) } : {}),
@@ -128,7 +184,14 @@ export function QuickSeries({
     if (
       await run(
         "quick-entry",
-        { id, date, discipline: sport, result, notes },
+        {
+          id,
+          date,
+          discipline: sport,
+          result,
+          notes,
+          ...(programId ? { presetId: programId } : {}),
+        },
         tr("quick.saved"),
         photo ? [photo] : [],
       )
@@ -141,6 +204,11 @@ export function QuickSeries({
       setNotes("");
       setPhoto(undefined);
       setElapsed("");
+      if (selectedStage && programStage + 1 < presetResults.length) {
+        setProgramStage(programStage + 1);
+        setShots(String(presetResults[programStage + 1].shots));
+        setLabel("");
+      }
       scoreInput.current?.focus();
     }
   }
@@ -177,6 +245,8 @@ export function QuickSeries({
                 onChange={(e) => {
                   const id = e.target.value as Session["discipline"];
                   setSport(id);
+                  setProgramId("");
+                  setProgramStage(0);
                   setDryFire(false);
                   setLabel("");
                   setElapsed("");
@@ -195,6 +265,87 @@ export function QuickSeries({
               </select>
             </label>
           </div>
+          {sport !== "custom" && (
+            <div className="form-grid">
+              <label>
+                {tr("event.select")}
+                <select
+                  value={programId}
+                  onChange={(e) => {
+                    setProgramId(e.target.value);
+                    setProgramStage(0);
+                    setLabel("");
+                    const program = eventChoices.find(
+                      (p) => p.id === e.target.value,
+                    );
+                    if (program) {
+                      const first = applyProgram(
+                        {
+                          id: "",
+                          date,
+                          time: "",
+                          location: "",
+                          discipline: sport,
+                          program: "",
+                          group: "",
+                          firearmId: null,
+                          firearmSnapshot: null,
+                          context: "practice",
+                          notes: "",
+                          results: [],
+                          revision: 0,
+                        },
+                        program,
+                        language,
+                        undefined,
+                        { unit: stageUnit },
+                      ).results[0];
+                      setShots(String(first.shots));
+                    }
+                  }}
+                >
+                  <option value="">{tr("event.manual")}</option>
+                  {eventChoices.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {programName(p, language)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {presetResults.length > 0 && (
+                <label>
+                  {tr("session.resultName")}
+                  <select
+                    value={programStage}
+                    onChange={(e) => {
+                      const i = Number(e.target.value);
+                      setProgramStage(i);
+                      setShots(String(presetResults[i].shots));
+                      setLabel("");
+                    }}
+                  >
+                    {presetResults.map((r, i) => (
+                      <option key={r.id} value={i}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {sport === "ppc" && selectedStage && (
+                <label>
+                  {tr("event.unit")}
+                  <select
+                    value={stageUnit}
+                    onChange={(e) => setStageUnit(e.target.value as "m" | "yd")}
+                  >
+                    <option value="yd">{tr("event.unitYards")}</option>
+                    <option value="m">{tr("event.unitMeters")}</option>
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
           {sport === "custom" && (
             <label>
               {tr("session.customEvent")}
@@ -246,23 +397,24 @@ export function QuickSeries({
                 onChange={(e) => setShots(e.target.value)}
               />
             </label>
-            {["points", "dynamic", "open"].includes(kind) && (
-              <label className="quick-score">
-                {tr("session.points")}
-                <input
-                  ref={scoreInput}
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  max={sport === "precision" ? Number(shots) * 10 : undefined}
-                  step="any"
-                  required={kind === "points"}
-                  placeholder="–"
-                  value={points}
-                  onChange={(e) => setPoints(e.target.value)}
-                />
-              </label>
-            )}
+            {sport !== "nordic-steel" &&
+              ["points", "dynamic", "open"].includes(kind) && (
+                <label className="quick-score">
+                  {tr("session.points")}
+                  <input
+                    ref={scoreInput}
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    max={sport === "precision" ? Number(shots) * 10 : undefined}
+                    step="any"
+                    required={kind === "points"}
+                    placeholder="–"
+                    value={points}
+                    onChange={(e) => setPoints(e.target.value)}
+                  />
+                </label>
+              )}
             {kind !== "points" && (
               <label className="quick-score">
                 {tr("session.hits")}
@@ -273,7 +425,10 @@ export function QuickSeries({
                   min="0"
                   max={Number(shots)}
                   step="1"
-                  required={!["dynamic", "open"].includes(kind)}
+                  required={
+                    sport === "nordic-steel" ||
+                    !["dynamic", "open"].includes(kind)
+                  }
                   placeholder="–"
                   value={hits}
                   onChange={(e) => setHits(e.target.value)}

@@ -19,22 +19,24 @@ export default function View() {
       <QuickSeries
         today={todayInTimezone(data.profile.timezone)}
         entries={(data.quickEntries ?? []).map(
-          ({ id, date, discipline, result, notes, recordedAt }) => ({
+          ({ id, date, discipline, result, notes, recordedAt, presetId }) => ({
             id,
             date,
             discipline,
             result,
             notes,
             recordedAt,
+            presetId,
           }),
         )}
         sessions={data.sessions.map(
-          ({ id, date, discipline, location, revision }) => ({
+          ({ id, date, discipline, location, revision, presetId }) => ({
             id,
             date,
             discipline,
             location,
             revision,
+            presetId,
           }),
         )}
       />

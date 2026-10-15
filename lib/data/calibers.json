@@ -78,5 +78,13 @@
   {
     "value": "20/70",
     "labelKey": "caliber.2070"
+  },
+  {
+    "value": ".223 Remington",
+    "labelKey": "caliber.223"
+  },
+  {
+    "value": ".308 Winchester",
+    "labelKey": "caliber.308"
   }
 ]

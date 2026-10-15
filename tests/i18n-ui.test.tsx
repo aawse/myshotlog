@@ -58,8 +58,8 @@ it("translates new form defaults and built-in caliber captions without changing 
       <SessionForm firearms={[]} />
     </LanguageProvider>,
   );
-  expect(html).toContain('value="5-shot series"');
-  expect(html).toContain('value="Series 1"');
+  expect(html).toContain('value="25 m precision · practice"');
+  expect(html).toContain('value="Series 1 · 25 m"');
   expect(caliberName("en", "4.5 mm")).toBe("4.5 mm (.177, air pistol)");
   expect(
     changeDiscipline({ ...session, program: "5-shot series" }, "field", "en")

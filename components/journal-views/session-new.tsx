@@ -17,7 +17,8 @@ export default function View({ quick }: { quick?: string }) {
       selected.some(
         (q) =>
           q!.date !== selected[0]!.date ||
-          q!.discipline !== selected[0]!.discipline,
+          q!.discipline !== selected[0]!.discipline ||
+          q!.presetId !== selected[0]!.presetId,
       ))
   )
     return <JournalMissing />;
@@ -28,6 +29,7 @@ export default function View({ quick }: { quick?: string }) {
             id: q.id,
             date: q.date,
             discipline: q.discipline,
+            presetId: q.presetId,
             result: q.result,
             notes: q.notes,
           },

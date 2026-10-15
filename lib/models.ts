@@ -21,6 +21,10 @@ export const resultSchema = z
     type: z.enum(["score", "application"]),
     shots: integer.max(1000),
     dryFire: z.boolean().optional(),
+    stageDistance: n.optional(),
+    stageDistanceUnit: z.enum(["m", "yd"]).optional(),
+    stageTimeLimit: n.optional(),
+    stageTarget: text(120).optional(),
     elapsedSeconds: n.optional(),
     matchPercent: n.max(100).optional(),
     placement: integer.min(1).optional(),
@@ -85,6 +89,13 @@ export const firearmSchema = z
     notes: text(3000),
     archived: z.boolean(),
     defaultDiscipline: z.enum(disciplineIds).nullable().optional(),
+    hasOptic: z.boolean().optional(),
+    firearmType: z
+      .enum(["pistol", "revolver", "rifle", "shotgun", "air", "other"])
+      .optional(),
+    classDefaults: z
+      .partialRecord(z.enum(disciplineIds), text(100).min(1))
+      .optional(),
   })
   .strict();
 export type Firearm = z.infer<typeof firearmSchema>;
@@ -103,6 +114,7 @@ export const sessionSchema = z
     discipline: z.enum(disciplineIds),
     program: text(120).min(1),
     ruleReference: text(200).optional(),
+    presetId: text(80).optional(),
     distance: n.nullable().optional(),
     seconds: n.nullable().optional(),
     target: text(120).nullable().optional(),
@@ -202,8 +214,9 @@ export const sessionSchema = z
           path: ["results", i, "points"],
         });
       if (
-        ["running", "ski", "falling", "sra"].includes(s.discipline) &&
+        ["running", "ski", "sra"].includes(s.discipline) &&
         r.elapsedSeconds === undefined &&
+        r.stageTimeLimit === undefined &&
         (s.seconds === null ||
           (s.seconds === undefined && r.seconds === undefined))
       )
@@ -243,6 +256,12 @@ export function seriesConditions(session: Session, result: Result): Result {
     delete effective.seconds;
     if (session.seconds !== null) effective.seconds = session.seconds;
   }
+  if (result.stageDistance !== undefined)
+    effective.distance =
+      result.stageDistance * (result.stageDistanceUnit === "yd" ? 0.9144 : 1);
+  if (result.stageTimeLimit !== undefined)
+    effective.seconds = result.stageTimeLimit;
+  if (result.stageTarget !== undefined) effective.target = result.stageTarget;
   return effective;
 }
 export function todayInTimezone(timezone: string, now = new Date()) {
@@ -332,6 +351,7 @@ export type Assessment = {
   input: unknown;
 };
 const quickFields = {
+  presetId: text(80).optional(),
   id: z.uuid(),
   date: dateSchema,
   discipline: z.enum(disciplineIds),

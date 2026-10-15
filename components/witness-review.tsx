@@ -1,4 +1,5 @@
 "use client";
+import { distanceText } from "@/lib/events/programs";
 import { useI18n } from "./language-provider";
 import { caliberName, disciplineName, targetName } from "@/lib/i18n-domain";
 import { PhotoViewer } from "./photo-viewer";
@@ -31,6 +32,7 @@ export function WitnessReviewView({
           ? `${review.firearm.make} ${review.firearm.model} · ${caliberName(language, review.firearm.caliber)}`
           : tr("common.borrowedFirearm")}
       </p>
+      {review.firearm?.hasOptic && <p>{tr("firearm.hasOptic")}</p>}
       {review.ruleReference && (
         <p>
           {tr("session.ruleReference")}: {review.ruleReference}
@@ -115,7 +117,7 @@ export function WitnessReviewView({
               <dd>
                 {result.distance === undefined
                   ? tr("common.notSpecified")
-                  : `${result.distance} m`}
+                  : distanceText(result)}
               </dd>
             </div>
             <div>

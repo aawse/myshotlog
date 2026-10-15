@@ -1,6 +1,6 @@
 # MyShotLog
 
-Svensk träningsjournal för personligt pistolskytte, byggd med Next.js och React. Inloggning sker med GitHub-konton. Journalen lagras i ett **konfigurerbart privat Git-repository**, med en commit per sparad post. GitHub API används på Vercel; en Git-adapter finns för egen server och lokala bare repositories.
+Personlig journal för skytte, träning och tävling, byggd med Next.js och React. Inloggning sker med GitHub-konton. Journalen lagras i ett **konfigurerbart privat Git-repository**, med en commit per sparad post. GitHub API används på Vercel; en Git-adapter finns för egen server och lokala bare repositories.
 
 ## Funktioner
 
@@ -101,3 +101,11 @@ GitHub-ärenden är offentliga. Granska skärmbilder och ta bort hemligheter och
 ## Åtkomstgranskning
 
 Under **Inställningar → Vem har åtkomst till dina data?** kan du granska GitHub-konton och behörigheter till datarepositoryt med din befintliga token. Publik åtkomst och ofullständiga kontolistor visas tydligt. Repositoryåtkomst gäller samtliga lagrade journaler och deras historik och är separat från appens inloggningslista. Se [åtkomstgranskning och begränsningar](docs/SETUP.md#granska-åtkomst-till-personliga-data).
+
+## Grenar, regler och träning
+
+Alla SPSF-grenar kan registreras, liksom IPSC, Nordic Steel Challenge, DMR och egna grenar. Ett pass har ett vapen och en gren. Skjutprogram fyller i serier, skottantal och kända villkor. PPC-program behåller varje etapps avstånd i meter eller yard. Optik och förvalda klasser per gren sparas på vapnet; tidigare vapenögonblicksbilder ändras inte.
+
+**Träningsmaterial** innehåller egna A4-övningstavlor, råd om säker torrträning och länkar till aktuella regelböcker. En kontroll hos SPSF jämför den publicerade handboken med appens granskade dokument. Den läser inga journaluppgifter och bedömer inte om gamla resultat. Se [gren- och regeltäckning](docs/RULES.md) och [skjutprogram](docs/EVENTS.md).
+
+Lämna både felrapporter och förbättringsförslag via **Synpunkter** på valfri sida.

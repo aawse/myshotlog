@@ -1,0 +1,1033 @@
+[
+  {
+    "id": "precision-1",
+    "discipline": "precision",
+    "labelKey": "event.precision1",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 300,
+        "target": "precision25"
+      }
+    ]
+  },
+  {
+    "id": "precision-6",
+    "discipline": "precision",
+    "labelKey": "event.precision6",
+    "blocks": [
+      {
+        "count": 6,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 300,
+        "target": "precision25"
+      }
+    ]
+  },
+  {
+    "id": "precision-7",
+    "discipline": "precision",
+    "labelKey": "event.precision7",
+    "blocks": [
+      {
+        "count": 7,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 300,
+        "target": "precision25"
+      }
+    ]
+  },
+  {
+    "id": "magnum-1",
+    "discipline": "magnum-precision",
+    "labelKey": "event.magnum1",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 5,
+        "distance": 50,
+        "seconds": 300,
+        "target": "precision25"
+      }
+    ]
+  },
+  {
+    "id": "magnum-6",
+    "discipline": "magnum-precision",
+    "labelKey": "event.magnum6",
+    "blocks": [
+      {
+        "count": 6,
+        "shots": 5,
+        "distance": 50,
+        "seconds": 300,
+        "target": "precision25"
+      }
+    ]
+  },
+  {
+    "id": "rapid-6",
+    "discipline": "rapid",
+    "labelKey": "event.rapid",
+    "blocks": [
+      {
+        "count": 6,
+        "shots": 5,
+        "distance": 25,
+        "target": "rapid25",
+        "phase": "event.duel"
+      }
+    ]
+  },
+  {
+    "id": "military-12",
+    "discipline": "military",
+    "labelKey": "event.military",
+    "blocks": [
+      {
+        "count": 4,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 10,
+        "target": "rapid25",
+        "phase": "event.round",
+        "round": 1
+      },
+      {
+        "count": 4,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 8,
+        "target": "rapid25",
+        "phase": "event.round",
+        "round": 2
+      },
+      {
+        "count": 4,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 6,
+        "target": "rapid25",
+        "phase": "event.round",
+        "round": 3
+      }
+    ]
+  },
+  {
+    "id": "national-12",
+    "discipline": "national",
+    "labelKey": "event.national",
+    "blocks": [
+      {
+        "count": 4,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 300,
+        "target": "precision25",
+        "phase": "event.phaseA"
+      },
+      {
+        "count": 4,
+        "shots": 5,
+        "distance": 25,
+        "target": "rapid25",
+        "phase": "event.phaseB"
+      },
+      {
+        "count": 1,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 18,
+        "target": "national",
+        "phase": "event.phaseC",
+        "index": 1
+      },
+      {
+        "count": 1,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 16,
+        "target": "national",
+        "phase": "event.phaseC",
+        "index": 2
+      },
+      {
+        "count": 1,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 14,
+        "target": "national",
+        "phase": "event.phaseC",
+        "index": 3
+      },
+      {
+        "count": 1,
+        "shots": 5,
+        "distance": 25,
+        "seconds": 12,
+        "target": "national",
+        "phase": "event.phaseC",
+        "index": 4
+      }
+    ]
+  },
+  {
+    "id": "air-40",
+    "discipline": "air",
+    "labelKey": "event.air40",
+    "blocks": [
+      {
+        "count": 4,
+        "shots": 10,
+        "distance": 10,
+        "target": "air10"
+      }
+    ]
+  },
+  {
+    "id": "air-60",
+    "discipline": "air",
+    "labelKey": "event.air60",
+    "blocks": [
+      {
+        "count": 6,
+        "shots": 10,
+        "distance": 10,
+        "target": "air10"
+      }
+    ]
+  },
+  {
+    "id": "falling-5",
+    "discipline": "falling",
+    "labelKey": "event.falling",
+    "blocks": [
+      {
+        "count": 5,
+        "shots": 5,
+        "target": "falling"
+      }
+    ]
+  },
+  {
+    "id": "application-1",
+    "discipline": "application",
+    "labelKey": "event.application",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 25,
+        "target": "B100"
+      }
+    ]
+  },
+  {
+    "id": "ppc-p1500",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.p1500",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "match": 1,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 15,
+        "seconds": 20,
+        "match": 1,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "match": 2,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 24,
+        "distance": 50,
+        "seconds": 165,
+        "match": 3,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 2,
+        "shots": 12,
+        "distance": 25,
+        "seconds": 35,
+        "match": 4,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "match": 5,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "match": 5,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 24,
+        "distance": 50,
+        "seconds": 165,
+        "match": 5,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 25,
+        "seconds": 12,
+        "match": 5,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "P1500",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "ppc-r1500",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.r1500",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "match": 1,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 15,
+        "seconds": 20,
+        "match": 1,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "match": 2,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 24,
+        "distance": 50,
+        "seconds": 165,
+        "match": 3,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 2,
+        "shots": 12,
+        "distance": 25,
+        "seconds": 35,
+        "match": 4,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "match": 5,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "match": 5,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 24,
+        "distance": 50,
+        "seconds": 165,
+        "match": 5,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 25,
+        "seconds": 12,
+        "match": 5,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "R1500",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "ppc-open60",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.open60",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 24,
+        "distance": 50,
+        "seconds": 165,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 25,
+        "seconds": 12,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "Open",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "ppc-dist-pistol",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.dist-pistol",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 24,
+        "distance": 50,
+        "seconds": 165,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 25,
+        "seconds": 12,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "Distinguished Pistol",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "ppc-dist-revolver",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.dist-revolver",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 24,
+        "distance": 50,
+        "seconds": 165,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 25,
+        "seconds": 12,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "Distinguished Revolver",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "ppc-sr425",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.sr425",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 3,
+        "seconds": 8,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 15,
+        "seconds": 20,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "Standard Revolver 4.25",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "ppc-sr275",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.sr275",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 3,
+        "seconds": 8,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 15,
+        "seconds": 20,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "Standard Revolver 2.75",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "ppc-sr275-5",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.sr275-5",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 5,
+        "distance": 3,
+        "seconds": 8,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 10,
+        "distance": 7,
+        "seconds": 20,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 10,
+        "distance": 15,
+        "seconds": 20,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 15,
+        "distance": 25,
+        "seconds": 90,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "Standard Revolver 2.75 5-shot",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "ppc-ssap",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.ssap",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 3,
+        "seconds": 8,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 15,
+        "seconds": 20,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "SSAP 5.5",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "ppc-ssap-production",
+    "discipline": "ppc",
+    "labelKey": "event.ppc.ssap-production",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 6,
+        "distance": 3,
+        "seconds": 8,
+        "index": 1,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 7,
+        "seconds": 20,
+        "index": 2,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 12,
+        "distance": 15,
+        "seconds": 20,
+        "index": 3,
+        "target": "ppc"
+      },
+      {
+        "count": 1,
+        "shots": 18,
+        "distance": 25,
+        "seconds": 90,
+        "index": 4,
+        "target": "ppc"
+      }
+    ],
+    "ppcClass": "SSAP 5.5 Production",
+    "source": "SPSF 21, O.7.7–O.7.9"
+  },
+  {
+    "id": "field-stages",
+    "discipline": "field",
+    "labelKey": "event.variable",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 6,
+        "target": "field"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "magnum-field-stages",
+    "discipline": "magnum-field",
+    "labelKey": "event.variable",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 6,
+        "target": "field"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "running-stages",
+    "discipline": "running",
+    "labelKey": "event.variable",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 5,
+        "target": "field"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ski-stages",
+    "discipline": "ski",
+    "labelKey": "event.variable",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 5,
+        "target": "field"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "sra-stages",
+    "discipline": "sra",
+    "labelKey": "event.variable",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 5,
+        "target": "sra"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "dmr-stages",
+    "discipline": "dmr",
+    "labelKey": "event.variable",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 5,
+        "target": "rifle"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "custom-stages",
+    "discipline": "custom",
+    "labelKey": "event.variable",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 5,
+        "target": "other"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-handgun-stages",
+    "discipline": "ipsc-handgun",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-22-stages",
+    "discipline": "ipsc-22",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-rifle-stages",
+    "discipline": "ipsc-rifle",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-shotgun-stages",
+    "discipline": "ipsc-shotgun",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-mini-rifle-stages",
+    "discipline": "ipsc-mini-rifle",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-pcc-stages",
+    "discipline": "ipsc-pcc",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-action-air-stages",
+    "discipline": "ipsc-action-air",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-action-air-rifle-stages",
+    "discipline": "ipsc-action-air-rifle",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-action-air-pcc-stages",
+    "discipline": "ipsc-action-air-pcc",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "ipsc-combined-stages",
+    "discipline": "ipsc-combined",
+    "labelKey": "event.dynamic",
+    "blocks": [
+      {
+        "count": 1,
+        "shots": 1,
+        "target": "ipsc"
+      }
+    ],
+    "variable": true
+  },
+  {
+    "id": "steel-match",
+    "discipline": "nordic-steel",
+    "labelKey": "event.steelMatch",
+    "blocks": [
+      {
+        "count": 5,
+        "shots": 5,
+        "seconds": 30,
+        "target": "steel",
+        "phase": "event.steel.five"
+      },
+      {
+        "count": 5,
+        "shots": 5,
+        "seconds": 30,
+        "target": "steel",
+        "phase": "event.steel.showdown"
+      },
+      {
+        "count": 5,
+        "shots": 5,
+        "seconds": 30,
+        "target": "steel",
+        "phase": "event.steel.smoke"
+      },
+      {
+        "count": 4,
+        "shots": 5,
+        "seconds": 30,
+        "target": "steel",
+        "phase": "event.steel.outer"
+      },
+      {
+        "count": 5,
+        "shots": 5,
+        "seconds": 30,
+        "target": "steel",
+        "phase": "event.steel.accelerator"
+      },
+      {
+        "count": 5,
+        "shots": 5,
+        "seconds": 30,
+        "target": "steel",
+        "phase": "event.steel.pendulum"
+      },
+      {
+        "count": 5,
+        "shots": 5,
+        "seconds": 30,
+        "target": "steel",
+        "phase": "event.steel.speed"
+      },
+      {
+        "count": 5,
+        "shots": 5,
+        "seconds": 30,
+        "target": "steel",
+        "phase": "event.steel.roundabout"
+      }
+    ],
+    "source": "Nordic Steel Challenge 2024-04 §6.1, Appendix E2"
+  },
+  {
+    "id": "steel-stage",
+    "discipline": "nordic-steel",
+    "labelKey": "event.steelStage",
+    "blocks": [
+      {
+        "count": 5,
+        "shots": 5,
+        "seconds": 30,
+        "target": "steel"
+      }
+    ]
+  }
+]

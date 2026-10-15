@@ -1,3 +1,4 @@
+import { suggestedRuleReference } from "../events/programs";
 import {
   recordingSchema,
   capturedProfile,
@@ -313,6 +314,7 @@ export class GitJournalStore {
                 id: existing.id,
                 date: existing.date,
                 discipline: existing.discipline,
+                ...(existing.presetId ? { presetId: existing.presetId } : {}),
                 result: existing.result,
                 notes: existing.notes,
               }),
@@ -336,8 +338,12 @@ export class GitJournalStore {
               ? recording.birthYear
               : records.profile.birthYear,
             ruleVersion:
-              rules.find((r) => r.from <= input.date && input.date < r.until)
-                ?.id ?? null,
+              input.discipline.startsWith("ipsc-") ||
+              ["nordic-steel", "dmr", "custom"].includes(input.discipline)
+                ? (suggestedRuleReference(input.discipline, input.date) ?? null)
+                : (rules.find(
+                    (r) => r.from <= input.date && input.date < r.until,
+                  )?.id ?? null),
           });
           put(
             this.entryPath("quick-entries", entry.id),
@@ -412,7 +418,10 @@ export class GitJournalStore {
           entry = sessionSchema.parse(sessionPayload);
           if (
             quick.some(
-              (q) => q.date !== entry.date || q.discipline !== entry.discipline,
+              (q) =>
+                q.date !== entry.date ||
+                q.discipline !== entry.discipline ||
+                Boolean(q.presetId && q.presetId !== entry.presetId),
             )
           )
             throw new InvalidRecord(swText("store.matchSession"));

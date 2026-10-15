@@ -252,6 +252,9 @@ export function csv(sessions: Records["sessions"], language: Language = "sv") {
       t(language, "session.scoreText"),
       t(language, "session.resultStatus"),
       t(language, "session.dryFire"),
+      t(language, "session.stageDistance"),
+      t(language, "event.unit"),
+      t(language, "session.ruleReference"),
     ],
   ];
   for (const s of sessions)
@@ -276,6 +279,9 @@ export function csv(sessions: Records["sessions"], language: Language = "sv") {
         r.scoreText ?? "",
         r.status ?? "",
         r.dryFire ? "true" : "",
+        String(r.stageDistance ?? ""),
+        r.stageDistanceUnit ?? "",
+        s.ruleReference ?? "",
       ]);
   return "\uFEFF" + rows.map((row) => row.map(quote).join(";")).join("\r\n");
 }

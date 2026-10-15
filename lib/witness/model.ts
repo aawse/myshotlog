@@ -25,6 +25,7 @@ export const reviewSchema = z
         make: z.string().max(100),
         model: z.string().max(100),
         caliber: z.string().max(60),
+        hasOptic: z.boolean().optional(),
       })
       .strict()
       .nullable(),
@@ -107,6 +108,9 @@ export function reviewSession(
           make: session.firearmSnapshot.make,
           model: session.firearmSnapshot.model,
           caliber: session.firearmSnapshot.caliber,
+          ...(session.firearmSnapshot.hasOptic !== undefined
+            ? { hasOptic: session.firearmSnapshot.hasOptic }
+            : {}),
         }
       : null,
     results: results.map((r) => {
@@ -121,6 +125,16 @@ export function reviewSession(
         ...(session.distance != null ? { distance: session.distance } : {}),
         ...(session.target ? { target: session.target } : {}),
         ...(session.seconds != null ? { seconds: session.seconds } : {}),
+        ...(r.stageDistance !== undefined
+          ? {
+              distance:
+                r.stageDistance * (r.stageDistanceUnit === "yd" ? 0.9144 : 1),
+            }
+          : {}),
+        ...(r.stageTimeLimit !== undefined
+          ? { seconds: r.stageTimeLimit }
+          : {}),
+        ...(r.stageTarget !== undefined ? { target: r.stageTarget } : {}),
       };
     }),
   });

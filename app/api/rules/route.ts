@@ -3,6 +3,7 @@ import { latestRules } from "@/lib/rules/latest";
 import { limitUpdates, UpdateRateLimited } from "@/lib/updates/rate-limit";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const maxDuration = 30;
 export async function GET() {
   const headers = { "Cache-Control": "private, no-store" };
   try {

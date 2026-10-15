@@ -1,3 +1,4 @@
+import { suggestedRuleReference } from "../events/programs";
 import { z } from "../validation";
 import {
   dateSchema,
@@ -208,7 +209,11 @@ export function applyOperation(data: Records, operation: Operation): Records {
         ...q,
         ...operation.recording,
         ruleVersion:
-          rules.find((v) => v.from <= q.date && q.date < v.until)?.id ?? null,
+          q.discipline.startsWith("ipsc-") ||
+          ["nordic-steel", "dmr", "custom"].includes(q.discipline)
+            ? (suggestedRuleReference(q.discipline, q.date) ?? null)
+            : (rules.find((v) => v.from <= q.date && q.date < v.until)?.id ??
+              null),
       },
     ];
   } else if (action === "delete-quick-entry")
@@ -253,6 +258,7 @@ export function applyOperation(data: Records, operation: Operation): Records {
         (q) =>
           q.date !== s.date ||
           q.discipline !== s.discipline ||
+          Boolean(q.presetId && q.presetId !== s.presetId) ||
           !s.results.some((r) => r.id === q.id),
       )
     )

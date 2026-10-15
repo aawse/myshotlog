@@ -1,3 +1,4 @@
+import { distanceText } from "../events/programs";
 import { netPoints, hitFactor } from "../result-metrics";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -156,7 +157,7 @@ export async function createSessionPdf(
   }
   function conditions(r: Session["results"][number]) {
     return [
-      r.distance != null ? r.distance + " m" : "",
+      distanceText(r),
       r.seconds != null ? r.seconds + " s" : "",
       r.target ? targetName(language, r.target) : "",
     ]
@@ -219,6 +220,7 @@ export async function createSessionPdf(
           .join(" · ")
       : tr("common.borrowedFirearm"),
   );
+  if (f?.hasOptic) text(tr("firearm.hasOptic"));
   field(tr("session.group"), session.group);
   text(
     tr("common.seriesCount", { count: session.results.length }) +

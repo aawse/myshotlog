@@ -1,4 +1,14 @@
 "use client";
+import {
+  eventPrograms,
+  programs,
+  applyProgram,
+  programName,
+  classFor,
+  distanceText,
+  classSuggestions,
+  suggestedRuleReference,
+} from "@/lib/events/programs";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
 import { useRef, useState } from "react";
@@ -37,7 +47,7 @@ export function SessionForm({
   initial?: Session;
   quickEntries?: Pick<
     QuickEntry,
-    "id" | "date" | "discipline" | "result" | "notes"
+    "id" | "date" | "discipline" | "result" | "notes" | "presetId"
   >[];
   locations?: string[];
   timezone?: string;
@@ -45,8 +55,8 @@ export function SessionForm({
   const { tr, language } = useI18n();
 
   const router = useJournalRouter();
-  const [session, setSession] = useState<Session>(() =>
-    initial
+  const [session, setSession] = useState<Session>(() => {
+    const value: Session = initial
       ? sessionSetup(initial)
       : {
           id: crypto.randomUUID(),
@@ -58,10 +68,23 @@ export function SessionForm({
           time: "",
           location: "",
           discipline: quickEntries[0]?.discipline ?? "precision",
+          presetId: quickEntries[0]?.presetId,
+          ruleReference: quickEntries[0]
+            ? suggestedRuleReference(
+                quickEntries[0].discipline,
+                quickEntries[0].date,
+              )
+            : undefined,
           program: quickEntries[0]
             ? quickEntries[0].discipline === "custom"
               ? quickEntries[0].result.label
-              : disciplineName(language, quickEntries[0].discipline)
+              : quickEntries[0].presetId &&
+                  programs.find((p) => p.id === quickEntries[0].presetId)
+                ? programName(
+                    programs.find((p) => p.id === quickEntries[0].presetId)!,
+                    language,
+                  )
+                : disciplineName(language, quickEntries[0].discipline)
             : tr("session.defaultProgram"),
           seconds:
             quickEntries[0] && quickEntries[0].discipline !== "precision"
@@ -87,8 +110,20 @@ export function SessionForm({
             ? quickEntries.map((q) => q.result)
             : [entry(tr("common.seriesLabel") + " 1")],
           revision: 0,
-        },
-  );
+        };
+    return !initial && !quickEntries.length
+      ? applyProgram(value, eventPrograms("precision")[0], language)
+      : !initial && quickEntries.length
+        ? {
+            ...value,
+            group:
+              classFor(value) ||
+              (discipline(value.discipline).kind === "dynamic"
+                ? ""
+                : value.group),
+          }
+        : value;
+  });
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const saving = useRef(false);
@@ -98,13 +133,86 @@ export function SessionForm({
     Record<string, boolean>
   >({});
   const photoBusy = Object.values(processingPhotos).some(Boolean);
+  const resultDirty = useRef(false);
   const kind = discipline(session.discipline).kind;
+  const [stageCount, setStageCount] = useState(initial?.results.length ?? 1);
+  const [ppcUnit, setPpcUnit] = useState<"m" | "yd">(
+    initial?.results[0]?.stageDistanceUnit ?? "yd",
+  );
+  const firearm = firearms.find((f) => f.id === session.firearmId);
+  const choices = eventPrograms(session.discipline);
+  const selectedProgram = programs.find((p) => p.id === session.presetId);
+  const hasStageConditions = session.results.some(
+    (r) =>
+      r.stageDistance !== undefined ||
+      r.stageTimeLimit !== undefined ||
+      r.stageTarget !== undefined,
+  );
+  function mayReplace() {
+    if (photoBusy || busy) return false;
+    return (
+      (!initial &&
+        !resultDirty.current &&
+        session.results.every(
+          (r) =>
+            !r.photoId &&
+            !r.points &&
+            !r.hits &&
+            !r.x &&
+            !r.elapsedSeconds &&
+            !r.penaltyPoints &&
+            !r.penaltySeconds &&
+            !r.scoreText,
+        )) ||
+      window.confirm(tr("event.replace"))
+    );
+  }
+  function chooseProgram(
+    id: string,
+    current = session,
+    chosenFirearm = firearm,
+  ) {
+    if (!id) {
+      setSession({ ...current, presetId: undefined });
+      return;
+    }
+    const program = programs.find(
+      (p) => p.id === id && p.discipline === current.discipline,
+    );
+    if (program && mayReplace()) {
+      resultDirty.current = false;
+      setPhotos({});
+      setSession(
+        applyProgram(current, program, language, chosenFirearm, {
+          unit: ppcUnit,
+          count: stageCount,
+        }),
+      );
+    }
+  }
+  function defaultProgram(sport: Session["discipline"], f?: Firearm) {
+    const list = eventPrograms(sport);
+    if (sport === "ppc")
+      return (
+        list.find(
+          (p) => p.ppcClass === f?.classDefaults?.ppc?.replace(" Optical", ""),
+        ) ??
+        list.find(
+          (p) =>
+            p.id ===
+            (f?.firearmType === "revolver" ? "ppc-r1500" : "ppc-p1500"),
+        )!
+      );
+    return list[0];
+  }
   const patch = (p: Partial<Session>) => setSession((s) => ({ ...s, ...p }));
-  const resultPatch = (id: string, p: Partial<Result>) =>
+  const resultPatch = (id: string, p: Partial<Result>) => {
+    resultDirty.current = true;
     setSession((s) => ({
       ...s,
       results: s.results.map((r) => (r.id === id ? { ...r, ...p } : r)),
     }));
+  };
   const field = (
     label: string,
     key: keyof Result,
@@ -195,11 +303,18 @@ export function SessionForm({
               disabled={quickEntries.length > 0}
               value={session.discipline}
               onChange={(e) => {
-                setSession((s) =>
-                  changeDiscipline(
-                    s,
-                    e.target.value as Session["discipline"],
+                const sport = e.target.value as Session["discipline"];
+                if (!mayReplace()) return;
+                resultDirty.current = false;
+                setPhotos({});
+                const next = changeDiscipline(session, sport, language);
+                setSession(
+                  applyProgram(
+                    next,
+                    defaultProgram(sport, firearm),
                     language,
+                    firearm,
+                    { unit: ppcUnit, count: stageCount },
                   ),
                 );
               }}
@@ -211,6 +326,70 @@ export function SessionForm({
               ))}
             </select>
           </label>
+          {!quickEntries.length && (
+            <label>
+              {tr("event.select")}
+              <select
+                value={session.presetId ?? ""}
+                onChange={(e) => chooseProgram(e.target.value)}
+              >
+                <option value="">{tr("event.manual")}</option>
+                {choices.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {programName(p, language)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {selectedProgram?.variable && (
+            <label>
+              {tr("event.count")}
+              <input
+                type="number"
+                min="1"
+                max="100"
+                step="1"
+                value={stageCount}
+                onChange={(e) => setStageCount(Number(e.target.value))}
+              />
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  if (
+                    stageCount >= 1 &&
+                    stageCount <= 100 &&
+                    Number.isInteger(stageCount)
+                  )
+                    chooseProgram(session.presetId!);
+                }}
+              >
+                {tr("event.apply")}
+              </button>
+            </label>
+          )}
+          {session.discipline === "ppc" && !quickEntries.length && (
+            <label>
+              {tr("event.unit")}
+              <select
+                value={ppcUnit}
+                onChange={(e) => {
+                  const unit = e.target.value as "m" | "yd";
+                  if (!selectedProgram || !mayReplace()) return;
+                  setPpcUnit(unit);
+                  setSession(
+                    applyProgram(session, selectedProgram, language, firearm, {
+                      unit,
+                    }),
+                  );
+                }}
+              >
+                <option value="yd">{tr("event.unitYards")}</option>
+                <option value="m">{tr("event.unitMeters")}</option>
+              </select>
+            </label>
+          )}
           <label>
             {tr(
               session.discipline === "custom"
@@ -244,14 +423,40 @@ export function SessionForm({
               value={session.firearmId ?? ""}
               onChange={(e) => {
                 const f = firearms.find((f) => f.id === e.target.value);
-                setSession((s) =>
-                  selectFirearm(
-                    s,
-                    f,
-                    Boolean(initial) || quickEntries.length > 0,
-                    language,
-                  ),
+                const next = selectFirearm(
+                  session,
+                  f,
+                  Boolean(initial) || quickEntries.length > 0,
+                  language,
                 );
+                if (next.discipline !== session.discipline) {
+                  if (!mayReplace()) return;
+                  setSession(
+                    applyProgram(
+                      next,
+                      defaultProgram(next.discipline, f),
+                      language,
+                      f,
+                      { unit: ppcUnit, count: stageCount },
+                    ),
+                  );
+                } else if (
+                  !initial &&
+                  !quickEntries.length &&
+                  session.discipline === "ppc" &&
+                  !resultDirty.current &&
+                  session.results.every((r) => !r.points && !r.photoId && !r.x)
+                ) {
+                  setSession(
+                    applyProgram(
+                      next,
+                      defaultProgram(next.discipline, f),
+                      language,
+                      f,
+                      { unit: ppcUnit },
+                    ),
+                  );
+                } else setSession({ ...next, group: classFor(next, f) });
               }}
             >
               <option value="">{tr("session.borrowed")}</option>
@@ -274,71 +479,75 @@ export function SessionForm({
               list="groups"
               onChange={(e) => patch({ group: e.target.value })}
             />
+            <span className="muted">{tr("event.classHelp")}</span>
             <datalist id="groups">
-              {["A", "A optisk", "B", "C", "R"].map((g) => (
+              {classSuggestions(session.discipline).map((g) => (
                 <option key={g} value={g}>
                   {g === "A optisk" ? tr("domain.optical") : g}
                 </option>
               ))}
             </datalist>
           </label>
-          <label>
-            {tr("session.distance")}
-            <input
-              type="number"
-              min="0"
-              step="any"
-              value={session.distance ?? ""}
-              onChange={(e) =>
-                patch({
-                  distance:
-                    e.target.value === "" ? null : Number(e.target.value),
-                })
-              }
-            />
-          </label>
-          <label>
-            {tr("session.shootingTime")}
-            <input
-              name="seconds"
-              type="number"
-              min="0"
-              step="any"
-              required={
-                ["running", "ski", "falling", "sra"].includes(
-                  session.discipline,
-                ) && session.results.some((r) => r.elapsedSeconds === undefined)
-              }
-              value={session.seconds ?? ""}
-              onChange={(e) =>
-                patch({
-                  seconds:
-                    e.target.value === "" ? null : Number(e.target.value),
-                })
-              }
-            />
-          </label>
-          <label>
-            {tr("session.target")}
-            <select
-              name="target"
-              value={session.target ?? ""}
-              onChange={(e) => patch({ target: e.target.value || null })}
-            >
-              <option value="">{tr("session.selectTarget")}</option>
-              {session.target &&
-                !targets.some((t) => t.value === session.target) && (
-                  <option value={session.target}>
-                    {session.target} {tr("common.savedPreviously")}
-                  </option>
-                )}
-              {targets.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {targetName(language, t.value)}
-                </option>
-              ))}
-            </select>
-          </label>
+          {!hasStageConditions && (
+            <>
+              <label>
+                {tr("session.distance")}
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={session.distance ?? ""}
+                  onChange={(e) =>
+                    patch({
+                      distance:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                />
+              </label>
+              <label>
+                {tr("session.shootingTime")}
+                <input
+                  name="seconds"
+                  type="number"
+                  min="0"
+                  step="any"
+                  required={
+                    ["running", "ski", "sra"].includes(session.discipline) &&
+                    session.results.some((r) => r.elapsedSeconds === undefined)
+                  }
+                  value={session.seconds ?? ""}
+                  onChange={(e) =>
+                    patch({
+                      seconds:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                />
+              </label>
+              <label>
+                {tr("session.target")}
+                <select
+                  name="target"
+                  value={session.target ?? ""}
+                  onChange={(e) => patch({ target: e.target.value || null })}
+                >
+                  <option value="">{tr("session.selectTarget")}</option>
+                  {session.target &&
+                    !targets.some((t) => t.value === session.target) && (
+                      <option value={session.target}>
+                        {session.target} {tr("common.savedPreviously")}
+                      </option>
+                    )}
+                  {targets.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {targetName(language, t.value)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
           <label>
             {tr("session.context")}
             <select
@@ -352,7 +561,17 @@ export function SessionForm({
             </select>
           </label>
         </div>
-        <p className="muted">{tr("session.sharedHelp")}</p>
+        <p className="muted">{tr("event.help")}</p>
+        {selectedProgram?.variable && (
+          <p className="muted">{tr("event.variableHelp")}</p>
+        )}
+        {firearm?.hasOptic && !session.group && (
+          <p className="notice">{tr("event.opticReview")}</p>
+        )}
+        {session.discipline === "ppc" &&
+          [".22 LR", ".22", ".22 WMR"].includes(firearm?.caliber ?? "") && (
+            <p className="notice">{tr("event.ppc22")}</p>
+          )}
         {hasMixedLegacyConditions(session) && (
           <p className="notice">{tr("session.legacyHelp")}</p>
         )}
@@ -409,7 +628,62 @@ export function SessionForm({
                 </label>
               )}
               {field(tr("quick.shots"), "shots", r, true)}
-              {["points", "field", "dynamic", "open"].includes(kind) &&
+              {hasStageConditions &&
+                selectedProgram &&
+                !selectedProgram.variable && (
+                  <p className="muted">
+                    {[
+                      distanceText(r),
+                      r.stageTimeLimit !== undefined
+                        ? `${r.stageTimeLimit} s`
+                        : "",
+                      r.stageTarget ? targetName(language, r.stageTarget) : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                )}
+              {hasStageConditions &&
+                (!selectedProgram || selectedProgram.variable) && (
+                  <>
+                    {field(tr("session.stageDistance"), "stageDistance", r)}
+                    <label>
+                      {tr("event.unit")}
+                      <select
+                        value={r.stageDistanceUnit ?? "m"}
+                        onChange={(e) =>
+                          resultPatch(r.id, {
+                            stageDistanceUnit: e.target.value as "m" | "yd",
+                          })
+                        }
+                      >
+                        <option value="m">{tr("event.unitMeters")}</option>
+                        <option value="yd">{tr("event.unitYards")}</option>
+                      </select>
+                    </label>
+                    {field(tr("session.stageTimeLimit"), "stageTimeLimit", r)}
+                    <label>
+                      {tr("session.target")}
+                      <select
+                        value={r.stageTarget ?? ""}
+                        onChange={(e) =>
+                          resultPatch(r.id, {
+                            stageTarget: e.target.value || undefined,
+                          })
+                        }
+                      >
+                        <option value="">{tr("session.selectTarget")}</option>
+                        {targets.map((t) => (
+                          <option key={t.value} value={t.value}>
+                            {targetName(language, t.value)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
+              {session.discipline !== "nordic-steel" &&
+                ["points", "field", "dynamic", "open"].includes(kind) &&
                 field(
                   kind === "field"
                     ? tr("session.pointTargets")
@@ -427,7 +701,8 @@ export function SessionForm({
                 )}
               {kind === "field" && field(tr("quick.figures"), "figures", r)}
               {kind === "points" && field(tr("session.innerTens"), "x", r)}
-              {["points", "field", "dynamic", "open"].includes(kind) &&
+              {session.discipline !== "nordic-steel" &&
+                ["points", "field", "dynamic", "open"].includes(kind) &&
                 field(tr("session.penaltyPoints"), "penaltyPoints", r)}
               {["time", "dynamic", "open"].includes(kind) &&
                 field(tr("session.penaltyTime"), "penaltySeconds", r)}
@@ -442,7 +717,8 @@ export function SessionForm({
                 )}
               {["dynamic", "open"].includes(kind) && (
                 <>
-                  {field(tr("session.matchPercent"), "matchPercent", r)}
+                  {session.discipline !== "nordic-steel" &&
+                    field(tr("session.matchPercent"), "matchPercent", r)}
                   {field(tr("session.placement"), "placement", r)}
                   <label>
                     {tr("session.scoreText")}

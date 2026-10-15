@@ -1,4 +1,6 @@
 "use client";
+import { distanceText } from "@/lib/events/programs";
+import { seriesConditions } from "@/lib/models";
 import { hitFactor } from "@/lib/result-metrics";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
@@ -89,6 +91,7 @@ export default function View({ id }: { id: string }) {
               ? tr("details.oldTimes")
               : tr("common.notSpecified")}
         </p>
+        {s.firearmSnapshot?.hasOptic && <p>{tr("firearm.hasOptic")}</p>}
         {s.ruleReference && (
           <p>
             {tr("session.ruleReference")}: {s.ruleReference}
@@ -127,6 +130,8 @@ export default function View({ id }: { id: string }) {
                         )}
                       </span>
                       <span className="subline">
+                        {distanceText(seriesConditions(s, r))}
+                        {" · "}
                         {r.shots}{" "}
                         <span className="text-lowercase">
                           {tr("session.shots")}
@@ -138,6 +143,12 @@ export default function View({ id }: { id: string }) {
                               : tr("session.ordinaryScoring"))
                           : ""}
                       </span>
+                      {r.stageTimeLimit !== undefined && (
+                        <span className="subline">
+                          {tr("session.stageTimeLimit")}: {r.stageTimeLimit}
+                          {" s"}
+                        </span>
+                      )}
                       <span className="subline">
                         {tr("details.ruleVersion")}{" "}
                         {assessment?.ruleVersion ?? tr("details.notRecorded")}

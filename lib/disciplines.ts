@@ -55,7 +55,7 @@ export const disciplines = [
   {
     id: "falling",
     name: swText("discipline.falling"),
-    kind: "time",
+    kind: "hits",
     section: "N",
   },
   { id: "ppc", name: swText("discipline.ppc"), kind: "points", section: "O" },

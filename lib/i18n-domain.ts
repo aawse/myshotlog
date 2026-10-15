@@ -12,7 +12,7 @@ export function targetName(
 }
 
 export function sourceSection(language: Language, id: DisciplineId) {
-  return id === "sra"
+  return ["dynamic", "open"].includes(discipline(id).kind)
     ? t(language, "domain.separateRules")
     : id === "application"
       ? t(language, "domain.appendix")
