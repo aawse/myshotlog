@@ -303,8 +303,8 @@ it("uses a six-month schedule, manual dispatch, Ubuntu and the built-in token", 
 });
 
 it("fingerprints Drive PDF bytes through a fixed public endpoint without redirects", async () => {
-  const entry = ipsc.documents.find((item) =>
-    item.url.includes("drive.google.com"),
+  const entry = ipsc.documents.find(
+    (item) => new URL(item.url).hostname === "drive.google.com",
   );
   expect(downloadUrl(entry.url)).toMatch(
     /^https:\/\/drive\.usercontent\.google\.com\/download\?id=[\w-]+&export=download$/,
@@ -322,4 +322,14 @@ it("fingerprints Drive PDF bytes through a fixed public endpoint without redirec
   expect(result[0].sha256).toBe(fingerprint);
   expect(fetcher.mock.calls[1][0]).toBe(downloadUrl(entry.url));
   expect(fetcher.mock.calls[1][1].redirect).toBe("error");
+});
+
+it.each([
+  ["&quot;Handbook&#39;&apos;", "\"Handbook''"],
+  ["&amp;quot;Handbook&amp;#39;", "&quot;Handbook&#39;"],
+  ["&#38;quot;Handbook&#x26;apos;", "&quot;Handbook&apos;"],
+])("decodes supported HTML entities once: %s", (label, expected) => {
+  expect(discover(source, `<a href="${doc.url}">${label}</a>`)[0].label).toBe(
+    expected,
+  );
 });

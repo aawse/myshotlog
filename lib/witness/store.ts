@@ -22,6 +22,9 @@ import {
 } from "./model";
 export class WitnessUnavailable extends Error {}
 export class WitnessSignatureInvalid extends Error {}
+// Fingerprint signed invitations containing a 32-byte random nonce, or review JSON.
+// These are token lookups/integrity digests, not user password hashes. Preserve
+// their format so existing invitations and witnessed snapshots remain valid.
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
 export const reviewDigest = (review: WitnessReview) =>

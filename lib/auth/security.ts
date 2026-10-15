@@ -7,6 +7,8 @@ import { GitSecurityStore } from "./security-store";
 let cached: { key: string; store: GitSecurityStore } | undefined;
 export function securityStore() {
   const config = oauthConfig();
+  // Namespace security state by origin and random signing key, not a user password.
+  // Keep the existing digest to preserve pending OAuth flows and shared rate limits.
   const scope = createHash("sha256")
     .update(config.siteUrl + "\0" + config.secret)
     .digest("hex");

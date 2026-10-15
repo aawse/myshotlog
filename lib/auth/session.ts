@@ -45,6 +45,8 @@ export function journalOwner(
 ) {
   githubIdSchema.parse(githubId);
   if (mapping[githubId]) return z.uuid().parse(mapping[githubId]);
+  // Public numeric GitHub ID -> stable storage identifier, not a password hash.
+  // Preserve this digest and namespace so existing journals remain accessible.
   const hash = createHash("sha256")
     .update(journalIdentityNamespace + githubId)
     .digest();
@@ -56,6 +58,7 @@ export function journalOwner(
 function signature(payload: string, secret: string) {
   if (Buffer.byteLength(secret) < 32)
     throw new Error("Session secret requires 32 bytes");
+  // Authenticate cookie contents with the configured random signing key; no passwords are stored.
   return createHmac("sha256", secret).update(payload).digest("base64url");
 }
 export function seal(value: unknown, secret: string) {

@@ -30,6 +30,8 @@ const stateSchema = z
   .strict()
   .transform(({ sessions: _legacySessions, ...state }) => state);
 type State = z.infer<typeof stateSchema>;
+// OAuth states are generated from 32 cryptographically random bytes in beginOAuth.
+// This lookup digest avoids storing the bearer state; it is not password storage.
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
 
@@ -80,6 +82,7 @@ export class GitSecurityStore {
     }
   }
   private key(scope: string, subject: string) {
+    // Keyed rate-limit identifiers protect raw client addresses; not password hashes.
     return createHmac("sha256", this.secret)
       .update(scope + ":" + subject)
       .digest("hex");

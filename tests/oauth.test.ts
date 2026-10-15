@@ -71,6 +71,7 @@ it("generates random state and S256 PKCE without requesting repository scopes", 
   expect(a.url.searchParams.get("state")).not.toBe(
     b.url.searchParams.get("state"),
   );
+  // RFC 7636 S256 hashes a random PKCE verifier, not a user password.
   expect(a.url.searchParams.get("code_challenge")).toBe(
     createHash("sha256").update(cookie.verifier).digest("base64url"),
   );

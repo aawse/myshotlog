@@ -9,9 +9,9 @@ const baselineFile = new URL(
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const decode = (value) =>
   value
-    .replace(/&amp;|&#0*38;|&#x0*26;/gi, "&")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'");
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&amp;|&#0*38;|&#x0*26;/gi, "&");
 const text = (value) =>
   decode(value.replace(/<[^>]*>/g, " "))
     .replace(/\s+/g, " ")
