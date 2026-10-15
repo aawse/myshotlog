@@ -1,0 +1,176 @@
+{
+  "reviewedAt": "2026-10-15",
+  "sources": [
+    {
+      "id": "spsf",
+      "name": "SPSF — Skjuthandboken and supplements",
+      "page": "https://www.pistolskytteforbundet.se/om-pistolskytte/regler/skjuthandboken-och-sakb/",
+      "mode": "pdf",
+      "minimumDocuments": 1,
+      "documents": [
+        {
+          "url": "https://www.pistolskytteforbundet.se/app/uploads/2026/01/SHB_2026_upplaga-21_NY.pdf",
+          "label": "Ladda hem som PDF",
+          "sha256": "ab2c56169b229ce706aa2e588de527cbdef12bb8d7bce5ef62e70fbfd9eeecfc"
+        },
+        {
+          "url": "https://www.pistolskytteforbundet.se/app/uploads/2026/03/Vapenlista-SSA-Production-Preliminar-20260318.pdf",
+          "label": "Vapenlista SSA Production Preliminär 20260318",
+          "sha256": "f2906c03f5fb58bedd38e3a24e671da84f5f14c7efdc3dd32272c6590a2d3b56"
+        }
+      ]
+    },
+    {
+      "id": "sra",
+      "name": "SRA — official SPSF rule publication",
+      "page": "https://www.pistolskytteforbundet.se/om-pistolskytte/sra/",
+      "mode": "pdf",
+      "minimumDocuments": 1,
+      "documents": [
+        {
+          "url": "https://www.pistolskytteforbundet.se/app/uploads/2025/03/sra-tts-regelbok-8.0-230622-gallande.pdf",
+          "label": "Regelverk",
+          "sha256": "66daa50b8493659f338d697e0cf3e714a897c9ede84485a171f6800932fa8a07"
+        }
+      ]
+    },
+    {
+      "id": "ipsc",
+      "name": "IPSC — all disciplines, combined events and interpretations",
+      "page": "https://www.ipsc.org/ipsc-rules/rule-books/",
+      "mode": "pdf",
+      "minimumDocuments": 13,
+      "documents": [
+        {
+          "url": "https://drive.google.com/file/d/1_vw9i4KKUsHZod6c3NCoU04vxe_JekkQ/view",
+          "label": "Grand Tournament",
+          "sha256": "a44d3389df68302f1c073f1d16d77a745b17b4d38ca7bdfb219317c1d1a3f95c"
+        },
+        {
+          "url": "https://drive.google.com/file/d/11hY6XdSlXyugiN4FNuLVpWd3Jivk8K2Y/view",
+          "label": "Shotgun",
+          "sha256": "fdf2a468c47d74c4907c85e721f479ec0888d0c1e8575ce367c4963988dc7d8c"
+        },
+        {
+          "url": "https://drive.google.com/file/d/133QErRHjHHHzVwMQ9iqCG5OzmA6SNh2H/view",
+          "label": "Combined &#8211; 6 Disciplines",
+          "sha256": "1bf46b06b424f6a6f650a601992f2755e9b4ac7a8f5639a6198e960ed0a95e01"
+        },
+        {
+          "url": "https://drive.google.com/file/d/16mvKniYTl0ZOUv-LwEALgHJZDff9UZ7A/view",
+          "label": "Mini-Rifle",
+          "sha256": "0407fb27e91d64f8f454b6831043010ca8d5b64fd79afec9d19e6246b55e64fd"
+        },
+        {
+          "url": "https://drive.google.com/file/d/17-lpGH2rVcSHYUc1BMiXachc4iAOw_5m/view",
+          "label": "Combined &#8211; 3 Disciplines",
+          "sha256": "56597bb2911b99b407da9657a9ea1d73ea5b1640b7a5785c3588b981f5c28f5b"
+        },
+        {
+          "url": "https://drive.google.com/file/d/19VYSZU3KO3XLfeGsSIL8ynckbLhYvV_O/view",
+          "label": "Action Air Handgun",
+          "sha256": "f143252df02eae8db4c59d5a607431813d41d4e888fd94bac5b000e9bcdab415"
+        },
+        {
+          "url": "https://drive.google.com/file/d/1A8fsxtPs_SeuG4pOKXAO8VfFz01A7hAq/view",
+          "label": "IPSC Competition Rules &#8211; May 2026 Interpretations",
+          "sha256": "df9f150542d2362bac36c5603a222334e93a6290be89caea3183b05a34a40954"
+        },
+        {
+          "url": "https://drive.google.com/file/d/1Gd-knKAbqb1l2izBWMJu2_fx9ilLpYNP/view",
+          "label": "Pistol Caliber Carbine",
+          "sha256": "0507cacdcc5ea6f7b79c9edf5305e7dec7acdf369862766ab10797b0ff27ab93"
+        },
+        {
+          "url": "https://drive.google.com/file/d/1InDB5zgAMrFMYxAx8sgAVp8fXag5lXaa/view",
+          "label": "Action Air Combined &#8211; 3 Disciplines",
+          "sha256": "c07f880aa12a82fbea802822760d6101ce697faeb745211907257a02c2928b37"
+        },
+        {
+          "url": "https://drive.google.com/file/d/1k4xXKVcRQMZOg6LTJSW0O4bW1zENE6Et/view",
+          "label": "Action Air Pistol Caliber Carbine",
+          "sha256": "48897c18294c26b9580e679fb0c2d10dd70b9805f6d921a46df86dc181a0b5a9"
+        },
+        {
+          "url": "https://drive.google.com/file/d/1nrlc9-I5uXoX-P6RaCfVRucYeRavE__3/view",
+          "label": "IPSC Competition Rules &#8211; February 2026 Interpretations",
+          "sha256": "2de57358382a9c3f378f2e6a34b18f40afc69c56ddd340d2c3235929c9941e3f"
+        },
+        {
+          "url": "https://drive.google.com/file/d/1puySH1bSKuQdzdxUfB_uUbB5krOKzScZ/view",
+          "label": "Handgun",
+          "sha256": "1ba68a56d5d84158c38a0bad9d0935f1ac035e8a4dd3aaaa2301f66576884668"
+        },
+        {
+          "url": "https://drive.google.com/file/d/1T7xPDvhIsIkMD4O_2yiw3_u9NPja7t-J/view",
+          "label": "Action Air Rifle",
+          "sha256": "ee180304fc9f2abb3bb1e31a49b5ff6af6574b5f7928293f5149860b37167bc9"
+        },
+        {
+          "url": "https://drive.google.com/file/d/1XAKNbnjzTTywV-Ux0Uj2cnRzETpDz2ai/view",
+          "label": "Rifle",
+          "sha256": "0d2b1827ce6a289218f9f8e32919e48c26b5772b1b6ebaf0b627d185b1d25e65"
+        },
+        {
+          "url": "https://drive.google.com/file/d/1yNy2qRrA0NmTHd9z039T2r3kgTxIyzH5/view",
+          "label": ".22LR Handgun",
+          "sha256": "ce1905575155caddf739f6d64b8a06057b2e7a53f9e0af6e723a9e48b6c06733"
+        },
+        {
+          "url": "https://www.ipsc.org/wp-content/uploads/2020/06/IPSC-Handgun-Equipment-Check-Handbook-Jan-2019-edition.pdf",
+          "label": "IPSC Handgun Equipment Check Handbook &#8211; January 2019",
+          "sha256": "a6dc3c7234907a22352addf824997332c7869318d22ee11fbcdfb0388d4a65bc"
+        },
+        {
+          "url": "https://www.ipsc.org/wp-content/uploads/2020/08/IROA-Chronograph-Manual-2021.pdf",
+          "label": "IROA Chronograph Manual 2021",
+          "sha256": "d6385c6047f4427b7493f844133c7b7e17435c2baa3880a678f64bff4b486ae7"
+        },
+        {
+          "url": "https://www.ipsc.org/wp-content/uploads/2024/07/IPSC-Rifle-Equipment-Check-Manual-2024.pdf",
+          "label": "IPSC Rifle Equipment Check Handbook &#8211; 2024",
+          "sha256": "1c14f920d834ae0cf98c1a64b094a698e4a4bdce1bbad956b53a9289c516167e"
+        },
+        {
+          "url": "https://www.ipsc.org/wp-content/uploads/2025/10/IPSC-Competition-Rules-Interpretations-October-2025-Final-14-Oct-2025.pdf",
+          "label": "IPSC Competition Rules &#8211; October 2025 Interpretations",
+          "sha256": "e785eb4e437fd7969e10fd2db0494434d901d50bf2e1763b9498fe56eb5a053f"
+        }
+      ]
+    },
+    {
+      "id": "sdssf",
+      "name": "SDSSF — Swedish handgun rules, Nordic Steel, DMR and badge requirements",
+      "page": "https://sdssf.se/press/",
+      "mode": "pdf",
+      "minimumDocuments": 3,
+      "documents": [
+        {
+          "url": "https://sdssf.se/wp-content/uploads/2023/04/IPSC_Markeslathund_2022.pdf",
+          "label": "Lathund märkesfordringar 2022",
+          "sha256": "a6be23796c923d02df488495ee51b21084b7a1e38102c4096c090401b0a2be97"
+        },
+        {
+          "url": "https://sdssf.se/wp-content/uploads/2025/12/Rules_DMR_2024_edition_1.1.pdf",
+          "label": "DMR 2024 Version 1.1",
+          "sha256": "aac47f4ca01555c25c31c8af527ab8d755872def55d70a58343aa35a31c762ca"
+        },
+        {
+          "url": "https://sdssf.se/wp-content/uploads/2026/04/Nordic-Steel-Challenge-Competition-Rules-April-2024.pdf",
+          "label": "Regler Nordic Steel Challenge",
+          "sha256": "2872ef142984665bac49251fd77a0938ea286c2752be86bab70388534f3f6cff"
+        },
+        {
+          "url": "https://sdssf.se/wp-content/uploads/2026/04/Regler_Sv_2026_utgava_01.pdf",
+          "label": "Handgun 2026 (Svenska)",
+          "sha256": "f1d5fcb2eb40b326a9fc9d35a7bb50e18275609261ab510642657c1d77b7d8ea"
+        },
+        {
+          "url": "https://sdssf.se/wp-content/uploads/2026/05/Fordringar_skjutskicklighet_SDSSF_2026-05-01.docx.pdf",
+          "label": "Fordringar skjutskicklighet SDSSF 2026-05-01",
+          "sha256": "e0fb8b9950b8d2ffd77da1c4161f8ce3cf6ab548a0589f322efe3644e05bb1d3"
+        }
+      ]
+    }
+  ]
+}

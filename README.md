@@ -108,4 +108,6 @@ Alla SPSF-grenar kan registreras, liksom IPSC, Nordic Steel Challenge, DMR och e
 
 **Träningsmaterial** innehåller egna A4-övningstavlor, råd om säker torrträning och länkar till aktuella regelböcker. En kontroll hos SPSF jämför den publicerade handboken med appens granskade dokument. Den läser inga journaluppgifter och bedömer inte om gamla resultat. Se [gren- och regeltäckning](docs/RULES.md) och [skjutprogram](docs/EVENTS.md).
 
+**Check rule updates** kontrollerar dessutom SPSF, SRA, IPSC och SDSSF var sjätte månad och skapar ett GitHub-ärende med uppdateringsanvisningar när officiella dokument ändras. Det kan även startas manuellt. Se [schemalagd regelkontroll](docs/RULES.md#schemalagd-kontroll-i-github).
+
 Lämna både felrapporter och förbättringsförslag via **Synpunkter** på valfri sida.

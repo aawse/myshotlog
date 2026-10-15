@@ -42,3 +42,20 @@ Lägg till en post med nytt ID, giltighetsperiod, källa och trösklar i regelka
 En ny dokumentlänk eller ändrad fil ger ändringsmeddelande. Saknade dokument, nätfel och ogiltiga svar blir **kunde inte bekräftas**, aldrig ett påstående om aktuella regler. Kontrollens omfattning är handbokens publicering; övriga tillägg och förbundets tolkningar måste läsas separat. Ingenting hämtas in som körbar regelkod, och tidigare resultat bedöms inte om. Vid ny upplaga uppdateras både katalogen och källmanifestet först efter granskning, med äldre versioner kvar.
 
 IPSC:s [regelbokssida](https://www.ipsc.org/ipsc-rules/rule-books/) och SDSSF:s [dokument](https://sdssf.se/press/) är källor för de dynamiska grenarna. Uppgifterna kan registreras, men appen räknar inte officiell matchplacering eller medaljer för dessa grenar. En egen regelreferens sparas med passet. IPSC:s personliga HF-visning är nettopoäng (lägst noll) delat med uppmätt tid, inte officiella stationspoäng eller matchranking.
+
+## Schemalagd kontroll i GitHub
+
+Arbetsflödet **Check rule updates** körs var sjätte månad, den 5 januari och 5 juli kl. 07.23 UTC. Det kan även startas under **Actions → Check rule updates → Run workflow** på standardgrenen. GitHub kan fördröja schemalagda körningar. Inga extra hemligheter, tjänster eller appinställningar behövs: arbetsflödet använder GitHubs inbyggda token med läsbehörighet för kod och skrivbehörighet för ärenden. Actions och Issues måste vara aktiverade i repot; i en fork kan schemalagda arbetsflöden behöva aktiveras. GitHub kan också inaktivera scheman i inaktiva publika repon efter 60 dagar; kontrollera körhistoriken eller starta manuellt då. Se [GitHubs regler för schemalagda körningar](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+
+Den separata granskningsbasen `lib/rules/update-baseline.json` omfattar:
+
+- SPSF:s handbok (alla tolv grenar och tillämpningsproven), rättelser, kompletteringar och publicerad SSA-vapenlista.
+- SRA:s regelverk via SPSF:s officiella SRA-sida.
+- IPSC:s officiella regelbokssida: samtliga stödda grenar, kombinationsformat, tolkningar och kontrollhandböcker. Översättningar på den internationella sidan ingår inte.
+- SDSSF:s svenska handgun-regler, Nordic Steel Challenge, DMR och publicerade märkesfordringar.
+
+Egna grenar saknar en gemensam officiell regelkälla. Kontrollen följer dokumentlänkar från de angivna officiella sidorna. För alla fyra källor jämförs även PDF-filernas SHA-256, så en ersatt fil med samma namn upptäcks. Offentliga Google Drive-filer som länkas från IPSC hämtas genom en fast nedladdningsadress. Inloggningssidor eller bekräftelsesidor räknas inte som PDF-filer. Kontrollen granskar inte alla förbundsnyheter eller fristående beslut som ännu inte länkats från dessa regelsidor.
+
+En ändrad länk, borttagen fil eller ändrad PDF skapar ett ärende med källor, ändringar och en checklista för uppdatering. Samma rapport skapas inte igen, även om ärendet har stängts. En ny kombination av dokumentändringar ger en ny rapport. Ingen kod, regelkatalog eller historisk bedömning ändras automatiskt. Nätfel, blockerade sidor, oväntat tomma dokumentlistor och ogiltiga PDF-filer ger en misslyckad körning med sammanfattning, aldrig besked om aktuella regler. Bekräftade ändringar hos andra förbund rapporteras ändå.
+
+För lokal kontroll utan att skapa ärenden: `node scripts/check-rule-updates.mjs`. Efter manuell granskning och nödvändiga ändringar: `node scripts/check-rule-updates.mjs --write-baseline`. Det senare sparar hela den nya dokumentlistan och PDF-fingeravtrycken endast om alla källor kunde kontrolleras. Granska skillnaden och inkludera basen i samma ändring som regeluppdateringen. Ändra inte äldre katalogversioner eller sparade resultat för att kvittera en publiceringsändring. Appens inloggade SPSF-kontroll och detta halvårsvisa underhållsflöde har olika omfattning.
