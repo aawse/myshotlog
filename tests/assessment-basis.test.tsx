@@ -42,9 +42,9 @@ it.each(["sv", "en"] as const)(
     expect(html).toContain(
       t(language, "rules.precisionScore", { points: 46, threshold: 46 }),
     );
-    expect(html).toContain(t(language, "basis.age", { year: 2025 }));
-    expect(html).toContain("<dd>35</dd>");
-    expect(html).toContain("<dd>1990</dd>");
+    expect(html).toContain(t(language, "basis.age", { age: 35, year: 2025 }));
+    expect(html).toContain(t(language, "basis.ageHelp"));
+    expect(html).not.toContain("1990");
     expect(html).not.toMatch(
       /<pre|ruleSnapshot|evaluatorVersion|birthYear|spsf-2026|10000000-/,
     );
@@ -59,7 +59,7 @@ it("uses the recorded age and comparison, including an age adjustment, unchanged
   const a = assessment(recorded);
   const before = structuredClone(a);
   const html = render(a);
-  expect(html).toContain("<dd>65</dd>");
+  expect(html).toContain(t("sv", "basis.age", { age: 65, year: 2025 }));
   expect(html).toContain("46 av minst 44 poäng.");
   expect(a).toEqual(before);
 });
@@ -99,7 +99,7 @@ it("shows application hits and times without implying an age adjustment", () => 
   expect(html).toContain("<dt>Hits</dt><dd>6</dd>");
   expect(html).toContain("6/6 hits, 15/15 seconds.");
   expect(html).not.toContain(t("en", "basis.ageHelp"));
-  expect(html).not.toContain(t("en", "basis.birthYear"));
+  expect(html).not.toContain("1990");
 });
 
 it("preserves custom names and zero deductions in unsupported sports", () => {
@@ -171,6 +171,36 @@ it("retains valid saved conditions when the saved result is malformed", () => {
   );
   expect(html).toContain(t("sv", "basis.unavailable"));
   expect(html).toContain("<dd>C</dd>");
-  expect(html).toContain("<dd>65</dd>");
+  expect(html).toContain(t("sv", "basis.age", { age: 65, year: 2025 }));
   expect(html).not.toContain("<dd>46</dd>");
+});
+
+it("omits the captured birth date while keeping its historical age clear", () => {
+  const html = render(
+    assessment(
+      evaluate(session, result, {
+        ...profile,
+        birthDate: "1960-06-15",
+        birthYear: 1960,
+      })[2],
+    ),
+  );
+  expect(html).toContain(t("sv", "basis.age", { age: 65, year: 2025 }));
+  expect(html).not.toContain("1960");
+  expect(html).not.toContain("06-15");
+});
+
+it("does not guess an age from incomplete historical inputs", () => {
+  const html = render(
+    assessment({
+      input: {
+        date: session.date,
+        discipline: "precision",
+        group: "C",
+        birthYear: 1960,
+      },
+    }),
+  );
+  expect(html).not.toContain(t("sv", "basis.ageHelp"));
+  expect(html).not.toContain("1960");
 });

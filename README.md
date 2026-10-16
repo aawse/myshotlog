@@ -106,7 +106,7 @@ Under **Inställningar → Vem har åtkomst till dina data?** kan du granska Git
 
 ## Grenar, regler och träning
 
-Passvyn visar regelupplagans läsbara namn en gång för passet, med seriehänvisningar om flera upplagor förekommer. Bedömningarna visas i kompakta, utfällbara rader med valör, serienamn, poäng och datum. Det utfällbara bedömningsunderlaget visar sparade resultat, förutsättningar och födelseuppgifter med tydliga rubriker, utan tekniska ID:n eller JSON.
+Passvyn visar regelupplagans läsbara namn en gång för passet, med seriehänvisningar om flera upplagor förekommer. Resultat och beräkningar visas i en gemensam lista med kompakta, utfällbara rader med valör, serienamn, nettopoäng och datum. Varje rad visar seriens resultatdetaljer och sparade bedömningsunderlag när den fälls ut, även om bedömning saknas. För precision visas åldern vid föregående årsskifte och referensåret tillsammans med förklaringen till poänggränsen; födelsedatum och födelseår visas inte. Tekniska ID:n och JSON visas inte.
 
 Alla SPSF-grenar kan registreras, liksom IPSC, Nordic Steel Challenge, DMR och egna grenar. Ett pass har ett vapen och en gren. Skjutprogram fyller i serier, skottantal och kända villkor. PPC-program behåller varje etapps avstånd i meter eller yard. Optik och förvalda klasser per gren sparas på vapnet; tidigare vapenögonblicksbilder ändras inte.
 

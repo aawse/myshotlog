@@ -13,7 +13,6 @@ const savedInput = z.object({
   date: dateSchema.optional().catch(undefined),
   discipline: z.enum(disciplineIds).optional().catch(undefined),
   group: z.string().trim().min(1).max(100).optional().catch(undefined),
-  birthDate: dateSchema.nullish().catch(undefined),
   birthYear: year.nullish().catch(undefined),
   ageReferenceYear: year.optional().catch(undefined),
   ageBasis: z.literal("previous-calendar-year").optional().catch(undefined),
@@ -107,24 +106,18 @@ export function AssessmentBasis({ assessment }: { assessment: Assessment }) {
             )}
             {input.discipline === "precision" && (
               <>
-                <dl>
-                  {field(
-                    "basis.birthDate",
-                    input.birthDate && date(input.birthDate),
-                  )}
-                  {field("basis.birthYear", input.birthYear?.toString())}
-                  {age !== undefined && (
-                    <div>
-                      <dt>
-                        {tr("basis.age", {
-                          year: input.ageReferenceYear ?? "",
-                        })}
-                      </dt>
-                      <dd>{number(age)}</dd>
-                    </div>
-                  )}
-                </dl>
-                {age !== undefined && <p>{tr("basis.ageHelp")}</p>}
+                {age !== undefined && (
+                  <p>
+                    <strong>
+                      {tr("basis.age", {
+                        age: number(age),
+                        year: input.ageReferenceYear ?? "",
+                      })}
+                    </strong>
+                    <br />
+                    {tr("basis.ageHelp")}
+                  </p>
+                )}
                 {input.birthYear === null && <p>{tr("basis.noBirth")}</p>}
               </>
             )}

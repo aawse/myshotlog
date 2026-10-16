@@ -42,8 +42,9 @@ for (const language of ["sv", "en"] as const) {
       t["rules.edition21"],
     );
     await expect(page.locator(".session-rules")).toHaveCount(1);
-    await expect(page.locator(".series-results")).not.toContainText(
-      "spsf-2026-21-badge-v1",
+    await expect(page.locator(".session-overview table")).toHaveCount(0);
+    await expect(page.locator(".assessment")).toHaveCount(
+      journal.records.sessions[0].results.length,
     );
     await expect(page.locator(".assessment-date")).not.toContainText(
       "spsf-2026-21-badge-v1",
@@ -54,6 +55,10 @@ for (const language of ["sv", "en"] as const) {
     await expect(basis.locator("dt")).toContainText([t["common.date"]]);
     await expect(basis).toContainText(t["basis.recordedResult"]);
     await expect(basis.locator("pre")).toHaveCount(0);
+    await expect(basis).toContainText(
+      t["basis.age"].replace("{age}", "35").replace("{year}", "2025"),
+    );
+    await expect(basis).not.toContainText("1990");
     await expect(basis).not.toContainText("spsf-2026-21-badge-v1");
     await expectLayout(page);
     await page.screenshot({
@@ -229,10 +234,18 @@ for (const language of ["sv", "en"] as const) {
       .evaluate((row) => row.getBoundingClientRect().height);
     expect(height).toBeGreaterThanOrEqual(44);
     expect(height).toBeLessThanOrEqual(80);
+    await page.screenshot({
+      path: test.info().outputPath(`merged-collapsed-${language}.png`),
+      fullPage: true,
+    });
     await first.focus();
     await page.keyboard.press("Enter");
     await expect(rows.first().locator("details")).toHaveAttribute("open", "");
     await expect(rows.first().locator(".assessment-basis")).toBeVisible();
+    await page.screenshot({
+      path: test.info().outputPath(`merged-expanded-${language}.png`),
+      fullPage: true,
+    });
     await page.keyboard.press("Space");
     await expect(rows.first().locator("details")).not.toHaveAttribute("open");
     await expect(rows.nth(6).locator(".assessment-cross")).toBeVisible();
@@ -245,6 +258,19 @@ for (const language of ["sv", "en"] as const) {
     await rows.first().scrollIntoViewIfNeeded();
     await page.screenshot({
       path: test.info().outputPath(`compact-assessments-${language}.png`),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expectLayout(page);
+    await page.screenshot({
+      path: test.info().outputPath(`merged-320-collapsed-${language}.png`),
+      fullPage: true,
+    });
+    await rows.last().locator("summary").click();
+    await expect(rows.last().locator(".series-result-details")).toBeVisible();
+    await expectLayout(page);
+    await page.screenshot({
+      path: test.info().outputPath(`merged-320-expanded-${language}.png`),
       fullPage: true,
     });
   });

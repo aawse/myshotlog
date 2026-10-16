@@ -743,9 +743,6 @@ summary {
   border-top: 1px solid var(--line);
   font-size: 13px;
 }
-.session-overview .series-results td {
-  padding-block: var(--space-12);
-}
 @media (max-width: 560px) {
   .assessment-summary {
     grid-template-columns: minmax(0, 1fr) auto 24px;
@@ -1049,12 +1046,6 @@ progress {
 }
 .session-list-row .row-title:focus-visible {
   outline: none;
-}
-
-.series-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .location-field {
@@ -1480,12 +1471,6 @@ progress {
   color: var(--danger);
 }
 
-/* Align recorded values on a consistent edge, like a shooting protocol. */
-.series-results th:not(:first-child),
-.series-results td:not(:first-child) {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
 input[type="number"],
 input[type="date"],
 input[type="time"],
@@ -2021,21 +2006,25 @@ summary {
   margin-block: var(--space-16) var(--space-8);
   font-size: 14px;
 }
-.assessment-basis dl {
+.assessment-basis dl,
+.series-result-details {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr));
   gap: var(--space-12);
   margin-block: var(--space-12);
 }
-.assessment-basis dl > div {
+.assessment-basis dl > div,
+.series-result-details > div {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.assessment-basis dt {
+.assessment-basis dt,
+.series-result-details dt {
   color: var(--muted);
   font-size: 12px;
 }
-.assessment-basis dd {
+.assessment-basis dd,
+.series-result-details dd {
   margin: var(--space-4) 0 0;
   font-size: 14px;
 }

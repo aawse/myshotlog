@@ -146,7 +146,7 @@ it("offers direct JSON import on an empty dashboard and hides it when journal en
   expect(populated).not.toContain('type="file"');
 });
 
-it("shows the same highest grade and net points once per series in both sections", async () => {
+it("shows the same highest grade and net points once per series in the merged list", async () => {
   const { default: Details } =
     await import("../components/journal-views/session-details");
   const { LanguageProvider } = await import("../components/language-provider");
@@ -197,9 +197,10 @@ it("shows the same highest grade and net points once per series in both sections
   expect(html).not.toContain('class="series-medal bronze"');
   expect(html).toContain('class="series-medal silver"');
   expect(html).not.toContain('class="assessment-cross"');
-  expect(html.match(/class="series-medal silver"/g)).toHaveLength(2);
+  expect(html.match(/class="series-medal silver"/g)).toHaveLength(1);
   expect(html.match(/class="assessment"/g)).toHaveLength(1);
-  expect(html).toContain("<td>45</td>");
+  expect(html).not.toContain("<table");
+  expect(html).toContain('class="series-result-details"');
   expect(html).not.toContain('class="series-medal gold"');
   recordsFixture({
     profile,
@@ -259,7 +260,7 @@ it("shows only current series calculations and ignores superseded or historical 
     ],
   });
   const html = renderToStaticMarkup(<Details id={session.id} />);
-  expect(html.match(/class="series-medal silver"/g)).toHaveLength(2);
+  expect(html.match(/class="series-medal silver"/g)).toHaveLength(1);
   expect(html.match(/class="assessment"/g)).toHaveLength(1);
   expect(html).not.toContain('class="series-medal gold"');
   expect(html).not.toContain("old-rule");
@@ -310,9 +311,51 @@ it.each(["sv", "en"] as const)(
     expect(summary).toContain(t(language, "rules.edition21"));
     expect(html.match(/class="session-rules"/g)).toHaveLength(1);
     expect(html.split(t(language, "rules.edition21"))).toHaveLength(2);
-    expect(html.match(/class="series-medal gold"/g)).toHaveLength(4);
+    expect(html.match(/class="series-medal gold"/g)).toHaveLength(2);
     const visible = html.replace(/<details>[\s\S]*?<\/details>/g, "");
     expect(visible).not.toContain(rules[0].id);
     expect(html).not.toContain(rules[0].id);
   },
 );
+
+it("keeps unassessed series expandable with all recorded result details", async () => {
+  const { default: Details } =
+    await import("../components/journal-views/session-details");
+  const unassessed = {
+    ...session,
+    discipline: "ipsc-handgun" as const,
+    results: [
+      {
+        ...session.results[0],
+        label: "Fixture stage",
+        elapsedSeconds: 10,
+        penaltyPoints: 2,
+        penaltySeconds: 3,
+        hits: 4,
+        figures: 2,
+        stageTimeLimit: 30,
+        scoreText: "Fixture note",
+      },
+    ],
+  };
+  recordsFixture({
+    profile,
+    firearms: [],
+    sessions: [unassessed],
+    assessments: [],
+  });
+  const html = renderToStaticMarkup(<Details id={session.id} />);
+  const summary = html.match(
+    /<summary class="assessment-summary"[^>]*>([\s\S]*?)<\/summary>/,
+  )?.[1];
+  expect(summary).toContain("Fixture stage");
+  expect(summary).toContain(session.date);
+  expect(html.match(/class="assessment"/g)).toHaveLength(1);
+  expect(html).toContain('class="series-result-details"');
+  expect(html).toContain("4 / 2");
+  expect(html).toContain("4.4000");
+  expect(html).toContain("Fixture note");
+  expect(html).toContain("30");
+  expect(html).not.toContain("<table");
+  expect(html).not.toContain("<details open");
+});

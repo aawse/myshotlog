@@ -140,121 +140,185 @@ export default function View({ id }: { id: string }) {
             </p>
           )}
         </div>
-        <div className="table-scroll">
-          <table className="series-results">
-            <thead>
-              <tr>
-                <th>{tr("details.seriesStage")}</th>
-                <th>{tr("session.points")}</th>
-                <th>{tr("details.hitsFigures")}</th>
-                <th>{tr("details.deductions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ratings.map(({ result: r, medal, points }) => {
-                return (
-                  <tr key={r.id}>
-                    <td>
-                      <span className="series-label">
-                        {r.label}
-                        {medal && (
-                          <span
-                            className={"series-medal " + medal}
-                            role="img"
-                            aria-label={tr("details.medalSeries", {
-                              level: tr(`level.${medal}`),
-                            })}
-                            title={tr("details.medalSeries", {
-                              level: tr(`level.${medal}`),
-                            })}
-                          >
-                            <Medal size={20} aria-hidden="true" />
-                          </span>
-                        )}
+        <div className="session-assessments">
+          <h2>{tr("details.assessments")}</h2>
+          <p className="muted">{tr("details.assessmentHelp")}</p>
+          {ratings.map(({ result, medal, status, assessment: a, points }) => {
+            const summary = (
+              <>
+                <strong>
+                  <span className="calculation-grade">
+                    {medal ? (
+                      <span
+                        className={`series-medal ${medal}`}
+                        role="img"
+                        aria-label={tr("details.medalSeries", {
+                          level: tr(`level.${medal}`),
+                        })}
+                      >
+                        <Medal size={20} aria-hidden="true" />
                       </span>
-                      <span className="subline">
-                        {distanceText(seriesConditions(s, r))}
-                        {" · "}
-                        {r.shots}{" "}
-                        <span className="text-lowercase">
-                          {tr("session.shots")}
-                        </span>
-                        {r.scoring
-                          ? " · " +
-                            (r.scoring === "points"
-                              ? tr("details.fieldPoints")
-                              : tr("session.ordinaryScoring"))
-                          : ""}
+                    ) : status === "not-met" ? (
+                      <span
+                        className="assessment-cross"
+                        role="img"
+                        aria-label={tr("details.gradeNotAchieved")}
+                      >
+                        <CircleX size={20} aria-hidden="true" />
                       </span>
-                      {r.stageTimeLimit !== undefined && (
-                        <span className="subline">
-                          {tr("session.stageTimeLimit")}: {r.stageTimeLimit}
-                          {" s"}
-                        </span>
-                      )}
-                      {r.photoId && (
-                        <PhotoViewer
-                          src={"/api/photos/" + r.photoId + "/"}
-                          label={r.label}
-                        />
-                      )}
-                    </td>
-                    <td>
-                      {points ?? "–"}
-                      {r.elapsedSeconds !== undefined && (
-                        <span className="subline">
-                          {tr("session.elapsedSeconds")}: {r.elapsedSeconds}
-                          {" s"}
-                        </span>
-                      )}
-                      {hitFactor(r, s.discipline) !== undefined && (
-                        <span className="subline">
-                          {tr("session.hitFactor")}:{" "}
-                          {hitFactor(r, s.discipline)!.toFixed(4)}
-                        </span>
-                      )}
-                      {r.matchPercent !== undefined && (
-                        <span className="subline">{r.matchPercent}%</span>
-                      )}
-                      {r.placement !== undefined && (
-                        <span className="subline">
-                          {tr("session.placement")}: {r.placement}
-                        </span>
-                      )}
-                      {r.dryFire && (
-                        <span className="subline">{tr("session.dryFire")}</span>
-                      )}
-                      {r.scoreText && (
-                        <span className="subline">{r.scoreText}</span>
-                      )}
-                      {r.status && r.status !== "completed" && (
-                        <span className="subline">
-                          {tr(`resultStatus.${r.status}`)}
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {r.hits ?? "–"} / {r.figures ?? "–"}
-                      {r.scoring === "points" && (
-                        <span className="subline">
-                          {(r.hits ?? 0) + (r.figures ?? 0)}{" "}
-                          <span className="text-lowercase">
-                            {tr("details.fieldPoints")}
+                    ) : (
+                      <CircleHelp size={20} aria-hidden="true" />
+                    )}
+                    {medal
+                      ? tr(`level.${medal}`)
+                      : status === "not-met"
+                        ? tr("details.gradeNotAchieved")
+                        : status === "not-applicable"
+                          ? labels["not-applicable"]
+                          : labels["not-evaluated"]}
+                  </span>
+                  <span className="assessment-series-name">{result.label}</span>
+                </strong>
+                {points !== undefined && (
+                  <span className="assessment-score">
+                    {tr("quick.points", { p0: points })}
+                  </span>
+                )}
+                <time
+                  className="assessment-date"
+                  dateTime={a?.createdAt ?? s.date}
+                >
+                  {a?.createdAt.slice(0, 10) ?? s.date}
+                </time>
+                <span className="assessment-toggle">
+                  <span className="visually-hidden">
+                    {tr("details.showInput")}
+                  </span>
+                  <ChevronDown size={18} aria-hidden="true" />
+                </span>
+              </>
+            );
+            return (
+              <div className="assessment" key={result.id}>
+                <details>
+                  <summary
+                    className="assessment-summary"
+                    title={tr("details.showInput")}
+                  >
+                    {summary}
+                  </summary>
+                  <div className="assessment-expanded">
+                    <dl className="series-result-details">
+                      <div>
+                        <dt>{tr("details.seriesStage")}</dt>
+                        <dd>
+                          <span className="subline">
+                            {distanceText(seriesConditions(s, result))}
+                            {" · "}
+                            {result.shots}{" "}
+                            <span className="text-lowercase">
+                              {tr("session.shots")}
+                            </span>
+                            {result.scoring
+                              ? " · " +
+                                (result.scoring === "points"
+                                  ? tr("details.fieldPoints")
+                                  : tr("session.ordinaryScoring"))
+                              : ""}
                           </span>
-                        </span>
+                          {result.stageTimeLimit !== undefined && (
+                            <span className="subline">
+                              {tr("session.stageTimeLimit")}:{" "}
+                              {result.stageTimeLimit}
+                              {" s"}
+                            </span>
+                          )}
+                          {result.photoId && (
+                            <PhotoViewer
+                              src={"/api/photos/" + result.photoId + "/"}
+                              label={result.label}
+                            />
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{tr("session.points")}</dt>
+                        <dd>
+                          {points ?? "–"}
+                          {result.elapsedSeconds !== undefined && (
+                            <span className="subline">
+                              {tr("session.elapsedSeconds")}:{" "}
+                              {result.elapsedSeconds}
+                              {" s"}
+                            </span>
+                          )}
+                          {hitFactor(result, s.discipline) !== undefined && (
+                            <span className="subline">
+                              {tr("session.hitFactor")}:{" "}
+                              {hitFactor(result, s.discipline)?.toFixed(4)}
+                            </span>
+                          )}
+                          {result.matchPercent !== undefined && (
+                            <span className="subline">
+                              {result.matchPercent}%
+                            </span>
+                          )}
+                          {result.placement !== undefined && (
+                            <span className="subline">
+                              {tr("session.placement")}: {result.placement}
+                            </span>
+                          )}
+                          {result.dryFire && (
+                            <span className="subline">
+                              {tr("session.dryFire")}
+                            </span>
+                          )}
+                          {result.scoreText && (
+                            <span className="subline">{result.scoreText}</span>
+                          )}
+                          {result.status && result.status !== "completed" && (
+                            <span className="subline">
+                              {tr(`resultStatus.${result.status}`)}
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{tr("details.hitsFigures")}</dt>
+                        <dd>
+                          {result.hits ?? "–"} / {result.figures ?? "–"}
+                          {result.scoring === "points" && (
+                            <span className="subline">
+                              {(result.hits ?? 0) + (result.figures ?? 0)}{" "}
+                              <span className="text-lowercase">
+                                {tr("details.fieldPoints")}
+                              </span>
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{tr("details.deductions")}</dt>
+                        <dd>
+                          {tr("details.penalties", {
+                            points: result.penaltyPoints ?? 0,
+                            seconds: result.penaltySeconds ?? 0,
+                          })}
+                        </dd>
+                      </div>
+                    </dl>
+                    {a &&
+                      (points === undefined ||
+                        status === "not-evaluated" ||
+                        status === "not-applicable") && (
+                        <p>{localizeMessage(language, a.reason)}</p>
                       )}
-                    </td>
-                    <td>
-                      {tr("details.penalties", {
-                        points: r.penaltyPoints ?? 0,
-                        seconds: r.penaltySeconds ?? 0,
-                      })}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    {a && <AssessmentBasis assessment={a} />}
+                  </div>
+                </details>
+              </div>
+            );
+          })}
         </div>
         <p className="muted">{tr("print.netPoints")}</p>
         {s.notes && <p className="notes">{s.notes}</p>}
@@ -264,92 +328,7 @@ export default function View({ id }: { id: string }) {
         results={s.results}
         signoffs={signoffs}
       />
-      <section className="card session-assessments">
-        <h2>{tr("details.assessments")}</h2>
-        <p className="muted">{tr("details.assessmentHelp")}</p>
-        {ratings.map(({ result, medal, status, assessment: a, points }) => {
-          const summary = (
-            <>
-              <strong>
-                <span className="calculation-grade">
-                  {medal ? (
-                    <span
-                      className={`series-medal ${medal}`}
-                      role="img"
-                      aria-label={tr("details.medalSeries", {
-                        level: tr(`level.${medal}`),
-                      })}
-                    >
-                      <Medal size={20} aria-hidden="true" />
-                    </span>
-                  ) : status === "not-met" ? (
-                    <span
-                      className="assessment-cross"
-                      role="img"
-                      aria-label={tr("details.gradeNotAchieved")}
-                    >
-                      <CircleX size={20} aria-hidden="true" />
-                    </span>
-                  ) : (
-                    <CircleHelp size={20} aria-hidden="true" />
-                  )}
-                  {medal
-                    ? tr(`level.${medal}`)
-                    : status === "not-met"
-                      ? tr("details.gradeNotAchieved")
-                      : status === "not-applicable"
-                        ? labels["not-applicable"]
-                        : labels["not-evaluated"]}
-                </span>
-                <span className="assessment-series-name">{result.label}</span>
-              </strong>
-              {points !== undefined && (
-                <span className="assessment-score">
-                  {tr("quick.points", { p0: points })}
-                </span>
-              )}
-              {a && (
-                <time className="assessment-date" dateTime={a.createdAt}>
-                  {a.createdAt.slice(0, 10)}
-                </time>
-              )}
-              {a && (
-                <span className="assessment-toggle">
-                  <span className="visually-hidden">
-                    {tr("details.showInput")}
-                  </span>
-                  <ChevronDown size={18} aria-hidden="true" />
-                </span>
-              )}
-            </>
-          );
-          return (
-            <div className="assessment" key={result.id}>
-              {a ? (
-                <details>
-                  <summary
-                    className="assessment-summary"
-                    title={tr("details.showInput")}
-                  >
-                    {summary}
-                  </summary>
-                  <div className="assessment-expanded">
-                    {(points === undefined ||
-                      status === "not-evaluated" ||
-                      status === "not-applicable") && (
-                      <p>{localizeMessage(language, a.reason)}</p>
-                    )}
-                    <AssessmentBasis assessment={a} />
-                  </div>
-                </details>
-              ) : (
-                <div className="assessment-summary">{summary}</div>
-              )}
-            </div>
-          );
-        })}
-        <SessionActions id={id} />
-      </section>
+      <SessionActions id={id} />
     </>
   );
 }

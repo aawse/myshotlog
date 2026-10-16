@@ -10,12 +10,14 @@ bedömningsunderlag eller katalogposten med exakt samma regel-ID. Dagens datum
 används inte för att välja ett namn. Om olika upplagor faktiskt förekommer visas
 vilka serier som hör till respektive upplaga. Saknad upplagemetadata markeras
 utan att ersättas med den senaste upplagan. Egna regelreferenser visas som de
-registrerats. Bedömningslistan visar valör, serienamn, poäng och datum i kompakta
-rader. Klicka på en rad eller använd Enter eller mellanslag för att visa eller
-dölja det sparade bedömningsunderlaget. Där visas sparade resultat, skjutvillkor
-och födelseunderlag i namngivna fält samt den sparade jämförelsen med valörens
-krav. Tekniska fältnamn och regel-ID:n visas inte. Saknade eller ogiltiga äldre
+registrerats. Resultat och beräkningar delar en lista som visar valör, serienamn,
+nettopoäng och datum i kompakta rader. Klicka på en rad eller använd Enter eller mellanslag för att visa eller
+dölja seriens resultatdetaljer och det sparade bedömningsunderlaget. Även serier
+utan bedömning kan fällas ut. Där visas sparade resultat och skjutvillkor i
+namngivna fält samt den sparade jämförelsen med valörens krav. Tekniska fältnamn och regel-ID:n visas inte. Saknade eller ogiltiga äldre
 uppgifter markeras utan att fyllas i från dagens profil eller pass.
+För precision visas den sparade åldern vid föregående årsskifte med referensår
+och förklaringen till poänggränsen. Födelsedatum och födelseår visas inte.
 Detta ändrar bara presentationen; bedömningar och lagrade resultat ändras inte.
 
 ## Täckningsmatris
