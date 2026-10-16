@@ -151,3 +151,38 @@ A change is complete only when:
 4. It follows existing patterns, with i18n keys in both locales.
 5. Obsolete code, keys, assets, and dependencies have been removed and bundle size has been optimized.
 6. Related documentation is updated.
+
+
+## 9. Working agreement and app/demo parity
+
+- Work in this `myshotlog` checkout; the former `skytte` path is obsolete. The
+  public website is the separate sibling `../myshotlog-website` repository.
+- Carry authorized work through implementation, review and verification. Make
+  small, coherent changes and verify each step. Do not ask again for choices or
+  actions already authorized. Ask only when a missing decision blocks safe work.
+- Keep the user informed with concise progress updates. Commit completed changes
+  as work progresses; use separate commits for independent requested changes.
+  Do not package ZIP files or push unless the user requests it.
+- Preserve existing journal IDs and stored records. Profile birth-date changes
+  must not retrospectively change a recorded series. Use the dated rules and
+  captured birth information; all medal displays must share the same rating logic.
+- Show readable rule editions once per session, grouping exceptions when needed.
+  Assessment details use labelled fields, never raw JSON or internal rule IDs.
+  Compact disclosure rows retain grade, full series name, score and date.
+- Keep all information accessible while tightening layouts. Wrap long labels,
+  preserve keyboard interaction and visible focus, and retain at least 44 px touch
+  targets. Floating tools must have reserved space so they cannot cover actions.
+- A session has one firearm and sport. Keep shared distance, target and time limit
+  at session level, with explicit event-stage overrides where applicable. Event
+  programs and firearm optics/defaults determine suggestions, not official class
+  certification. Never auto-award medals for unsupported sports.
+- When app features or design change, check the website demo and documentation
+  for drift if they are in scope. The demo must stay independent and browser-only;
+  do not copy authentication, server storage or credentials into the website.
+- Use fictional records and mocked/offline requests for tests and visual review.
+  For UI changes run the browser matrix as well as the required checks above;
+  inspect desktop, phone and tablet screenshots in both languages, including
+  320 px widths, long content, collapsed and expanded states.
+- Run browser tests with their dedicated production build/configuration. Only
+  use `UI_SKIP_BUILD=1` when the existing build used that same configuration;
+  public build-time settings cannot be replaced merely by runtime test values.
