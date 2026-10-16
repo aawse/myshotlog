@@ -10,8 +10,10 @@ bedömningsunderlag eller katalogposten med exakt samma regel-ID. Dagens datum
 används inte för att välja ett namn. Om olika upplagor faktiskt förekommer visas
 vilka serier som hör till respektive upplaga. Saknad upplagemetadata markeras
 utan att ersättas med den senaste upplagan. Egna regelreferenser visas som de
-registrerats. Tekniska regel-ID:n finns kvar i beräkningsunderlaget under
-**Visa sparat bedömningsunderlag**, men upprepas inte i seriens vanliga visning.
+registrerats. Under **Visa sparat bedömningsunderlag** visas sparade resultat, skjutvillkor
+och födelseunderlag i namngivna fält samt den sparade jämförelsen med valörens
+krav. Tekniska fältnamn och regel-ID:n visas inte. Saknade eller ogiltiga äldre
+uppgifter markeras utan att fyllas i från dagens profil eller pass.
 Detta ändrar bara presentationen; bedömningar och lagrade resultat ändras inte.
 
 ## Täckningsmatris

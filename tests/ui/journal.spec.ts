@@ -48,6 +48,31 @@ for (const language of ["sv", "en"] as const) {
       "spsf-2026-21-badge-v1",
     );
     await page
+      .getByText(t["details.showInput"], { exact: true })
+      .first()
+      .click();
+    const basis = page.locator(".assessment-basis").first();
+    await expect(basis).toBeVisible();
+    await expect(basis.locator("dt")).toContainText([t["common.date"]]);
+    await expect(basis).toContainText(t["basis.recordedResult"]);
+    await expect(basis.locator("pre")).toHaveCount(0);
+    await expect(basis).not.toContainText("spsf-2026-21-badge-v1");
+    await expectLayout(page);
+    await page.screenshot({
+      path: test.info().outputPath(`assessment-${language}.png`),
+      fullPage: true,
+    });
+    await basis.locator(".assessment-comparison").scrollIntoViewIfNeeded();
+    await expect(basis.locator(".assessment-comparison")).toContainText(
+      t["rules.precisionScore"]
+        .replace("{points}", "46")
+        .replace("{threshold}", "46"),
+    );
+    await page.screenshot({
+      path: test.info().outputPath(`assessment-result-${language}.png`),
+      fullPage: true,
+    });
+    await page
       .getByRole("link", { name: t["session.editHeading"], exact: true })
       .click();
     await page
@@ -152,6 +177,13 @@ test("narrow screens retain usable navigation and results", async ({
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto("/sessions/");
   await expect(page.locator(".session-list-row")).toHaveCount(1);
+  await expectLayout(page);
+  await page.locator(".session-list-row .row-title").first().click();
+  await page
+    .getByText(sv["details.showInput"], { exact: true })
+    .first()
+    .click();
+  await expect(page.locator(".assessment-basis").first()).toBeVisible();
   await expectLayout(page);
   await page
     .locator("aside nav")

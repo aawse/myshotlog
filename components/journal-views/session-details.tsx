@@ -15,6 +15,7 @@ import { disciplineName, targetName, caliberName } from "@/lib/i18n-domain";
 import { sessionSeriesRatings } from "@/lib/session-medals";
 import { summarize } from "@/lib/rules/engine";
 import { appliedRuleGroups } from "@/lib/rules/presentation";
+import { AssessmentBasis } from "@/components/assessment-basis";
 import { SessionPrint } from "@/components/session-print";
 import { SessionActions } from "@/components/session-actions";
 export default function View({ id }: { id: string }) {
@@ -314,13 +315,7 @@ export default function View({ id }: { id: string }) {
                 <small>{a.createdAt.slice(0, 10)}</small>
                 <details>
                   <summary>{tr("details.showInput")}</summary>
-                  <pre>
-                    {JSON.stringify(
-                      { ruleVersion: a.ruleVersion, input: a.input },
-                      null,
-                      2,
-                    )}
-                  </pre>
+                  <AssessmentBasis assessment={a} />
                 </details>
               </>
             )}

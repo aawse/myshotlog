@@ -1913,3 +1913,36 @@ summary {
     min-height: 110px;
   }
 }
+
+.assessment-basis {
+  margin-top: var(--space-16);
+  padding: var(--space-16);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--bg);
+}
+.assessment-basis h4 {
+  margin-block: var(--space-20) var(--space-12);
+  font-size: 14px;
+}
+.assessment-basis dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-16);
+  margin-block: var(--space-16);
+}
+.assessment-basis dl > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.assessment-basis dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.assessment-basis dd {
+  margin: var(--space-4) 0 0;
+  font-size: 16px;
+}
+.assessment-comparison {
+  border-top: 1px solid var(--line);
+}

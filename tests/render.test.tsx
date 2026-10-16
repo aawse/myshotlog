@@ -181,7 +181,10 @@ it("shows the same highest grade and net points once per series in both sections
   expect(html).toContain("45 poäng");
   expect(html).not.toContain("Delprestation uppfylld");
   expect(html).not.toContain("Kraven ej uppfyllda");
-  expect(html).not.toContain("45 av minst 34 poäng");
+  expect(html.replace(/<details>[\s\S]*?<\/details>/g, "")).not.toContain(
+    "45 av minst 34 poäng",
+  );
+  expect(html).toContain("45 av minst 34 poäng");
   expect(html).not.toContain('class="series-medal bronze"');
   expect(html).toContain('class="series-medal silver"');
   expect(html).not.toContain('class="assessment-cross"');
@@ -301,6 +304,6 @@ it.each(["sv", "en"] as const)(
     expect(html.match(/class="series-medal gold"/g)).toHaveLength(4);
     const visible = html.replace(/<details>[\s\S]*?<\/details>/g, "");
     expect(visible).not.toContain(rules[0].id);
-    expect(html).toContain(rules[0].id);
+    expect(html).not.toContain(rules[0].id);
   },
 );
