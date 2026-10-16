@@ -6,6 +6,7 @@ import {
 } from "./layout";
 import sv from "../../lib/locales/sv.json";
 import en from "../../lib/locales/en.json";
+import { evaluate } from "../../lib/rules/engine";
 import { signSession } from "../../lib/auth/session";
 import { uiSigningKey, uiOrigin } from "./fixture";
 
@@ -44,13 +45,10 @@ for (const language of ["sv", "en"] as const) {
     await expect(page.locator(".series-results")).not.toContainText(
       "spsf-2026-21-badge-v1",
     );
-    await expect(page.locator(".assessment > small")).not.toContainText(
+    await expect(page.locator(".assessment-date")).not.toContainText(
       "spsf-2026-21-badge-v1",
     );
-    await page
-      .getByText(t["details.showInput"], { exact: true })
-      .first()
-      .click();
+    await page.locator(".assessment summary").first().click();
     const basis = page.locator(".assessment-basis").first();
     await expect(basis).toBeVisible();
     await expect(basis.locator("dt")).toContainText([t["common.date"]]);
@@ -179,10 +177,7 @@ test("narrow screens retain usable navigation and results", async ({
   await expect(page.locator(".session-list-row")).toHaveCount(1);
   await expectLayout(page);
   await page.locator(".session-list-row .row-title").first().click();
-  await page
-    .getByText(sv["details.showInput"], { exact: true })
-    .first()
-    .click();
+  await page.locator(".assessment summary").first().click();
   await expect(page.locator(".assessment-basis").first()).toBeVisible();
   await expectLayout(page);
   await page
@@ -196,3 +191,61 @@ test("narrow screens retain usable navigation and results", async ({
   await page.setViewportSize({ width: 844, height: 390 });
   await expectLayout(page);
 });
+
+for (const language of ["sv", "en"] as const) {
+  test(`compact assessment rows retain results and keyboard access (${language})`, async ({
+    page,
+    journal,
+  }) => {
+    journal.setLanguage(language);
+    const session = journal.records.sessions[0];
+    const template = session.results[0];
+    session.results = Array.from({ length: 8 }, (_, index) => ({
+      ...template,
+      id: `50000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+      label:
+        index === 7
+          ? "Fixture long series name that should wrap without hiding any of its content"
+          : `Serie ${index + 1}`,
+      points: index === 6 ? 20 : 46,
+    }));
+    journal.records.assessments = session.results
+      .flatMap((result) => evaluate(session, result, journal.records.profile))
+      .map((assessment, index) => ({
+        ...assessment,
+        id: `60000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+        createdAt: "2026-10-10T12:00:00Z",
+      }));
+    await page.goto(`/sessions/${session.id}/`);
+    const rows = page.locator(".assessment");
+    await expect(rows).toHaveCount(8);
+    await expect(page.locator(".assessment details[open]")).toHaveCount(0);
+    const first = rows.first().locator("summary");
+    await expect(first).toContainText("Serie 1");
+    await expect(first).toContainText("46");
+    await expect(first).toContainText("2026-10-10");
+    const height = await rows
+      .first()
+      .evaluate((row) => row.getBoundingClientRect().height);
+    expect(height).toBeGreaterThanOrEqual(44);
+    expect(height).toBeLessThanOrEqual(80);
+    await first.focus();
+    await page.keyboard.press("Enter");
+    await expect(rows.first().locator("details")).toHaveAttribute("open", "");
+    await expect(rows.first().locator(".assessment-basis")).toBeVisible();
+    await page.keyboard.press("Space");
+    await expect(rows.first().locator("details")).not.toHaveAttribute("open");
+    await expect(rows.nth(6).locator(".assessment-cross")).toBeVisible();
+    await expect(rows.last()).toContainText(session.results[7].label);
+    const clips = await rows
+      .last()
+      .evaluate((row) => row.scrollWidth > row.clientWidth + 1);
+    expect(clips).toBe(false);
+    await expectLayout(page);
+    await rows.first().scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: test.info().outputPath(`compact-assessments-${language}.png`),
+      fullPage: true,
+    });
+  });
+}

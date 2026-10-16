@@ -6,7 +6,7 @@ import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
 import Link from "next/link";
 import { PhotoViewer } from "@/components/photo-viewer";
-import { Medal, CircleX, CircleHelp } from "lucide-react";
+import { Medal, CircleX, CircleHelp, ChevronDown } from "lucide-react";
 import { JournalMissing } from "../journal-missing";
 import { witnessCurrent } from "@/lib/witness/model";
 import { BrowserWitnessPanel } from "@/components/browser-witness-panel";
@@ -62,7 +62,7 @@ export default function View({ id }: { id: string }) {
           </Link>
         </div>
       </div>
-      <section className="card">
+      <section className="card session-overview">
         <h2>
           {s.firearmSnapshot
             ? s.firearmSnapshot.nickname ||
@@ -72,37 +72,39 @@ export default function View({ id }: { id: string }) {
             <> · {caliberName(language, s.firearmSnapshot.caliber)}</>
           )}
         </h2>
-        <p>
-          {tr("sessions.groupPrefix")} {s.group} · {total.shots}{" "}
-          {tr("details.shotsSeparator")} {s.results.length}{" "}
-          {tr("details.entries")}
-        </p>
-        {(s.distance !== undefined || s.target !== undefined) && (
+        <div className="session-facts">
           <p>
-            {tr("details.distance")}{" "}
-            {s.distance !== null && s.distance !== undefined
-              ? s.distance + " m"
-              : tr("common.notSpecified")}{" "}
-            {tr("details.target")} {targetName(language, s.target)}
+            {tr("sessions.groupPrefix")} {s.group} · {total.shots}{" "}
+            {tr("details.shotsSeparator")} {s.results.length}{" "}
+            {tr("details.entries")}
           </p>
-        )}
-        <p>
-          {tr("details.time")}{" "}
-          {s.seconds !== null && s.seconds !== undefined
-            ? s.seconds + " s"
-            : s.results.some((r) => r.seconds !== undefined)
-              ? tr("details.oldTimes")
-              : tr("common.notSpecified")}
-        </p>
-        {s.firearmSnapshot?.hasOptic && <p>{tr("firearm.hasOptic")}</p>}
-        {s.ruleReference &&
-          !ruleGroups.some(
-            (group) => group.declared && group.edition === s.ruleReference,
-          ) && (
+          {(s.distance !== undefined || s.target !== undefined) && (
             <p>
-              {tr("session.ruleReference")}: {s.ruleReference}
+              {tr("details.distance")}{" "}
+              {s.distance !== null && s.distance !== undefined
+                ? s.distance + " m"
+                : tr("common.notSpecified")}{" "}
+              {tr("details.target")} {targetName(language, s.target)}
             </p>
           )}
+          <p>
+            {tr("details.time")}{" "}
+            {s.seconds !== null && s.seconds !== undefined
+              ? s.seconds + " s"
+              : s.results.some((r) => r.seconds !== undefined)
+                ? tr("details.oldTimes")
+                : tr("common.notSpecified")}
+          </p>
+          {s.firearmSnapshot?.hasOptic && <p>{tr("firearm.hasOptic")}</p>}
+          {s.ruleReference &&
+            !ruleGroups.some(
+              (group) => group.declared && group.edition === s.ruleReference,
+            ) && (
+              <p>
+                {tr("session.ruleReference")}: {s.ruleReference}
+              </p>
+            )}
+        </div>
         <div className="session-rules">
           {ruleGroups.length ? (
             ruleGroups.map((group, index) => (
@@ -262,65 +264,90 @@ export default function View({ id }: { id: string }) {
         results={s.results}
         signoffs={signoffs}
       />
-      <section className="card">
+      <section className="card session-assessments">
         <h2>{tr("details.assessments")}</h2>
         <p className="muted">{tr("details.assessmentHelp")}</p>
-        {ratings.map(({ result, medal, status, assessment: a, points }) => (
-          <div className="assessment" key={result.id}>
-            <strong>
-              <span className="calculation-grade">
-                {medal ? (
-                  <span
-                    className={`series-medal ${medal}`}
-                    role="img"
-                    aria-label={tr("details.medalSeries", {
-                      level: tr(`level.${medal}`),
-                    })}
-                  >
-                    <Medal size={20} aria-hidden="true" />
-                  </span>
-                ) : status === "not-met" ? (
-                  <span
-                    className="assessment-cross"
-                    role="img"
-                    aria-label={tr("details.gradeNotAchieved")}
-                  >
-                    <CircleX size={20} aria-hidden="true" />
-                  </span>
-                ) : (
-                  <CircleHelp size={20} aria-hidden="true" />
-                )}
-                {medal
-                  ? tr(`level.${medal}`)
-                  : status === "not-met"
-                    ? tr("details.gradeNotAchieved")
-                    : status === "not-applicable"
-                      ? labels["not-applicable"]
-                      : labels["not-evaluated"]}
-              </span>{" "}
-              · {result.label}
-            </strong>
-            {points !== undefined ? (
-              <p>{tr("quick.points", { p0: points })}</p>
-            ) : (
-              a && <p>{localizeMessage(language, a.reason)}</p>
-            )}
-            {points !== undefined &&
-              a &&
-              (status === "not-evaluated" || status === "not-applicable") && (
-                <p>{localizeMessage(language, a.reason)}</p>
+        {ratings.map(({ result, medal, status, assessment: a, points }) => {
+          const summary = (
+            <>
+              <strong>
+                <span className="calculation-grade">
+                  {medal ? (
+                    <span
+                      className={`series-medal ${medal}`}
+                      role="img"
+                      aria-label={tr("details.medalSeries", {
+                        level: tr(`level.${medal}`),
+                      })}
+                    >
+                      <Medal size={20} aria-hidden="true" />
+                    </span>
+                  ) : status === "not-met" ? (
+                    <span
+                      className="assessment-cross"
+                      role="img"
+                      aria-label={tr("details.gradeNotAchieved")}
+                    >
+                      <CircleX size={20} aria-hidden="true" />
+                    </span>
+                  ) : (
+                    <CircleHelp size={20} aria-hidden="true" />
+                  )}
+                  {medal
+                    ? tr(`level.${medal}`)
+                    : status === "not-met"
+                      ? tr("details.gradeNotAchieved")
+                      : status === "not-applicable"
+                        ? labels["not-applicable"]
+                        : labels["not-evaluated"]}
+                </span>
+                <span className="assessment-series-name">{result.label}</span>
+              </strong>
+              {points !== undefined && (
+                <span className="assessment-score">
+                  {tr("quick.points", { p0: points })}
+                </span>
               )}
-            {a && (
-              <>
-                <small>{a.createdAt.slice(0, 10)}</small>
+              {a && (
+                <time className="assessment-date" dateTime={a.createdAt}>
+                  {a.createdAt.slice(0, 10)}
+                </time>
+              )}
+              {a && (
+                <span className="assessment-toggle">
+                  <span className="visually-hidden">
+                    {tr("details.showInput")}
+                  </span>
+                  <ChevronDown size={18} aria-hidden="true" />
+                </span>
+              )}
+            </>
+          );
+          return (
+            <div className="assessment" key={result.id}>
+              {a ? (
                 <details>
-                  <summary>{tr("details.showInput")}</summary>
-                  <AssessmentBasis assessment={a} />
+                  <summary
+                    className="assessment-summary"
+                    title={tr("details.showInput")}
+                  >
+                    {summary}
+                  </summary>
+                  <div className="assessment-expanded">
+                    {(points === undefined ||
+                      status === "not-evaluated" ||
+                      status === "not-applicable") && (
+                      <p>{localizeMessage(language, a.reason)}</p>
+                    )}
+                    <AssessmentBasis assessment={a} />
+                  </div>
                 </details>
-              </>
-            )}
-          </div>
-        ))}
+              ) : (
+                <div className="assessment-summary">{summary}</div>
+              )}
+            </div>
+          );
+        })}
         <SessionActions id={id} />
       </section>
     </>

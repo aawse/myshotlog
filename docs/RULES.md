@@ -10,7 +10,9 @@ bedömningsunderlag eller katalogposten med exakt samma regel-ID. Dagens datum
 används inte för att välja ett namn. Om olika upplagor faktiskt förekommer visas
 vilka serier som hör till respektive upplaga. Saknad upplagemetadata markeras
 utan att ersättas med den senaste upplagan. Egna regelreferenser visas som de
-registrerats. Under **Visa sparat bedömningsunderlag** visas sparade resultat, skjutvillkor
+registrerats. Bedömningslistan visar valör, serienamn, poäng och datum i kompakta
+rader. Klicka på en rad eller använd Enter eller mellanslag för att visa eller
+dölja det sparade bedömningsunderlaget. Där visas sparade resultat, skjutvillkor
 och födelseunderlag i namngivna fält samt den sparade jämförelsen med valörens
 krav. Tekniska fältnamn och regel-ID:n visas inte. Saknade eller ogiltiga äldre
 uppgifter markeras utan att fyllas i från dagens profil eller pass.

@@ -179,6 +179,15 @@ it("shows the same highest grade and net points once per series in both sections
     </LanguageProvider>,
   );
   expect(html).toContain("45 poäng");
+  const compactSummary = html.match(
+    /<summary class="assessment-summary"[^>]*>([\s\S]*?)<\/summary>/,
+  )?.[1];
+  expect(compactSummary).toContain("45 poäng");
+  expect(compactSummary).toContain("Silver");
+  expect(compactSummary).toContain(scored.results[0].label);
+  expect(compactSummary).toContain("2026-10-13");
+  expect(compactSummary).not.toContain("45 av minst 34 poäng");
+  expect(html).not.toContain("<details open");
   expect(html).not.toContain("Delprestation uppfylld");
   expect(html).not.toContain("Kraven ej uppfyllda");
   expect(html.replace(/<details>[\s\S]*?<\/details>/g, "")).not.toContain(
