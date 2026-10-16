@@ -42,7 +42,7 @@
   "auth.denied": "Ditt GitHub-konto har inte åtkomst till den här journalinstallationen. Kontakta instansägaren.",
   "auth.notConfigured": "GitHub-inloggningen är inte konfigurerad.",
   "auth.rateLimited": "För många försök. Vänta och försök igen.",
-  "basis.age": "{age} år vid utgången av {year}",
+  "basis.age": "Skytten var {age} år gammal vid utgången av föregående kalenderår ({year}).",
   "basis.ageHelp": "Åldern vid föregående årsskifte används för precisionsseriens poänggräns.",
   "basis.comparison": "Jämförelse med kraven för {level}",
   "basis.conditions": "Förutsättningar vid bedömningen",
