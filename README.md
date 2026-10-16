@@ -57,6 +57,8 @@ GitHub-workflowen **Tests** kör installation, samtliga tester, typkontroll och 
 
 Se även [beroenden och uppdateringar](docs/DEPENDENCIES.md) samt [validering, prestanda och SEO, 13 oktober 2026](docs/VALIDATION-2026-10-13.md).
 
+Resultat för oanvänd kod och komprimerad JavaScript-storlek finns i [paketgranskningen, 16 oktober 2026](docs/BUNDLE-AUDIT-2026-10-16.md).
+
 ## Språk och UI-texter
 
 Alla fasta UI-texter finns i `lib/locales/sv.json` och `lib/locales/en.json`, med samma nycklar i båda filerna. Profilens `language` i den lokala journalvyn styr UI:t och synkas till `profile.json`. Serverns skal använder en kontobunden språkledtråd utan att läsa Git. Ändra språk under **Inställningar → Din profil → Språk** och spara profilen. Befintliga profiler utan språkfält använder svenska; webbläsarens språk ersätter inte profilvalet.
