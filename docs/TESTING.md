@@ -20,6 +20,7 @@ Kontrollerna täcker bland annat:
 - Postcommits, atomiska importer, samtidiga skrivningar, revisionskonflikter och användarisolering.
 - Tomma GitHub-repositories, första metadatacommit, initieringskonflikter, verkliga branch-/behörighetsfel och importpanel på tom översikt.
 - GitHub API, OAuth-state/PKCE, engångsflöden, stateless sessionskontroller utan Git, origin/version/utgång och gemensamma trafikgränser.
+- Krypterad delimport över 3 MB mellan serverinstanser; utgångstid, ägarisolering, manipulerade delar, hashfel, storleksgränser och begränsade konfliktretries. Lokal export utan pagineringsloopar samt laddningsindikator i båda språk och browsermatrisen.
 - Rå JSON/CSV-export utan bedömningar, import med daterade regler och fångade födelseuppgifter, äldre backupkompatibilitet, stabila journal-ID:n och prefixval.
 - Fotovalidering, bildreferenser, deduplicering och städning av tillfälliga Git-repositories.
 - Brons/silver/guld för A/B/C, åldersgränser, passdatum och regelversioner.

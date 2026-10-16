@@ -13,7 +13,7 @@ Personlig journal för skytte, träning och tävling, byggd med Next.js och Reac
 - Ett valfritt tavelfoto per serie. Välj en bild; formatet avgör automatiskt om den kan användas direkt eller behöver konverteras och optimeras i webbläsaren före uppladdning.
 - Lokal IndexedDB-cache med köade sparningar, batchsynkning, commit-kontroll och konfliktgranskning. En öppen app kan läsa och spara offline; synkstatus visar vad som nått GitHub.
 - Konfigurerbar servercache och återanvändning av immutabla Git-blobbar för snabbare läsningar.
-- JSON-export/import med profil, vapen, råresultat, seriens födelseuppgifter, okopplade serier, foton och vittnesintyg. Bedömningar exporteras inte; vid import beräknas de med reglerna för passdatumet. CSV exporterar resultat från pass till kalkylblad.
+- JSON-export/import med profil, vapen, råresultat, skyttens födelsedatum eller födelseår sparat med varje serie, okopplade serier, foton och vittnesintyg. Bedömningar exporteras inte; vid import beräknas de med reglerna för passdatumet. CSV exporterar resultat från pass till kalkylblad.
 - Valfria vittnesintyg för en serie eller ett helt pass. Dela en engångslänk eller QR-kod; vittnet skriver sitt namn och ritar en namnteckning utan konto. Intyget gäller resultaten som visades vid underskriften och ändrar inte märkesbedömningen. Se [vittnesfunktionen](docs/WITNESSES.md).
 - PDF-utskrift från passets sida med tydligt datum och plats, resultat, regelversioner och vittnesnamn samt namnteckningar. Tidigare intyg efter en ändring märks och visar de ursprungliga uppgifterna. Tavelfoton ingår inte. QR-koden länkar till passet och kräver vanlig inloggning. PDF-filen skapas i minnet och sparas inte i Git eller på serverns disk.
 - Uppdateringsnotis när den driftsatta appen saknar ändringar från uppströmsversionen. Kodforken synkroniseras manuellt via GitHubs Sync fork; Vercel driftsätter via Git-integrationen. Se [appuppdateringar](docs/UPDATES.md).
@@ -75,7 +75,7 @@ Inloggningssessioner använder stateless HMAC-signerade cookies med åtta timmar
 
 Git lagrar fortfarande engångsflöden för OAuth och gemensamma trafikgränser. OAuth-flöden och godkända records/photo-API-anrop kan därför skapa säkerhetscommits. Journalens poster och foton lagras fortsatt i Git.
 
-Radering tar bort uppgifter från aktuell journal; **tidigare versioner finns kvar i Git-historiken och dess kopior**. JSON-export är en flyttbar journalbackup, medan Git-backup även bevarar historiken. Import är begränsad till **3 MB per anrop**, inklusive bilddata.
+Radering tar bort uppgifter från aktuell journal; **tidigare versioner finns kvar i Git-historiken och dess kopior**. JSON-export är en flyttbar journalbackup, medan Git-backup även bevarar historiken. JSON-export och import stöder filer upp till **32 MB**, inklusive bilddata. Export byggs i webbläsaren efter synkning med foton hämtade ett i taget. Import överför filen i delar på högst 1,5 MB (cirka 2 MB som JSON/base64), medan API-gränsen på 3 MB per anrop behålls. Hela filen valideras före atomisk publicering. Se [överföringsflödet](docs/ARCHITECTURE.md#export-och-drift). Vercel behöver Fluid compute för records-ruttens tidsgräns på 300 sekunder; den slutliga importtiden beror på antal poster och Git-providerns svarstid.
 
 Befintliga WebP-foton förblir läsbara och bevaras i JSON-export/import. Nya uppladdningar lagras som JPEG; äldre foton och deras Git-historik ändras inte.
 

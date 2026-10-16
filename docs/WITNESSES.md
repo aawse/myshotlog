@@ -24,7 +24,7 @@ Vittnessidor har `no-store`, `no-referrer` och `noindex` och laddar inga Analyti
 
 JSON-export/import bevarar intyg, namnteckningar och de råresultat som intygades. Levande inbjudningar eller deras tokens exporteras inte. Befintliga säkerhetskopior utan intyg går fortfarande att importera. Import validerar snapshot-hash och bilddata; intyg kopieras utan ny signering eller ändrad tidsstämpel. Märkesbedömning görs fortfarande separat med reglerna för passdatumet. CSV innehåller råresultat, inte namnteckningar.
 
-När ett pass eller hela journalen raderas tas dess intyg och inbjudningar bort från aktuell lagring. Tidigare versioner, namn och namnteckningar finns kvar i Git-historiken och eventuella kopior, precis som övriga journaluppgifter. JSON-import har fortfarande gränsen 3 MB; använd Git-backup för större journaler.
+När ett pass eller hela journalen raderas tas dess intyg och inbjudningar bort från aktuell lagring. Tidigare versioner, namn och namnteckningar finns kvar i Git-historiken och eventuella kopior, precis som övriga journaluppgifter. JSON-export/import stöder filer upp till 32 MB via mindre anrop; se [export och drift](ARCHITECTURE.md#export-och-drift). Använd Git-backup för större journaler och för att bevara historiken.
 
 ## Kom ihåg vittnet på enheten
 

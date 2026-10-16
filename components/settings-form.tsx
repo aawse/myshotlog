@@ -4,7 +4,8 @@ import { useI18n } from "./language-provider";
 import { useRef, useState } from "react";
 import { useJournalRouter } from "./journal-navigation";
 import { todayInTimezone, type Profile } from "@/lib/models";
-import type { Records } from "@/lib/models";
+import { useJournal } from "./journal-provider";
+import { LoadingIndicator } from "./loading-indicator";
 import { ImportData } from "./import-data";
 import { mutate, ensureSynchronized } from "./mutate";
 export function SettingsForm({ profile }: { profile: Profile }) {
@@ -14,6 +15,8 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     [busy, setBusy] = useState(false),
     [confirm, setConfirm] = useState("");
   const router = useJournalRouter();
+  const journal = useJournal();
+  const [exporting, setExporting] = useState(false);
   const baseline = useRef(profile);
   async function act(action: string, payload: unknown) {
     setBusy(true);
@@ -38,62 +41,16 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     }
   }
   async function download(format: "json" | "csv") {
+    if (busy) return;
     setBusy(true);
-    setMessage(tr("profile.preparingExport"));
+    setExporting(true);
+    setMessage("");
     try {
       await ensureSynchronized();
-      const { csv, exportRecords } = await import("@/lib/portability");
-      const read = async (part: string, offset = 0) => {
-        const res = await fetch(`/api/records/?part=${part}&offset=${offset}`);
-        if (!res.ok) throw new Error(tr("profile.exportFailed"));
-        return res.json();
-      };
-      const all = async (part: string) => {
-        const items = [];
-        for (let offset = 0; ; offset += 10) {
-          const page = await read(part, offset);
-          items.push(...page);
-          if (page.length < 10) break;
-        }
-        return items;
-      };
-      const [
-        profile,
-        firearms,
-        sessions,
-        contexts,
-        quickEntries,
-        photos,
-        witnessSignoffs,
-      ] = await Promise.all([
-        read("profile"),
-        all("firearms"),
-        all("sessions"),
-        format === "json" ? all("recordingContexts") : [],
-        all("quickEntries"),
-        format === "json" ? all("photos") : [],
-        format === "json" ? all("witnessSignoffs") : [],
-      ]);
-      const data: Records = {
-        profile,
-        firearms,
-        sessions,
-        assessments: [],
-        quickEntries,
-        photos,
-        witnessSignoffs,
-      };
-      const blob = new Blob(
-        [
-          format === "json"
-            ? JSON.stringify(exportRecords(data, contexts), null, 2)
-            : csv(sessions, language),
-        ],
-        {
-          type:
-            format === "json" ? "application/json" : "text/csv;charset=utf-8",
-        },
-      );
+      const data = journal?.getSnapshot().records;
+      if (!data) throw new Error(tr("profile.exportFailed"));
+      const { createBackup } = await import("@/lib/transfer-browser");
+      const blob = await createBackup(data, format, language);
       const url = URL.createObjectURL(blob),
         link = document.createElement("a");
       link.href = url;
@@ -107,6 +64,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
       setMessage((e as Error).message);
     } finally {
       setBusy(false);
+      setExporting(false);
     }
   }
   return (
@@ -205,6 +163,9 @@ export function SettingsForm({ profile }: { profile: Profile }) {
             {tr("profile.exportCsv")}
           </button>
         </div>
+        {exporting && (
+          <LoadingIndicator label={tr("profile.preparingExport")} />
+        )}
         <ImportData disabled={busy} onBusyChange={setBusy} />
       </section>
       <section className="card">

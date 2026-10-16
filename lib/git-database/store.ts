@@ -285,8 +285,9 @@ export class GitJournalStore {
       import("../witness/model").WitnessSignoff
     >();
     const importedPhotos = new Map<string, PhotoAsset>();
-    if (action === "import") {
-      const data = parseImport(payload);
+    const importData = action === "import" ? parseImport(payload) : null;
+    if (importData) {
+      const data = importData;
       for (const value of data.witnessSignoffs)
         importedWitnesses.set(value.id, await validateSignoff(value));
       try {
@@ -513,8 +514,9 @@ export class GitJournalStore {
           message: "MyShotLog: remove session " + id,
           changes: [{ path: this.entryPath("sessions", id), content: null }],
         });
-      } else if (action === "import") {
-        const data = parseImport(payload);
+      } else if (action === "import" && importData) {
+        const data = importData;
+        const contexts = new Map(data.recordingContexts.map((c) => [c.id, c]));
         if (!snapshot.files.has(this.profilePath()))
           put(
             this.profilePath(),
@@ -548,9 +550,7 @@ export class GitJournalStore {
                 version: 1,
                 entry,
                 assessments: entry.results.flatMap((result) => {
-                  const context = data.recordingContexts.find(
-                    (c) => c.sessionId === entry.id && c.resultId === result.id,
-                  );
+                  const context = contexts.get(entry.id + ":" + result.id);
                   const profile = context
                     ? profileSchema.parse({
                         ...data.profile,

@@ -48,15 +48,11 @@ const legacyExportSchema = z
       new Set(d.assessments.map((a) => a.id)).size !== d.assessments.length
     )
       c.addIssue({ code: "custom", message: swText("import.duplicates") });
-    if (
-      d.quickEntries.some((q) =>
-        d.sessions.some((s) => s.results.some((r) => r.id === q.id)),
-      )
-    )
-      c.addIssue({
-        code: "custom",
-        message: swText("import.attachedQuick"),
-      });
+    const attached = new Set(
+      d.sessions.flatMap((s) => s.results.map((r) => r.id)),
+    );
+    if (d.quickEntries.some((q) => attached.has(q.id)))
+      c.addIssue({ code: "custom", message: swText("import.attachedQuick") });
     const ids = new Set(d.photos.map((p) => p.id));
     for (const r of [
       ...d.sessions.flatMap((s) => s.results),
@@ -67,23 +63,28 @@ const legacyExportSchema = z
           code: "custom",
           message: swText("import.photoMissing"),
         });
+    const firearms = new Set(d.firearms.map((f) => f.id));
     for (const s of d.sessions)
-      if (s.firearmId && !d.firearms.some((f) => f.id === s.firearmId))
+      if (s.firearmId && !firearms.has(s.firearmId))
         c.addIssue({
           code: "custom",
           message: swText("import.firearmMissing"),
         });
-    for (const a of d.assessments)
+    const sessions = new Map(
+      d.sessions.map((s) => [
+        s.id,
+        { revision: s.revision, results: new Set(s.results.map((r) => r.id)) },
+      ]),
+    );
+    for (const a of d.assessments) {
+      const session = sessions.get(a.sessionId);
       if (
-        !d.sessions.some(
-          (s) =>
-            s.id === a.sessionId &&
-            a.revision <= s.revision &&
-            (a.revision < s.revision ||
-              s.results.some((r) => r.id === a.resultId)),
-        )
+        !session ||
+        a.revision > session.revision ||
+        (a.revision === session.revision && !session.results.has(a.resultId))
       )
         c.addIssue({ code: "custom", message: swText("import.resultMissing") });
+    }
   });
 // Birth information is raw recording context, not a rule conclusion.
 const recordingContextSchema = z
@@ -109,11 +110,14 @@ const recordingContextSchema = z
   });
 export type RecordingContext = z.infer<typeof recordingContextSchema>;
 export function recordingContexts(records: Records): RecordingContext[] {
+  const inputs = new Map<string, unknown>();
+  for (const assessment of records.assessments) {
+    const key = assessment.sessionId + ":" + assessment.resultId;
+    if (!inputs.has(key)) inputs.set(key, assessment.input);
+  }
   return records.sessions.flatMap((session) =>
     session.results.map((result) => {
-      const input = records.assessments.find(
-        (a) => a.sessionId === session.id && a.resultId === result.id,
-      )?.input;
+      const input = inputs.get(session.id + ":" + result.id);
       const captured =
         input && typeof input === "object" && Object.hasOwn(input, "birthYear")
           ? profileSchema.safeParse({
@@ -148,12 +152,14 @@ export const exportSchema = z
   })
   .strict()
   .superRefine((data, c) => {
+    const sessions = new Set(data.sessions.map((s) => s.id));
+    const results = new Set(
+      data.sessions.flatMap((s) => s.results.map((r) => s.id + ":" + r.id)),
+    );
     if (
       new Set(data.witnessSignoffs.map((w) => w.id)).size !==
         data.witnessSignoffs.length ||
-      data.witnessSignoffs.some(
-        (w) => !data.sessions.some((s) => s.id === w.sessionId),
-      )
+      data.witnessSignoffs.some((w) => !sessions.has(w.sessionId))
     )
       c.addIssue({ code: "custom", message: swText("import.duplicates") });
     // The legacy validator covers all shared references without retaining evaluations.
@@ -186,13 +192,7 @@ export const exportSchema = z
     )
       c.addIssue({ code: "custom", message: swText("import.resultMissing") });
     for (const context of data.recordingContexts)
-      if (
-        !data.sessions.some(
-          (s) =>
-            s.id === context.sessionId &&
-            s.results.some((r) => r.id === context.resultId),
-        )
-      )
+      if (!results.has(context.id))
         c.addIssue({ code: "custom", message: swText("import.resultMissing") });
   });
 export function exportRecords(

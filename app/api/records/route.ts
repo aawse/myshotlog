@@ -1,13 +1,15 @@
+import { ImportTransfer } from "@/lib/import-transfer";
+import { database, databasePrefix } from "@/lib/git-database/config";
+import { photoIdSchema } from "@/lib/photos/schema";
 import { swText } from "@/lib/i18n";
 import { NextResponse, type NextRequest } from "next/server";
-import { records, journal } from "@/lib/data";
+import { journal } from "@/lib/data";
 import { AuthenticationRequired, authenticated } from "@/lib/auth/server";
 import {
   DatabaseConflict,
   DatabaseUnavailable,
 } from "@/lib/git-database/types";
 import { InvalidRecord, RecordNotFound } from "@/lib/git-database/store";
-import { exportRecords, recordingContexts, csv } from "@/lib/portability";
 import { z } from "../../../lib/validation";
 import { oauthConfig } from "@/lib/auth/github";
 import { securityStore } from "@/lib/auth/security";
@@ -15,7 +17,7 @@ import { RateLimited } from "@/lib/auth/security-store";
 import { boundedBody, BodyTooLarge } from "@/lib/request-body";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 const response = (value: unknown, status = 200) =>
   NextResponse.json(value, {
     status,
@@ -62,62 +64,11 @@ export async function GET(request: NextRequest) {
   try {
     const { user } = await authenticated();
     await securityStore().limitApi(user.id, false);
-    const data = await records();
-    const part = request.nextUrl.searchParams.get("part");
-    if (part) {
-      if (
-        ![
-          "profile",
-          "firearms",
-          "sessions",
-          "assessments",
-          "recordingContexts",
-          "quickEntries",
-          "photos",
-          "witnessSignoffs",
-        ].includes(part)
-      )
-        return response({ error: swText("api.invalidExportPart") }, 400);
-      if (part === "profile") return response(data.profile);
-      if (part === "photos") data.photos = await (await journal()).photos();
-      const offset = Number(request.nextUrl.searchParams.get("offset") ?? 0);
-      if (!Number.isSafeInteger(offset) || offset < 0)
-        return response({ error: swText("api.invalidOffset") }, 400);
-      return response(
-        (part === "recordingContexts"
-          ? recordingContexts(data)
-          : (data[
-              part as
-                | "firearms"
-                | "sessions"
-                | "assessments"
-                | "quickEntries"
-                | "witnessSignoffs"
-                | "photos"
-            ] ?? [])
-        )
-          .slice()
-          .sort((a, b) => a.id.localeCompare(b.id))
-          .slice(offset, offset + 10),
-      );
-    }
-    const format = request.nextUrl.searchParams.get("format");
-    if (format === "json") data.photos = await (await journal()).photos();
-    if (format === "csv" || format === "json")
-      return new NextResponse(
-        format === "csv"
-          ? csv(data.sessions, data.profile.language)
-          : JSON.stringify(exportRecords(data), null, 2),
-        {
-          headers: {
-            "Content-Type":
-              format === "csv" ? "text/csv; charset=utf-8" : "application/json",
-            "Content-Disposition": `attachment; filename="${format === "csv" ? "myshotlog.csv" : "myshotlog-v2.json"}"`,
-            "Cache-Control": "private, no-store",
-          },
-        },
-      );
-    return response(data);
+    const { photo } = z
+      .object({ photo: photoIdSchema })
+      .strict()
+      .parse(Object.fromEntries(request.nextUrl.searchParams));
+    return response(await (await journal()).photo(photo));
   } catch (error) {
     return failure(error);
   }
@@ -131,7 +82,6 @@ export async function POST(request: NextRequest) {
     const { user } = await authenticated();
     await securityStore().limitApi(user.id, true);
     const body = await boundedBody(request);
-    const store = await journal();
     const { action, payload, photos } = z
       .object({
         action: z.string(),
@@ -140,6 +90,20 @@ export async function POST(request: NextRequest) {
       })
       .strict()
       .parse(JSON.parse(body));
+    if (["import-start", "import-chunk", "import-finish"].includes(action)) {
+      if (photos) return response({ error: swText("api.invalidData") }, 400);
+      const transfer = new ImportTransfer(
+        database(),
+        user.id,
+        databasePrefix(),
+        oauthConfig().secret,
+      );
+      if (action === "import-start" || action === "import-chunk")
+        return response(await transfer.write(action, payload));
+      const backup = await transfer.read(payload);
+      return response(await (await journal()).mutate("import", backup));
+    }
+    const store = await journal();
     return response(
       await (photos
         ? store.mutate(action, payload, photos)

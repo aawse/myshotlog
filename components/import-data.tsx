@@ -4,7 +4,8 @@ import { useJournalRouter } from "./journal-navigation";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "./language-provider";
 import { LoadingIndicator } from "./loading-indicator";
-import { mutate } from "./mutate";
+import { ensureSynchronized, refreshJournal } from "./mutate";
+import { TRANSFER_MAX_BYTES } from "@/lib/transfer-limits";
 export function ImportData({
   disabled = false,
   onBusyChange,
@@ -38,7 +39,7 @@ export function ImportData({
             setMessage("");
             setFailed(false);
             try {
-              if (file.size > 3000000)
+              if (file.size > TRANSFER_MAX_BYTES)
                 throw new Error(tr("profile.fileTooLarge"));
               let payload: unknown;
               try {
@@ -46,7 +47,10 @@ export function ImportData({
               } catch {
                 throw new Error(tr("profile.invalidJson"));
               }
-              const receipt = await mutate("import", payload);
+              await ensureSynchronized();
+              const { uploadBackup } = await import("@/lib/transfer-browser");
+              const receipt = await uploadBackup(payload);
+              await refreshJournal();
               setMessage(tr("profile.imported", { p0: receipt.imported }));
               if (returnToDashboard) router.replace("/dashboard/");
               router.refresh();

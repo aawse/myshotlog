@@ -5,7 +5,15 @@ vi.mock("../lib/auth/server", () => ({
   authenticated: vi.fn(),
 }));
 vi.mock("../lib/auth/github", () => ({
-  oauthConfig: () => ({ siteUrl: "http://localhost" }),
+  oauthConfig: () => ({
+    siteUrl: "http://localhost",
+    secret: "fictional-import-api-key-at-least-32-bytes",
+  }),
+}));
+const staging = vi.hoisted(() => ({ snapshot: vi.fn(), publish: vi.fn() }));
+vi.mock("../lib/git-database/config", () => ({
+  database: () => staging,
+  databasePrefix: () => "test/v1",
 }));
 vi.mock("../lib/data", () => ({ records: vi.fn(), journal: vi.fn() }));
 const limitApi = vi.hoisted(() => vi.fn());
@@ -28,8 +36,14 @@ const request = () =>
   });
 beforeEach(() => {
   vi.resetAllMocks();
+  staging.snapshot.mockResolvedValue({ head: null, files: new Map() });
+  staging.publish.mockResolvedValue({ head: null, commits: [] });
   vi.mocked(authenticated).mockResolvedValue({
-    user: { id: "owner", githubId: "12345", login: "user" },
+    user: {
+      id: "20000000-0000-4000-8000-000000000001",
+      githubId: "12345",
+      login: "user",
+    },
   });
 });
 it("rejects unauthenticated reads and writes", async () => {
@@ -114,26 +128,53 @@ it("uses the configured public origin instead of a reconstructed or spoofed requ
   expect((await POST(good)).status).toBe(200);
 });
 
-it("downloads raw MyShotLog backups and pages birth context without evaluations", async () => {
-  const fixtures = await import("./fixtures");
-  vi.mocked(records).mockResolvedValue({
-    profile: fixtures.profile,
-    firearms: [fixtures.firearm],
-    sessions: [fixtures.session],
-    assessments: [],
-  });
-  vi.mocked(journal).mockResolvedValue({ photos: async () => [] } as never);
+it("reads one owner-selected photo without loading the full journal or photo collection", async () => {
+  const photo = vi.fn().mockResolvedValue({ id: "a".repeat(64) });
+  vi.mocked(journal).mockResolvedValue({ photo } as never);
   const response = await GET(
-    new NextRequest("http://localhost/api/records?format=json"),
+    new NextRequest("http://localhost/api/records?photo=" + "a".repeat(64)),
   );
-  expect(response.headers.get("Content-Disposition")).toContain(
-    "myshotlog-v2.json",
+  expect(response.status).toBe(200);
+  expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+  expect(photo).toHaveBeenCalledWith("a".repeat(64));
+  expect(records).not.toHaveBeenCalled();
+  expect(
+    (await GET(new NextRequest("http://localhost/api/records?photo=../other")))
+      .status,
+  ).toBe(400);
+});
+it("stages imports only under the verified owner and denies incomplete finalization", async () => {
+  const send = (
+    action: string,
+    payload: unknown,
+    origin = "http://localhost",
+  ) =>
+    POST(
+      new NextRequest("http://localhost/api/records", {
+        method: "POST",
+        headers: { origin },
+        body: JSON.stringify({ action, payload }),
+      }),
+    );
+  const payload = {
+    id: "30000000-0000-4000-8000-000000000001",
+    bytes: 10,
+    hash: "a".repeat(64),
+  };
+  expect(
+    (await send("import-start", payload, "https://attacker.test")).status,
+  ).toBe(403);
+  expect(staging.snapshot).not.toHaveBeenCalled();
+  expect(
+    (await send("import-start", { ...payload, owner: "other" })).status,
+  ).toBe(400);
+  expect((await send("import-start", payload)).status).toBe(200);
+  expect(staging.snapshot).toHaveBeenCalledWith(
+    "test/v1/imports/users/20000000-0000-4000-8000-000000000001",
   );
-  const data = await response.json();
-  expect(data).toMatchObject({ format: "myshotlog", version: 2 });
-  expect(data).not.toHaveProperty("assessments");
-  const page = await GET(
-    new NextRequest("http://localhost/api/records?part=recordingContexts"),
-  );
-  expect(await page.json()).toEqual(data.recordingContexts);
+  expect((await send("import-finish", { id: payload.id })).status).toBe(400);
+  expect(journal).not.toHaveBeenCalled();
+  vi.mocked(authenticated).mockRejectedValue(new Error("AUTH_REQUIRED"));
+  expect((await send("import-chunk", {})).status).toBe(401);
+  expect((await send("import-finish", { id: payload.id })).status).toBe(401);
 });
