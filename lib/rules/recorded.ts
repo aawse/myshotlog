@@ -19,8 +19,7 @@ export function recordSeries(
     (a) => a.sessionId === session.id && a.resultId === result.id,
   );
   const input = previous?.input as
-    | { birthDate?: unknown; birthYear?: unknown }
-    | undefined;
+    { birthDate?: unknown; birthYear?: unknown } | undefined;
   const captured =
     input && Object.hasOwn(input, "birthYear")
       ? profileSchema.safeParse({

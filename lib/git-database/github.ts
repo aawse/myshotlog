@@ -157,9 +157,9 @@ export class GitHubDatabase implements GitDatabase {
         ),
       ).object.sha;
     } catch (error) {
-      if (
-        !(error instanceof MissingReference || error instanceof EmptyRepository)
-      )
+      if (!(
+        error instanceof MissingReference || error instanceof EmptyRepository
+      ))
         throw error;
       // A missing configured branch in an existing repo is not an empty journal.
       const branches = z

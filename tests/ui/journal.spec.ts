@@ -96,35 +96,42 @@ test("quick entry survives temporary disconnection and synchronizes after reconn
   await expectLayout(page);
 });
 
-test("unauthenticated and disallowed accounts cannot open a journal", async ({
-  page,
-  context,
-  baseURL,
-}) => {
-  await context.clearCookies();
-  await page.goto("/sessions/");
-  await expect(page).toHaveURL(/\/login\/$/);
-  if (!baseURL) throw new Error("Missing UI baseURL");
-  await context.addCookies([
-    {
-      name: "myshotlog_session",
-      value: signSession(
-        { githubId: "999", login: "disallowed" },
-        uiSigningKey,
-        uiOrigin,
-      ),
-      url: baseURL,
-      httpOnly: true,
-      sameSite: "Lax",
-    },
-  ]);
-  await page.goto("/settings/");
-  await expect(page).toHaveURL(/\/login\/$/);
-  const response = await context.request.get(
-    "/api/sync/?scope=" + "a".repeat(64),
-  );
-  expect(response.status()).toBe(401);
-});
+for (const account of ["unauthenticated", "disallowed"] as const) {
+  test(`${account} accounts cannot open a journal`, async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await context.clearCookies();
+    if (account === "disallowed") {
+      if (!baseURL) throw new Error("Missing UI baseURL");
+      await context.addCookies([
+        {
+          name: "myshotlog_session",
+          value: signSession(
+            { githubId: "999", login: "disallowed" },
+            uiSigningKey,
+            uiOrigin,
+          ),
+          url: baseURL,
+          httpOnly: true,
+          sameSite: "Lax",
+        },
+      ]);
+    }
+    await page.goto(
+      account === "unauthenticated" ? "/sessions/" : "/settings/",
+    );
+    await expect(page).toHaveURL(/\/login\/$/);
+    await expect(
+      page.getByRole("heading", { name: sv["login.heading"], exact: true }),
+    ).toBeVisible();
+    const response = await context.request.get(
+      "/api/sync/?scope=" + "a".repeat(64),
+    );
+    expect(response.status()).toBe(401);
+  });
+}
 
 test("narrow screens retain usable navigation and results", async ({
   page,

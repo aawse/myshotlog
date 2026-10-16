@@ -32,13 +32,7 @@ const repositorySchema = z.object({
   owner: accountSchema,
 });
 export type AccessRole =
-  | "owner"
-  | "admin"
-  | "maintain"
-  | "write"
-  | "triage"
-  | "read"
-  | "unknown";
+  "owner" | "admin" | "maintain" | "write" | "triage" | "read" | "unknown";
 export type RepositoryAccount = {
   id: number;
   login: string;
@@ -48,11 +42,7 @@ export type RepositoryAccount = {
 };
 export type RepositoryAccessReport = {
   status:
-    | "complete"
-    | "partial"
-    | "unavailable"
-    | "unsupported"
-    | "configuration";
+    "complete" | "partial" | "unavailable" | "unsupported" | "configuration";
   issue?: "permissions" | "rateLimited" | "unavailable" | "limit";
   repository?: string;
   visibility?: "private" | "public" | "internal";

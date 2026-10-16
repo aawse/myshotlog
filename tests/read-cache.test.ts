@@ -12,12 +12,10 @@ function fixture(ttl = 15000, bytes = 1024 * 1024, count = 64) {
     head = 0;
   const files = new Map<string, string>();
   const source = {
-    snapshot: vi.fn(
-      async (prefix: string): Promise<GitSnapshot> => ({
-        head: String(head),
-        files: new Map([...files].filter(([p]) => p.startsWith(prefix + "/"))),
-      }),
-    ),
+    snapshot: vi.fn(async (prefix: string): Promise<GitSnapshot> => ({
+      head: String(head),
+      files: new Map([...files].filter(([p]) => p.startsWith(prefix + "/"))),
+    })),
     publish: vi.fn<GitDatabase["publish"]>(async (_snapshot, entries) => {
       for (const entry of entries)
         for (const change of entry.changes)

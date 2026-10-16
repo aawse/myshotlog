@@ -12,7 +12,4 @@ export type UpdateStatus = {
   commits: { sha: string; message: string }[];
 };
 export type UpdateErrorCode =
-  | "configuration"
-  | "unavailable"
-  | "permissions"
-  | "rateLimited";
+  "configuration" | "unavailable" | "permissions" | "rateLimited";

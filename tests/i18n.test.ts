@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import { it, expect } from "vitest";
 import { languageOrDefault, messages, t, translator } from "../lib/i18n";
 import { profileSchema } from "../lib/models";
