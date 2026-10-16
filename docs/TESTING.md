@@ -30,9 +30,13 @@ Git-tester använder `node:os.tmpdir()` och `node:path.join()`, och simulerar pu
 
 ## GitHub Actions
 
-Workflowen **Tests** kör `npm ci`, samtliga tester, typkontroll och produktionsbygge på **`ubuntu-latest` med Node.js 24**. Den startar vid pull requests, push till `main` och manuell körning. CI kör inte macOS- eller Windows-jobb.
+Workflowen **Tests** kör `npm ci`, Vitest-tester, typkontroll, formateringskontroll och produktionsbygge på **`ubuntu-latest` med Node.js 24**. Den startar vid pull requests, push till `main` och manuell körning. CI kör inte macOS- eller Windows-jobb.
 
 Manuell körning finns under **Actions → Tests → Run workflow** när workflowfilen finns på standardbranchen. Actions är fästa vid commit-SHA:n och Dependabot kontrollerar uppdateringar varje vecka. Workflowen behöver inga apphemligheter eller datarepo-behörigheter.
+
+Det separata arbetsflödet **UI tests** kör Playwrights dator- och mobilmatris med
+ett eget produktionsbygge och samma triggers, oberoende av **Tests**. Felrapporter
+sparas i sju dagar. Se [UI-tester och mobil användning](UI-TESTS.md).
 
 ## Kontroll efter publicering
 

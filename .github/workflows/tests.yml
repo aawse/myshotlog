@@ -41,22 +41,3 @@ jobs:
 
       - name: Build application
         run: npm run build
-
-      - name: Install UI test browsers
-        run: npm run test:ui:install
-
-      - name: Test desktop and mobile browser UI
-        run: npm run test:ui
-        env:
-          UI_SKIP_BUILD: "1"
-
-      - name: Save UI test failure reports
-        if: failure()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: ui-test-report
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
-          retention-days: 7

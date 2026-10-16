@@ -17,8 +17,9 @@ Kommandona fungerar på Windows, macOS och Linux. På Linux installerar
 `test:ui:install` även webbläsarnas systembibliotek och kan behöva administratörsrättigheter.
 
 Kör ett projekt med `npx playwright test --project=ios-safari`. Öppna den lokala
-rapporten med `npx playwright show-report`. `UI_SKIP_BUILD=1` används av CI efter
-ett lyckat bygge; vanliga lokala körningar bygger automatiskt. Behåll samma
+rapporten med `npx playwright show-report`. `UI_SKIP_BUILD=1` får bara användas efter
+ett lyckat bygge med samma testkonfiguration som i `playwright.config.ts`. Både
+CI och vanliga lokala körningar låter Playwright bygga automatiskt. Behåll samma
 Playwright-version och låsfil i båda projekten.
 
 ## Testmatris
@@ -51,9 +52,10 @@ kontrolleras mot serverns verkliga autentisering. Inga testundantag finns i appe
 
 ## CI och testdata
 
-Det befintliga arbetsflödet **Tests** kör UI-testerna på `ubuntu-latest`, efter
-Vitest, typkontroll och produktionsbygge. Det körs vid pull requests, push till
-`main` och manuellt. Chromium, Firefox och WebKit installeras automatiskt. Vid fel
+Det separata arbetsflödet **UI tests** (`.github/workflows/ui-tests.yml`) kör
+UI-testerna på `ubuntu-latest` med Node.js 24, oberoende av **Tests**. Det körs vid
+pull requests, push till `main` och manuellt via **Actions → UI tests → Run workflow**.
+Playwright bygger appen med sin egen testkonfiguration före browser-testerna. Chromium, Firefox och WebKit installeras automatiskt. Vid fel
 sparas HTML-rapport, skärmbilder och spår i en artefakt i sju dagar.
 
 Testdata, signeringsnycklar och konton är påhittade. Externa webbanrop från

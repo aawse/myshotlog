@@ -53,7 +53,7 @@ npm run build
 
 Git måste finnas i PATH för integrationstesterna. Tester och byggen behöver inga riktiga databas- eller OAuth-hemligheter. `npm run start` startar ett färdigt produktionsbygge; produktion kräver en konfigurerad HTTPS-origin.
 
-GitHub-workflowen **Tests** kör installation, samtliga tester, typkontroll och produktionsbygge på **`ubuntu-latest` med Node.js 24**. Den startar vid pull requests, pushar till `main` och manuellt via **Actions → Tests → Run workflow**. Actions är fästa vid commit-SHA:n och uppdateras genom Dependabot.
+GitHub-workflowen **Tests** kör installation, Vitest-tester, typkontroll, formateringskontroll och produktionsbygge på **`ubuntu-latest` med Node.js 24**. Den startar vid pull requests, pushar till `main` och manuellt via **Actions → Tests → Run workflow**. Actions är fästa vid commit-SHA:n och uppdateras genom Dependabot.
 
 Se även [beroenden och uppdateringar](docs/DEPENDENCIES.md) samt [validering, prestanda och SEO, 13 oktober 2026](docs/VALIDATION-2026-10-13.md).
 
@@ -120,8 +120,10 @@ Lämna både felrapporter och förbättringsförslag via **Synpunkter** på valf
 
 Playwright testar Chromium, Firefox och WebKit på dator samt webbläsarprofiler
 för Android, iPhone och iPad. Kör först `npm run test:ui:install` och sedan
-`npm run test:ui`. Det befintliga Ubuntu-arbetsflödet kör samma tester och sparar
-felrapporter. Testerna använder fiktiva lokala uppgifter; inga riktiga konton
+`npm run test:ui`. Det separata arbetsflödet **UI tests** kör samma tester på
+Ubuntu med Node.js 24 och ett eget produktionsbygge, oberoende av **Tests**. Det
+startar vid pull requests, push till `main` och manuellt via
+**Actions → UI tests → Run workflow**, och sparar felrapporter i sju dagar. Testerna använder fiktiva lokala uppgifter; inga riktiga konton
 eller hemligheter behövs. Mobilprofiler är emulering; kamera, installation och
 operativsystem behöver också kontrolleras på riktiga enheter.
 Se [UI-tester och mobil användning](docs/UI-TESTS.md).
