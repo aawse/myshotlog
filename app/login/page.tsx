@@ -1,7 +1,7 @@
 import { getI18n } from "@/lib/i18n-server";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
-import { LogIn } from "lucide-react";
+import { LoginButton } from "@/components/login-button";
 export const dynamic = "force-dynamic";
 export default async function Page({
   searchParams,
@@ -22,9 +22,7 @@ export default async function Page({
       <h1>{tr("login.heading")}</h1>
       <p className="muted">{tr("login.intro")}</p>
       <section className="card">
-        <a className="button" href="/auth/github/">
-          <LogIn size={18} aria-hidden="true" /> {tr("login.github")}
-        </a>
+        <LoginButton />
         <p className="muted">{tr("login.help")}</p>
         {error && (
           <p role="alert" className="notice">

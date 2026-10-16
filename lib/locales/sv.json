@@ -359,6 +359,7 @@
   "loading.journal": "Hämtar din journal…",
   "login.accountHeading": "Använd ditt GitHub-konto.",
   "login.accountHelp": "Kontakta instansägaren för att få åtkomst till journalen.",
+  "login.connecting": "Ansluter till GitHub…",
   "login.denied": "Ditt GitHub-konto har inte åtkomst. Kontakta instansägaren.",
   "login.failed": "GitHub-inloggningen kunde inte genomföras. Försök igen.",
   "login.github": "Logga in med GitHub →",

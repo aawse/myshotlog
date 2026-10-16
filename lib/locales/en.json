@@ -359,6 +359,7 @@
   "loading.journal": "Loading your journal…",
   "login.accountHeading": "Use your GitHub account.",
   "login.accountHelp": "Contact the installation owner to get access to the journal.",
+  "login.connecting": "Connecting to GitHub…",
   "login.denied": "Your GitHub account does not have access. Contact the installation owner.",
   "login.failed": "GitHub sign-in failed. Please try again.",
   "login.github": "Sign in with GitHub →",
