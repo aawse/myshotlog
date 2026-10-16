@@ -94,7 +94,7 @@ Befintliga WebP-foton förblir läsbara och bevaras i JSON-export/import. Nya up
 
 ## Rapportera problem och föreslå förbättringar
 
-Välj den diskreta **Rapportera ett problem**-knappen längst ned till höger på valfri sida, även vid inloggning, installation och vittnessignering. På mobilen visas den som en liten felrapporteringsikon. Formuläret laddas först när du öppnar det och ditt utkast bevaras vid vanlig navigation mellan appens sidor. Beskriv problemet utförligt, ange steg, förväntat beteende och relevanta felmeddelanden. Du kan också välja förbättringsförslag. Rapporten öppnas som ett förifyllt utkast i originalrepositoryt `aawse/myshotlog`; granska och skapa ärendet på GitHub med ditt eget konto. Ingen ny token, OAuth-behörighet eller miljövariabel krävs.
+Välj **Synpunkter** längst ned till höger i den inloggade appen. Knappen delar plats med den kompakta synkstatusen och visas som en ikon på små skärmar. Den finns inte på inloggnings-, installations- eller vittnessidan och tas bort tillsammans med ett öppet utkast om synkningen upptäcker en utgången session. Formuläret laddas först när du öppnar det och ditt utkast bevaras vid vanlig navigation mellan appens sidor. Beskriv problemet utförligt, ange steg, förväntat beteende och relevanta felmeddelanden. Du kan också välja förbättringsförslag. Rapporten öppnas som ett förifyllt utkast i originalrepositoryt `aawse/myshotlog`; granska och skapa ärendet på GitHub med ditt eget konto. Ingen ny token, OAuth-behörighet eller miljövariabel krävs.
 
 Rapporten hålls bara i webbläsarens minne och sparas inte i journalen eller på appservern. Appen förifyller endast den publika byggcommitens korta SHA och webbläsarfamilj; du kan ändra eller ta bort båda. Installationens adress, privata repositorynamn, konto-ID:n, miljövärden och journaldata samlas inte in. För mycket långa rapporter visas hela texten för kopiering; klistra in den i **Additional details** i GitHubs formulär. Vid nekad clipboardåtkomst kan du kopiera texten manuellt.
 
@@ -112,7 +112,7 @@ Alla SPSF-grenar kan registreras, liksom IPSC, Nordic Steel Challenge, DMR och e
 
 **Check rule updates** kontrollerar dessutom SPSF, SRA, IPSC och SDSSF var sjätte månad och skapar ett GitHub-ärende med uppdateringsanvisningar när officiella dokument ändras. Det kan även startas manuellt. Se [schemalagd regelkontroll](docs/RULES.md#schemalagd-kontroll-i-github).
 
-Lämna både felrapporter och förbättringsförslag via **Synpunkter** på valfri sida.
+Lämna både felrapporter och förbättringsförslag via **Synpunkter** på valfri sida i den inloggade appen.
 
 ## UI-tester och mobil installation
 

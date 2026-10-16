@@ -1,32 +1,11 @@
 "use client";
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
 import { MessageSquarePlus } from "lucide-react";
 import { LoadingIndicator } from "./loading-indicator";
 import { useI18n } from "./language-provider";
-import { translator, languageOrDefault } from "@/lib/i18n";
-function subscribePageLanguage(notify: () => void) {
-  const observer = new MutationObserver(notify);
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["lang"],
-  });
-  return () => observer.disconnect();
-}
-function usePageI18n() {
-  const { language: fallback } = useI18n();
-  const witnessPage = /^\/witness\/?$/.test(usePathname() ?? "");
-  const language = useSyncExternalStore(
-    subscribePageLanguage,
-    () =>
-      witnessPage ? languageOrDefault(document.documentElement.lang) : fallback,
-    () => fallback,
-  );
-  return translator(language);
-}
 function ReportLoading() {
-  const { tr } = usePageI18n();
+  const { tr } = useI18n();
   return (
     <div className="issue-quick-loading">
       <LoadingIndicator label={tr("issues.loading")} />
@@ -38,14 +17,16 @@ const IssueReport = dynamic(
   { ssr: false, loading: ReportLoading },
 );
 export function QuickIssueReport() {
-  const { tr, language } = usePageI18n();
+  const { tr, language } = useI18n();
+  const trigger = useRef<HTMLButtonElement>(null);
   const [opened, setOpened] = useState(false),
     [loaded, setLoaded] = useState(false);
   return (
     <div className="issue-quick-control">
       <button
+        ref={trigger}
         type="button"
-        className="issue-quick-button"
+        className="journal-tool-button issue-quick-button"
         aria-label={tr("issues.report")}
         title={tr("issues.report")}
         aria-haspopup="dialog"
@@ -61,7 +42,10 @@ export function QuickIssueReport() {
         <IssueReport
           pageLanguage={language}
           open={opened}
-          onClose={() => setOpened(false)}
+          onClose={() => {
+            setOpened(false);
+            trigger.current?.focus({ preventScroll: true });
+          }}
         />
       )}
     </div>

@@ -38,6 +38,9 @@ test("anonymous witness photo, drawing and signing work without login", async ({
   });
   await page.goto("/witness/#token=fictional-invitation&lang=en");
   await expect(page.locator("form.witness-form")).toBeVisible();
+  await expect(
+    page.locator(".issue-quick-button, .issue-dialog, .journal-tools"),
+  ).toHaveCount(0);
   await page.locator(".photo-thumbnail").click();
   await expect(page.locator(".photo-full:not(.photo-pending)")).toBeVisible();
   await page.locator(".photo-overlay-header button").click();

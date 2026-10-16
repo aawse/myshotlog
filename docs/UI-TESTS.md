@@ -43,6 +43,8 @@ Passvisning, redigering och återgång till listan, aktiv navigering, synlig
 medaljsummering, dialoger, beständiga ändringar efter omladdning, snabbserier under
 tillfälligt nätavbrott, återanslutning, nekad åtkomst, fotoval/JPEG-konvertering,
 fotovyn, anonymt vittnesintyg och utgångna inbjudningar. Svenska och engelska ingår.
+Den flytande kontrollraden provas på 320 px, surfplatta, dator och liggande vy: knapparna hålls åtskilda, sidans sparknapp är åtkomlig, dialoger ryms och fokus återgår efter Escape. Tester kontrollerar också nedladdning av väntande ändringar och att ett öppet rapportutkast försvinner vid utgången inloggning. Inloggnings- och anonyma vittnessidor saknar rapportkontroller.
+
 De positiva journalflödena använder riktiga signerade kakor med en fiktiv testnyckel
 samt mockade synkroniseringssvar. Nekad sidåtkomst och 401 från synkroniserings-API:t
 kontrolleras mot serverns verkliga autentisering. Inga testundantag finns i appen.

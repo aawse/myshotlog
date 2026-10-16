@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   BookOpen,
 } from "lucide-react";
-import { SyncStatus } from "./sync-status";
+import { JournalTools } from "./journal-tools";
 import { JournalScreens } from "./journal-screens";
 import { navigateJournal } from "./journal-navigation";
 import { useJournalState } from "./journal-provider";
@@ -31,97 +31,102 @@ export function PrivateShell({ children }: { children: React.ReactNode }) {
         : undefined;
   return (
     <UpdateProvider>
-      <div
-        className="shell"
-        onClickCapture={(event) => {
-          if (
-            event.defaultPrevented ||
-            event.button !== 0 ||
-            event.metaKey ||
-            event.ctrlKey ||
-            event.shiftKey ||
-            event.altKey
-          )
-            return;
-          const anchor = (event.target as Element).closest("a");
-          if (!anchor || anchor.target || anchor.hasAttribute("download"))
-            return;
-          if (navigateJournal(anchor.href)) event.preventDefault();
-        }}
-        onSubmitCapture={(event) => {
-          const form = event.target as HTMLFormElement;
-          if (form.classList.contains("filters")) {
-            const query = new URLSearchParams();
-            new FormData(form).forEach((value, key) => {
-              if (typeof value === "string") query.set(key, value);
-            });
-            if (navigateJournal("/qualifications/?" + query))
-              event.preventDefault();
-          }
-        }}
-      >
-        <aside className="sidebar">
-          <Link href="/dashboard/" className="brand">
-            <BrandLogo />
-          </Link>
-          <div className="nav-caption">{tr("nav.caption")}</div>
-          <nav>
-            <Link href="/quick/" aria-current={current("/quick")}>
-              <Zap size={19} /> {tr("nav.quick")}
+      <div className="private-app">
+        <div
+          className="shell"
+          role="region"
+          aria-label={tr("nav.caption")}
+          tabIndex={0}
+          onClickCapture={(event) => {
+            if (
+              event.defaultPrevented ||
+              event.button !== 0 ||
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey
+            )
+              return;
+            const anchor = (event.target as Element).closest("a");
+            if (!anchor || anchor.target || anchor.hasAttribute("download"))
+              return;
+            if (navigateJournal(anchor.href)) event.preventDefault();
+          }}
+          onSubmitCapture={(event) => {
+            const form = event.target as HTMLFormElement;
+            if (form.classList.contains("filters")) {
+              const query = new URLSearchParams();
+              new FormData(form).forEach((value, key) => {
+                if (typeof value === "string") query.set(key, value);
+              });
+              if (navigateJournal("/qualifications/?" + query))
+                event.preventDefault();
+            }
+          }}
+        >
+          <aside className="sidebar">
+            <Link href="/dashboard/" className="brand">
+              <BrandLogo />
             </Link>
-            <Link href="/dashboard/" aria-current={current("/dashboard")}>
-              <LayoutDashboard size={19} /> {tr("nav.dashboard")}
-            </Link>
-            <Link href="/sessions/" aria-current={current("/sessions")}>
-              <NotebookPen size={19} /> {tr("nav.sessions")}
-            </Link>
-            <Link href="/firearms/" aria-current={current("/firearms")}>
-              <Target size={19} /> {tr("nav.firearms")}
-            </Link>
-            <Link
-              href="/qualifications/"
-              aria-current={current("/qualifications")}
-            >
-              <ShieldCheck size={19} /> {tr("nav.qualifications")}
-            </Link>
-            <Link href="/training/" aria-current={current("/training")}>
-              <BookOpen size={19} /> {tr("training.title")}
-            </Link>
-            <Link href="/settings/" aria-current={current("/settings")}>
-              <Settings size={19} /> {tr("nav.settings")}
-            </Link>
-          </nav>
-          <div className="sidebar-bottom">
-            <span className="private-tag">{tr("nav.private")}</span>
-            <p>{tr("nav.motto")}</p>
-            <form
-              action={signOut}
-              onSubmit={(event) => {
-                if (
-                  state.pending.length &&
-                  !window.confirm(tr("sync.leavePending"))
-                )
-                  event.preventDefault();
-              }}
-            >
-              <button className="text-button">{tr("nav.signOut")}</button>
-            </form>
+            <div className="nav-caption">{tr("nav.caption")}</div>
+            <nav>
+              <Link href="/quick/" aria-current={current("/quick")}>
+                <Zap size={19} /> {tr("nav.quick")}
+              </Link>
+              <Link href="/dashboard/" aria-current={current("/dashboard")}>
+                <LayoutDashboard size={19} /> {tr("nav.dashboard")}
+              </Link>
+              <Link href="/sessions/" aria-current={current("/sessions")}>
+                <NotebookPen size={19} /> {tr("nav.sessions")}
+              </Link>
+              <Link href="/firearms/" aria-current={current("/firearms")}>
+                <Target size={19} /> {tr("nav.firearms")}
+              </Link>
+              <Link
+                href="/qualifications/"
+                aria-current={current("/qualifications")}
+              >
+                <ShieldCheck size={19} /> {tr("nav.qualifications")}
+              </Link>
+              <Link href="/training/" aria-current={current("/training")}>
+                <BookOpen size={19} /> {tr("training.title")}
+              </Link>
+              <Link href="/settings/" aria-current={current("/settings")}>
+                <Settings size={19} /> {tr("nav.settings")}
+              </Link>
+            </nav>
+            <div className="sidebar-bottom">
+              <span className="private-tag">{tr("nav.private")}</span>
+              <p>{tr("nav.motto")}</p>
+              <form
+                action={signOut}
+                onSubmit={(event) => {
+                  if (
+                    state.pending.length &&
+                    !window.confirm(tr("sync.leavePending"))
+                  )
+                    event.preventDefault();
+                }}
+              >
+                <button className="text-button">{tr("nav.signOut")}</button>
+              </form>
+            </div>
+          </aside>
+          <div className="workspace">
+            <header className="topbar">
+              <span>{tr("nav.caption")}</span>
+              <span className="private-tag">
+                <ShieldCheck size={14} /> {tr("nav.onlyYou")}
+              </span>
+            </header>
+            <main className="content">
+              <UpdateNotice />
+              <JournalScreens fallback={children} />
+            </main>
+            <footer>{tr("nav.footer")}</footer>
           </div>
-        </aside>
-        <div className="workspace">
-          <header className="topbar">
-            <span>{tr("nav.caption")}</span>
-            <span className="private-tag">
-              <ShieldCheck size={14} /> {tr("nav.onlyYou")}
-            </span>
-          </header>
-          <main className="content">
-            <UpdateNotice />
-            <SyncStatus />
-            <JournalScreens fallback={children} />
-          </main>
-          <footer>{tr("nav.footer")}</footer>
         </div>
+        <JournalTools />
       </div>
     </UpdateProvider>
   );

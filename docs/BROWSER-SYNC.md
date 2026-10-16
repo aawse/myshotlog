@@ -6,13 +6,23 @@ MyShotLog läser journalen från en lokal IndexedDB-kopia och synkroniserar med 
 
 Profil, vapen, pass, snabbserier, koppling av snabbserier och enskilda raderingar sparas först i en atomisk IndexedDB-transaktion tillsammans med en väntande operation. Appen bekräftar lokal sparning först när transaktionen är klar. Listor och formulär uppdateras direkt. Optimerade JPEG-foton följer med kön och kan visas innan de har laddats upp.
 
-Status högst upp skiljer **sparat på denna enhet** från **sparat på GitHub**. Synkning startar ungefär 1,5 sekunder efter en sparning, vid återanslutning och fokus samt ungefär var 30:e sekund när appen är synlig. **Synka nu** startar en kontroll manuellt. Flera ändringar skickas i en batch med högst 20 operationer och cirka 2,7 MB operationsdata. Varje journalpost, revision, bild och koppling behåller sin egen Git-commit; hela kedjan blir synlig genom en enda icke-forcerad uppdatering av databranchens referens.
+Den kompakta statusknappen längst ned till höger skiljer **sparat på denna enhet** från **sparat på GitHub**. Synkning startar ungefär 1,5 sekunder efter en sparning, vid återanslutning och fokus samt ungefär var 30:e sekund när appen är synlig. Öppna statusknappen för fullständig information, **Synka nu**, säkerhetskopior och konfliktgranskning. **Synka nu** startar en kontroll manuellt. Flera ändringar skickas i en batch med högst 20 operationer och cirka 2,7 MB operationsdata. Varje journalpost, revision, bild och koppling behåller sin egen Git-commit; hela kedjan blir synlig genom en enda icke-forcerad uppdatering av databranchens referens.
 
 Synkningen jämför den senast kända commit-hashen. Oförändrat GitHub-head kräver ingen nedladdning av journalfiler. Stora JSON-svar komprimeras med gzip när klienten stöder det för att minska överföringen. Vid ändrat head hämtas aktuell journal; servern återanvänder oförändrade blobbar efter deras Git-SHA för att undvika att läsa samma fil på nytt från GitHub. Commit-hashen är en kontrollpunkt, inte en konfliktlösningsmetod.
 
+Status och **Synpunkter** ligger i samma flytande rad. Kontrollraden har en egen yta
+längst ned, medan sidans innehåll rullar ovanför. Skärmens säkra kanter beaktas,
+så knapparna inte ligger över formulärfält eller sidans åtgärder. På pekskärmar döljs raden medan ett fält i
+sidans formulär har fokus; den reserverade ytan behåller sin höjd så att knappar
+inte flyttas under ett tryck. Sidans rullyta kan fokuseras med tangentbord.
+Dialogerna visas i webbläsarens översta lager,
+ryms i visningsytan och kan stängas med stängknappen eller Escape.
+Fel och konflikter markeras även när synkdialogen är stängd; hela statustexten
+finns tillgänglig för skärmläsare. Dialogen öppnas inte automatiskt.
+
 ## Offline och återhämtning
 
-En redan öppnad app kan läsa cachelagrade journaldata, navigera mellan journalvyer och köa sparningar offline. Visade foton cachelagras i webbläsaren när det går; nya foton finns i kön från början. Omladdning, första besök och inloggning kräver fortfarande en anslutning. Appen är inte en installerbar offline-PWA och lovar ingen bakgrundssynkning efter att fliken stängts.
+En redan öppnad app kan läsa cachelagrade journaldata, navigera mellan journalvyer och köa sparningar offline. Visade foton cachelagras i webbläsaren när det går; nya foton finns i kön från början. Omladdning, första besök och inloggning kräver fortfarande en anslutning. Appen kan läggas till på hemskärmen, men en ny sidöppning kräver fortfarande nät och ingen bakgrundssynkning utlovas efter att fliken stängts.
 
 Väntande operationer överlever stängning och återupptas efter nästa inloggade besök i samma webbläsare. Kön rensas endast för operationer som servern uttryckligen har bekräftat. Ett förlorat svar efter en lyckad publicering skapar inte dubbla commits: operationens ID och digest bekräftas atomiskt i journalens `sync-receipts.json`. Den filen är internt synktillstånd och ingår inte i vanlig journalexport. Radera eller ändra den inte manuellt.
 

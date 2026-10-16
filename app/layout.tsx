@@ -1,4 +1,3 @@
-import { QuickIssueReport } from "@/components/quick-issue-report";
 import { LanguageProvider } from "@/components/language-provider";
 import { getI18n } from "@/lib/i18n-server";
 import { AppTelemetry } from "@/components/app-telemetry";
@@ -59,7 +58,6 @@ export default async function Layout({
       <body>
         <LanguageProvider language={language}>
           {children}
-          <QuickIssueReport />
           <AppTelemetry speedEnabled={process.env.VERCEL === "1"} />
         </LanguageProvider>
       </body>

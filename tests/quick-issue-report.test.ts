@@ -15,7 +15,7 @@ it.each(["sv", "en"] as const)(
     );
     expect(html).toContain('aria-label="' + t(language, "issues.report") + '"');
     expect(html).toContain('aria-haspopup="dialog"');
-    expect(html).toContain('class="issue-quick-button"');
+    expect(html).toContain("issue-quick-button");
     expect(html).not.toMatch(/<dialog|<textarea|<form|<section/);
   },
 );

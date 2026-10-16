@@ -15,7 +15,9 @@ export function navigateJournal(url: string, replace = false) {
     "",
     target.pathname + target.search + target.hash,
   );
-  window.scrollTo({ top: 0 });
+  const viewport = document.querySelector(".shell");
+  if (viewport instanceof HTMLElement) viewport.scrollTo({ top: 0 });
+  else window.scrollTo({ top: 0 });
   return true;
 }
 export function useJournalRouter() {

@@ -126,6 +126,9 @@ for (const account of ["unauthenticated", "disallowed"] as const) {
     await expect(
       page.getByRole("heading", { name: sv["login.heading"], exact: true }),
     ).toBeVisible();
+    await expect(
+      page.locator(".issue-quick-button, .issue-dialog, .journal-tools"),
+    ).toHaveCount(0);
     const response = await context.request.get(
       "/api/sync/?scope=" + "a".repeat(64),
     );
