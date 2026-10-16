@@ -14,6 +14,7 @@ import { useRecords } from "@/components/journal-provider";
 import { disciplineName, targetName, caliberName } from "@/lib/i18n-domain";
 import { sessionSeriesRatings } from "@/lib/session-medals";
 import { summarize } from "@/lib/rules/engine";
+import { appliedRuleGroups } from "@/lib/rules/presentation";
 import { SessionPrint } from "@/components/session-print";
 import { SessionActions } from "@/components/session-actions";
 export default function View({ id }: { id: string }) {
@@ -33,6 +34,7 @@ export default function View({ id }: { id: string }) {
   const total = summarize(s);
   const assessments = data.assessments.filter((a) => a.sessionId === id);
   const ratings = sessionSeriesRatings(s, assessments);
+  const ruleGroups = appliedRuleGroups(s, ratings);
   return (
     <>
       <div className="page-heading">
@@ -92,11 +94,49 @@ export default function View({ id }: { id: string }) {
               : tr("common.notSpecified")}
         </p>
         {s.firearmSnapshot?.hasOptic && <p>{tr("firearm.hasOptic")}</p>}
-        {s.ruleReference && (
-          <p>
-            {tr("session.ruleReference")}: {s.ruleReference}
-          </p>
-        )}
+        {s.ruleReference &&
+          !ruleGroups.some(
+            (group) => group.declared && group.edition === s.ruleReference,
+          ) && (
+            <p>
+              {tr("session.ruleReference")}: {s.ruleReference}
+            </p>
+          )}
+        <div className="session-rules">
+          {ruleGroups.length ? (
+            ruleGroups.map((group, index) => (
+              <p key={group.id}>
+                {index === 0 && (
+                  <>
+                    <strong>{tr("details.ruleVersion")}</strong>{" "}
+                  </>
+                )}
+                {group.edition
+                  ? group.declared
+                    ? group.edition
+                    : localizeMessage(language, group.edition)
+                  : tr(
+                      group.declared
+                        ? "common.notSpecified"
+                        : "details.ruleEditionUnknown",
+                    )}
+                {ruleGroups.length > 1 && (
+                  <span className="subline">{group.series.join(", ")}</span>
+                )}
+                {group.reference && (
+                  <span className="subline">
+                    {localizeMessage(language, group.reference)}
+                  </span>
+                )}
+              </p>
+            ))
+          ) : (
+            <p>
+              <strong>{tr("details.ruleVersion")}</strong>{" "}
+              {tr("details.notRecorded")}
+            </p>
+          )}
+        </div>
         <div className="table-scroll">
           <table className="series-results">
             <thead>
@@ -108,7 +148,7 @@ export default function View({ id }: { id: string }) {
               </tr>
             </thead>
             <tbody>
-              {ratings.map(({ result: r, medal, assessment, points }) => {
+              {ratings.map(({ result: r, medal, points }) => {
                 return (
                   <tr key={r.id}>
                     <td>
@@ -149,10 +189,6 @@ export default function View({ id }: { id: string }) {
                           {" s"}
                         </span>
                       )}
-                      <span className="subline">
-                        {tr("details.ruleVersion")}{" "}
-                        {assessment?.ruleVersion ?? tr("details.notRecorded")}
-                      </span>
                       {r.photoId && (
                         <PhotoViewer
                           src={"/api/photos/" + r.photoId + "/"}
@@ -275,15 +311,16 @@ export default function View({ id }: { id: string }) {
               )}
             {a && (
               <>
-                <small>
-                  {a.ruleVersion} · {a.createdAt.slice(0, 10)}
-                </small>
-                {a.source && (
-                  <p className="muted">{localizeMessage(language, a.source)}</p>
-                )}
+                <small>{a.createdAt.slice(0, 10)}</small>
                 <details>
                   <summary>{tr("details.showInput")}</summary>
-                  <pre>{JSON.stringify(a.input, null, 2)}</pre>
+                  <pre>
+                    {JSON.stringify(
+                      { ruleVersion: a.ruleVersion, input: a.input },
+                      null,
+                      2,
+                    )}
+                  </pre>
                 </details>
               </>
             )}

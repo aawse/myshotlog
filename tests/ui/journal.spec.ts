@@ -37,6 +37,16 @@ for (const language of ["sv", "en"] as const) {
     await expect(
       page.locator('aside nav a[aria-current="location"]'),
     ).toBeVisible();
+    await expect(page.locator(".session-rules")).toContainText(
+      t["rules.edition21"],
+    );
+    await expect(page.locator(".session-rules")).toHaveCount(1);
+    await expect(page.locator(".series-results")).not.toContainText(
+      "spsf-2026-21-badge-v1",
+    );
+    await expect(page.locator(".assessment > small")).not.toContainText(
+      "spsf-2026-21-badge-v1",
+    );
     await page
       .getByRole("link", { name: t["session.editHeading"], exact: true })
       .click();

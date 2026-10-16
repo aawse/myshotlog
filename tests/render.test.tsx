@@ -253,3 +253,54 @@ it("shows only current series calculations and ignores superseded or historical 
   expect(html).not.toContain("old-rule");
   expect(html).not.toContain("removed-series");
 });
+
+it.each(["sv", "en"] as const)(
+  "shows the readable applied edition once per session in %s",
+  async (language) => {
+    const { default: Details } =
+      await import("../components/journal-views/session-details");
+    const { rules } = await import("../lib/rules/catalog");
+    const { t } = await import("../lib/i18n");
+    const results = [
+      session.results[0],
+      {
+        ...session.results[0],
+        id: crypto.randomUUID(),
+        label: "Second series",
+      },
+    ];
+    const s = { ...session, results };
+    const assessments = results.flatMap((result) =>
+      (["bronze", "silver", "gold"] as const).map((level) => ({
+        id: crypto.randomUUID(),
+        sessionId: s.id,
+        resultId: result.id,
+        revision: s.revision,
+        ruleVersion: rules[0].id,
+        level,
+        status: "met" as const,
+        reason: "",
+        source: "",
+        input: {},
+        createdAt: "2026-10-10T12:00:00Z",
+      })),
+    );
+    recordsFixture({
+      profile: { ...profile, language },
+      firearms: [],
+      sessions: [s],
+      assessments,
+    });
+    const html = renderToStaticMarkup(<Details id={s.id} />);
+    const summary = html.match(
+      /<div class="session-rules">([\s\S]*?)<\/div>/,
+    )?.[1];
+    expect(summary).toContain(t(language, "rules.edition21"));
+    expect(html.match(/class="session-rules"/g)).toHaveLength(1);
+    expect(html.split(t(language, "rules.edition21"))).toHaveLength(2);
+    expect(html.match(/class="series-medal gold"/g)).toHaveLength(4);
+    const visible = html.replace(/<details>[\s\S]*?<\/details>/g, "");
+    expect(visible).not.toContain(rules[0].id);
+    expect(html).toContain(rules[0].id);
+  },
+);

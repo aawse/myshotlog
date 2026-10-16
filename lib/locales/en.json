@@ -131,6 +131,7 @@
   "details.photoAlt": "Target photo",
   "details.previousResult": "Previous result",
   "details.revision": "· revision",
+  "details.ruleEditionUnknown": "Rule edition unavailable in the app catalogue",
   "details.ruleVersion": "Rule version:",
   "details.seriesStage": "Series / stage",
   "details.shotsSeparator": "shots ·",

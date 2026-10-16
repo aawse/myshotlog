@@ -2,6 +2,18 @@
 
 Kontrollerat 2026-10-15 mot SPSF:s [officiella regelsida](https://www.pistolskytteforbundet.se/om-pistolskytte/regler/skjuthandboken-och-sakb/) och [Skjuthandboken 21, 2026](https://www.pistolskytteforbundet.se/app/uploads/2026/01/SHB_2026_upplaga-21_NY.pdf). Innehållsförteckningens delar D–O täcker de tolv huvudsakliga grenarna nedan. SRA och tillämpningsserier finns också som separata val. Den historiska bedömningskatalogens källreferens till PPC-cupens exemplar behålls; appens nya nedladdningslänk går till SPSF. Gränserna för precision och tillämpning har jämförts med de officiella sidorna 452–453 (samma sidnummer i den nuvarande PDF-filen).
 
+## Regelupplaga i passvyn
+
+Passet visar regelupplagans läsbara namn, till exempel **Skjuthandboken 21 (2026)**,
+en gång ovanför serierna. Namn och hänvisning hämtas från de aktuella seriernas
+bedömningsunderlag eller katalogposten med exakt samma regel-ID. Dagens datum
+används inte för att välja ett namn. Om olika upplagor faktiskt förekommer visas
+vilka serier som hör till respektive upplaga. Saknad upplagemetadata markeras
+utan att ersättas med den senaste upplagan. Egna regelreferenser visas som de
+registrerats. Tekniska regel-ID:n finns kvar i beräkningsunderlaget under
+**Visa sparat bedömningsunderlag**, men upprepas inte i seriens vanliga visning.
+Detta ändrar bara presentationen; bedömningar och lagrade resultat ändras inte.
+
 ## Täckningsmatris
 
 | Gren                                        | Referens i upplaga 21      | Registrerade mått                                                  | Automatisk kvalifikation            |

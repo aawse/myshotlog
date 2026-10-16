@@ -3,6 +3,7 @@ import { signSession } from "../../lib/auth/session";
 import { project, batchSchema } from "../../lib/sync/model";
 import type { Records } from "../../lib/models";
 import { profile, firearm, session } from "../fixtures";
+import { recordSeries } from "../../lib/rules/recorded";
 export const uiSigningKey =
   "myshotlog-ui-only-signing-key-not-for-real-deployments-0123456789";
 export const uiOrigin = "https://ui.myshotlog.test";
@@ -48,6 +49,19 @@ export const test = base.extend<{ journal: Journal; browserErrors: void }>({
         quickEntries: [],
         witnessSignoffs: [],
       };
+      records.assessments = records.sessions
+        .flatMap((session) =>
+          session.results.flatMap((result) =>
+            recordSeries(session, result, records.profile, []),
+          ),
+        )
+        .map((assessment, index) => ({
+          ...assessment,
+          id:
+            "30000000-0000-4000-8000-" +
+            (index + 1).toString(16).padStart(12, "0"),
+          createdAt: "2026-10-10T12:00:00Z",
+        }));
       await context.addCookies([
         {
           name: "myshotlog_session",
