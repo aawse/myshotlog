@@ -19,7 +19,13 @@ const savedInput = z.object({
   result: resultSchema.optional().catch(undefined),
 });
 
-export function AssessmentBasis({ assessment }: { assessment: Assessment }) {
+export function AssessmentBasis({
+  assessment,
+  showDate = true,
+}: {
+  assessment: Assessment;
+  showDate?: boolean;
+}) {
   const { tr, language, locale } = useI18n();
   const input = savedInput.safeParse(assessment.input).data;
   const result = input?.result;
@@ -57,7 +63,7 @@ export function AssessmentBasis({ assessment }: { assessment: Assessment }) {
           <>
             <h4>{tr("basis.conditions")}</h4>
             <dl>
-              {field("common.date", input.date && date(input.date))}
+              {showDate && field("common.date", input.date && date(input.date))}
               {field(
                 "session.sport",
                 input.discipline && disciplineName(language, input.discipline),

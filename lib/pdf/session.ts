@@ -1,3 +1,4 @@
+import { sessionDisplayConditions } from "@/lib/session-conditions";
 import { distanceText } from "../events/programs";
 import { netPoints, hitFactor } from "../result-metrics";
 import { readFile } from "node:fs/promises";
@@ -15,9 +16,11 @@ import sharp from "sharp";
 import type { Records, Session } from "@/lib/models";
 import { sessionSeriesRatings } from "@/lib/session-medals";
 import { seriesConditions } from "@/lib/models";
-import { translator } from "@/lib/i18n";
+import { appliedAgeGroups, appliedRuleGroups } from "@/lib/rules/presentation";
+import { localizeMessage, translator } from "@/lib/i18n";
 import { caliberName, disciplineName, targetName } from "@/lib/i18n-domain";
 import design from "@/lib/brand/design.json";
+import type { WitnessSignoff } from "@/lib/witness/model";
 import { witnessCurrent } from "@/lib/witness/model";
 
 // Assets only: generated PDFs and journal contents are never cached or written to disk.
@@ -77,6 +80,8 @@ export async function createSessionPdf(
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(session.date + "T12:00:00Z"));
+  const sharedConditions = sessionDisplayConditions(session);
+  const precision = session.discipline === "precision";
   const signoffs = (data.witnessSignoffs ?? []).filter(
     (w) => w.sessionId === session.id,
   );
@@ -141,9 +146,9 @@ export async function createSessionPdf(
     maxWidth = width,
   ) {
     for (const valueLine of lines(value, maxWidth, font, size)) {
-      ensure(size + 5);
+      ensure(size + 3);
       page.drawText(valueLine, { x: left, y, size, font, color });
-      y -= size + 5;
+      y -= size + 3;
     }
   }
   function heading(value: string) {
@@ -169,7 +174,7 @@ export async function createSessionPdf(
       tr("details.seriesStage"),
       tr("session.shots"),
       tr("session.points"),
-      tr("details.hitsFigures"),
+      ...(precision ? [] : [tr("details.hitsFigures")]),
       tr("print.grade"),
     ];
     page.drawRectangle({
@@ -179,7 +184,10 @@ export async function createSessionPdf(
       height: 26,
       color: colour(design.colours.pale),
     });
-    [0, 252, 322, 414, width - 5].forEach((x, i) =>
+    (precision
+      ? [0, 300, 390, width - 5]
+      : [0, 252, 322, 414, width - 5]
+    ).forEach((x, i) =>
       page.drawText(cols[i], {
         x:
           i === 0
@@ -193,156 +201,9 @@ export async function createSessionPdf(
     );
     y -= 32;
   }
-  newPage();
-  text(date + (session.time ? " · " + session.time : ""), 22, emphasis, green);
-  text(session.location || tr("common.noLocation"), 16, emphasis);
-  y -= 8;
-  if (data.profile.displayName)
-    field(tr("print.shooter"), data.profile.displayName);
-  field(tr("session.sport"), disciplineName(language, session.discipline));
-  if (session.program) field(tr("session.program"), session.program);
-  if (session.ruleReference)
-    field(tr("session.ruleReference"), session.ruleReference);
-  field(
-    tr("session.context"),
-    tr(
-      session.context === "practice"
-        ? "session.practice"
-        : "session.competition",
-    ),
-  );
-  const f = session.firearmSnapshot;
-  field(
-    tr("session.firearm"),
-    f
-      ? [f.make, f.model, caliberName(language, f.caliber)]
-          .filter(Boolean)
-          .join(" · ")
-      : tr("common.borrowedFirearm"),
-  );
-  if (f?.hasOptic) text(tr("firearm.hasOptic"));
-  field(tr("session.group"), session.group);
-  text(
-    tr("common.seriesCount", { count: session.results.length }) +
-      " · " +
-      session.results.reduce((sum, r) => sum + r.shots, 0) +
-      " " +
-      tr("session.shots").toLocaleLowerCase(locale),
-  );
-  heading(tr("session.results"));
-  headerRow();
-  for (const { result: r, medal, assessments } of sessionSeriesRatings(
-    session,
-    data.assessments,
-  )) {
-    const currentWitnesses = signoffs.filter(
-      (w) => (!w.resultId || w.resultId === r.id) && witnessCurrent(w, session),
-    );
-    const details = [
-      conditions(seriesConditions(session, r)),
-      r.elapsedSeconds !== undefined
-        ? tr("session.elapsedSeconds") + ": " + r.elapsedSeconds + " s"
-        : "",
-      r.matchPercent !== undefined
-        ? tr("session.matchPercent") + ": " + r.matchPercent + "%"
-        : "",
-      r.placement !== undefined
-        ? tr("session.placement") + ": " + r.placement
-        : "",
-      hitFactor(r, session.discipline) !== undefined
-        ? tr("session.hitFactor") +
-          ": " +
-          hitFactor(r, session.discipline)!.toFixed(4)
-        : "",
-      r.dryFire ? tr("session.dryFire") : "",
-      r.scoreText ?? "",
-      r.status ? tr(`resultStatus.${r.status}`) : "",
-      r.scoring
-        ? tr(
-            r.scoring === "points"
-              ? "session.pointsScoring"
-              : "session.ordinaryScoring",
-          )
-        : "",
-      tr("details.penalties", {
-        points: r.penaltyPoints ?? 0,
-        seconds: r.penaltySeconds ?? 0,
-      }),
-      r.x != null ? tr("session.innerTens") + ": " + r.x : "",
-      ...Array.from(new Set(assessments.map((a) => a.ruleVersion))).map(
-        (version) => tr("details.ruleVersion") + " " + version,
-      ),
-      currentWitnesses.length
-        ? tr("print.witnessed", {
-            names: currentWitnesses.map((w) => w.name).join(", "),
-          })
-        : "",
-    ].filter(Boolean);
-    const labelLines = lines(r.label, 195, emphasis, 10);
-    const detailLines = details.flatMap((value) =>
-      lines(value, width - 10, regular, 8),
-    );
-    const height =
-      Math.max(20, labelLines.length * 14) + detailLines.length * 12 + 14;
-    if (y - height < bottom) {
-      newPage();
-      headerRow();
-    }
-    labelLines.forEach((value, i) =>
-      page.drawText(value, {
-        x: left + 5,
-        y: y - i * 14,
-        size: 10,
-        font: emphasis,
-        color: ink,
-      }),
-    );
-    const cells = [
-      String(r.shots),
-      r.points != null ? String(netPoints(r, session.discipline)) : "-",
-      (r.hits ?? "-") + " / " + (r.figures ?? "-"),
-      medal ? tr(`level.${medal}`) : "-",
-    ];
-    [252, 322, 414, width - 5].forEach((x, i) =>
-      page.drawText(cells[i], {
-        x: left + x - regular.widthOfTextAtSize(cells[i], 10),
-        y,
-        size: 10,
-        font: regular,
-        color: ink,
-      }),
-    );
-    y -= Math.max(20, labelLines.length * 14);
-    for (const value of detailLines) {
-      ensure(12);
-      page.drawText(value, {
-        x: left + 5,
-        y,
-        size: 8,
-        font: regular,
-        color: muted,
-      });
-      y -= 12;
-    }
-    page.drawLine({
-      start: { x: left, y: y + 1 },
-      end: { x: left + width, y: y + 1 },
-      thickness: 0.5,
-      color: line,
-    });
-    y -= 14;
-  }
-  text(tr("print.netPoints"), 8, regular, muted);
-  text(tr("details.assessmentHelp"), 8, regular, muted);
-  if (session.notes) {
-    heading(tr("common.notes"));
-    text(session.notes);
-  }
-  heading(tr("witness.heading"));
-  if (!signoffs.length) text(tr("witness.empty"));
-  for (const w of signoffs) {
+  async function renderWitness(w: WitnessSignoff) {
     const current = witnessCurrent(w, session);
-    ensure(210);
+    ensure(125);
     const time = new Intl.DateTimeFormat(locale, {
       dateStyle: "medium",
       timeStyle: "short",
@@ -361,16 +222,12 @@ export async function createSessionPdf(
       10,
       emphasis,
     );
-    text(
-      tr(current ? "witness.current" : "witness.changed"),
-      9,
-      regular,
-      current ? green : colour(design.colours.danger),
-    );
+    if (!current)
+      text(tr("witness.changed"), 9, regular, colour(design.colours.danger));
     // The original attestation is kept in the language actually signed.
     text(w.statement, 9);
     const image = await doc.embedPng(Buffer.from(w.signature.data, "base64"));
-    const signature = image.scaleToFit(210, 72);
+    const signature = image.scaleToFit(150, 45);
     ensure(signature.height + 25);
     page.drawImage(image, {
       x: left,
@@ -443,6 +300,206 @@ export async function createSessionPdf(
     }
     y -= 10;
   }
+  newPage();
+  const ratings = sessionSeriesRatings(session, data.assessments);
+  text(
+    data.profile.displayName || tr("common.notSpecified"),
+    22,
+    emphasis,
+    green,
+  );
+  text(
+    tr(
+      session.context === "practice"
+        ? "session.practice"
+        : "session.competition",
+    ) +
+      " · " +
+      date,
+    16,
+    emphasis,
+  );
+  text(session.location || tr("common.noLocation"), 13);
+  y -= 6;
+  field(tr("session.sport"), disciplineName(language, session.discipline));
+  if (session.program) field(tr("session.program"), session.program);
+  const f = session.firearmSnapshot;
+  field(
+    tr("session.firearm"),
+    f
+      ? [f.make, f.model, caliberName(language, f.caliber)]
+          .filter(Boolean)
+          .join(" · ")
+      : tr("common.borrowedFirearm"),
+  );
+  if (f?.hasOptic) text(tr("firearm.hasOptic"));
+  field(tr("session.group"), session.group);
+  text(
+    tr("common.seriesCount", { count: session.results.length }) +
+      " · " +
+      session.results.reduce((sum, r) => sum + r.shots, 0) +
+      " " +
+      tr("session.shots").toLocaleLowerCase(locale),
+  );
+  if (sharedConditions.seconds != null)
+    field(tr("session.shootingTime"), sharedConditions.seconds + " s");
+  if (sharedConditions.distance != null)
+    field(tr("session.distance"), sharedConditions.distance + " m");
+  if (sharedConditions.target)
+    field(tr("session.target"), targetName(language, sharedConditions.target));
+  const ruleGroups = appliedRuleGroups(session, ratings);
+  for (const group of ruleGroups) {
+    field(
+      tr("details.ruleVersion"),
+      (group.edition
+        ? group.declared
+          ? group.edition
+          : localizeMessage(language, group.edition)
+        : tr("details.ruleEditionUnknown")) +
+        (ruleGroups.length > 1 ? " · " + group.series.join(", ") : ""),
+    );
+  }
+  if (!ruleGroups.length)
+    field(
+      tr("details.ruleVersion"),
+      session.ruleReference || tr("details.notRecorded"),
+    );
+  if (session.discipline === "precision") {
+    const ageGroups = appliedAgeGroups(ratings);
+    for (const group of ageGroups)
+      field(
+        tr("details.calculationAge"),
+        (group.age === undefined
+          ? tr("details.notRecorded")
+          : tr("basis.age", { age: group.age, year: group.year ?? "" })) +
+          (ageGroups.length > 1 ? " · " + group.series.join(", ") : ""),
+      );
+  }
+  heading(tr("session.results"));
+  headerRow();
+  for (const { result: r, medal } of ratings) {
+    const currentWitnesses = signoffs.filter(
+      (w) => w.resultId === r.id && witnessCurrent(w, session),
+    );
+    const details = [
+      r.stageDistance !== undefined ||
+      r.stageTimeLimit !== undefined ||
+      r.stageTarget !== undefined ||
+      (r.distance != null && r.distance !== sharedConditions.distance) ||
+      (r.seconds != null && r.seconds !== sharedConditions.seconds) ||
+      (r.target != null && r.target !== sharedConditions.target)
+        ? conditions(seriesConditions(session, r))
+        : "",
+      r.elapsedSeconds !== undefined
+        ? tr("session.elapsedSeconds") + ": " + r.elapsedSeconds + " s"
+        : "",
+      r.matchPercent !== undefined
+        ? tr("session.matchPercent") + ": " + r.matchPercent + "%"
+        : "",
+      r.placement !== undefined
+        ? tr("session.placement") + ": " + r.placement
+        : "",
+      hitFactor(r, session.discipline) !== undefined
+        ? tr("session.hitFactor") +
+          ": " +
+          hitFactor(r, session.discipline)!.toFixed(4)
+        : "",
+      r.dryFire ? tr("session.dryFire") : "",
+      r.scoreText ?? "",
+      r.status && r.status !== "completed"
+        ? tr(`resultStatus.${r.status}`)
+        : "",
+      r.scoring
+        ? tr(
+            r.scoring === "points"
+              ? "session.pointsScoring"
+              : "session.ordinaryScoring",
+          )
+        : "",
+      r.penaltyPoints || r.penaltySeconds
+        ? tr("details.penalties", {
+            points: r.penaltyPoints ?? 0,
+            seconds: r.penaltySeconds ?? 0,
+          })
+        : "",
+      r.x != null ? tr("session.innerTens") + ": " + r.x : "",
+      currentWitnesses.length
+        ? tr("print.witnessed", {
+            names: currentWitnesses.map((w) => w.name).join(", "),
+          })
+        : "",
+    ].filter(Boolean);
+    const labelLines = lines(r.label, 195, emphasis, 10);
+    const detailLines = details.flatMap((value) =>
+      lines(value, width - 10, regular, 8),
+    );
+    const height =
+      Math.max(20, labelLines.length * 14) + detailLines.length * 12 + 14;
+    if (y - height < bottom) {
+      newPage();
+      headerRow();
+    }
+    labelLines.forEach((value, i) =>
+      page.drawText(value, {
+        x: left + 5,
+        y: y - i * 14,
+        size: 10,
+        font: emphasis,
+        color: ink,
+      }),
+    );
+    const cells = [
+      String(r.shots),
+      r.points != null ? String(netPoints(r, session.discipline)) : "-",
+      ...(precision ? [] : [(r.hits ?? "-") + " / " + (r.figures ?? "-")]),
+      medal ? tr(`level.${medal}`) : "-",
+    ];
+    (precision ? [300, 390, width - 5] : [252, 322, 414, width - 5]).forEach(
+      (x, i) =>
+        page.drawText(cells[i], {
+          x: left + x - regular.widthOfTextAtSize(cells[i], 10),
+          y,
+          size: 10,
+          font: regular,
+          color: ink,
+        }),
+    );
+    y -= Math.max(20, labelLines.length * 14);
+    for (const value of detailLines) {
+      ensure(12);
+      page.drawText(value, {
+        x: left + 5,
+        y,
+        size: 8,
+        font: regular,
+        color: muted,
+      });
+      y -= 12;
+    }
+    page.drawLine({
+      start: { x: left, y: y + 1 },
+      end: { x: left + width, y: y + 1 },
+      thickness: 0.5,
+      color: line,
+    });
+    y -= 14;
+    for (const w of signoffs.filter((w) => w.resultId === r.id))
+      await renderWitness(w);
+  }
+  text(tr("print.netPoints"), 8, regular, muted);
+  text(tr("details.assessmentHelp"), 8, regular, muted);
+  if (session.notes) {
+    heading(tr("common.notes"));
+    text(session.notes);
+  }
+  const remainingSignoffs = signoffs.filter(
+    (w) => !w.resultId || !session.results.some((r) => r.id === w.resultId),
+  );
+  if (remainingSignoffs.length) {
+    ensure(155);
+    heading(tr("witness.heading"));
+  }
+  for (const w of remainingSignoffs) await renderWitness(w);
   if (signoffs.length) text(tr("witness.identity"), 8, regular, muted);
   const pages = doc.getPages();
   pages.forEach((p, i) => {

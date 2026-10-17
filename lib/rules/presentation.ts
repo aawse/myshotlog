@@ -1,3 +1,4 @@
+import { z } from "../validation";
 import type { Session } from "../models";
 import type { sessionSeriesRatings } from "../session-medals";
 import { rules, type RuleVersion } from "./catalog";
@@ -65,6 +66,33 @@ export function appliedRuleGroups(
         series: [result.label],
       });
     }
+  }
+  return [...groups.values()];
+}
+
+const ageInput = z.object({
+  birthYear: z.number().int().min(1800).max(9999).nullable(),
+  ageReferenceYear: z.number().int().min(1800).max(9999),
+  ageBasis: z.literal("previous-calendar-year"),
+});
+export function appliedAgeGroups(
+  ratings: ReturnType<typeof sessionSeriesRatings>,
+) {
+  const groups = new Map<
+    string,
+    { age?: number; year?: number; series: string[] }
+  >();
+  for (const { result, assessment } of ratings) {
+    const input = ageInput.safeParse(assessment?.input).data;
+    const age =
+      input?.birthYear != null && input.ageReferenceYear >= input.birthYear
+        ? input.ageReferenceYear - input.birthYear
+        : undefined;
+    const year = age === undefined ? undefined : input?.ageReferenceYear;
+    const key = `${age}:${year}`;
+    const group = groups.get(key);
+    if (group) group.series.push(result.label);
+    else groups.set(key, { age, year, series: [result.label] });
   }
   return [...groups.values()];
 }

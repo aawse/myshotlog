@@ -139,7 +139,6 @@
   "details.penalties": "{points} pts / {seconds} s",
   "details.photoAlt": "Target photo",
   "details.previousResult": "Previous result",
-  "details.revision": "· revision",
   "details.ruleEditionUnknown": "Rule edition unavailable in the app catalogue",
   "details.ruleVersion": "Rule version:",
   "details.seriesStage": "Series / stage",
@@ -810,5 +809,6 @@
   "witness.statement": "I witnessed the shooting and confirm that the results shown here are correct.",
   "witness.submit": "Confirm and save signature",
   "witness.unavailable": "This witness link has expired, been cancelled or used, or the results have changed. Ask the owner for a new link.",
-  "witness.viewSnapshot": "Show the results that were signed"
+  "witness.viewSnapshot": "Show the results that were signed",
+  "details.calculationAge": "Age used for scoring"
 }

@@ -1,4 +1,5 @@
 "use client";
+import { sessionDisplayConditions } from "@/lib/session-conditions";
 import { distanceText } from "@/lib/events/programs";
 import { seriesConditions } from "@/lib/models";
 import { hitFactor } from "@/lib/result-metrics";
@@ -14,7 +15,7 @@ import { useRecords } from "@/components/journal-provider";
 import { disciplineName, targetName, caliberName } from "@/lib/i18n-domain";
 import { sessionSeriesRatings } from "@/lib/session-medals";
 import { summarize } from "@/lib/rules/engine";
-import { appliedRuleGroups } from "@/lib/rules/presentation";
+import { appliedAgeGroups, appliedRuleGroups } from "@/lib/rules/presentation";
 import { AssessmentBasis } from "@/components/assessment-basis";
 import { SessionPrint } from "@/components/session-print";
 import { SessionActions } from "@/components/session-actions";
@@ -33,24 +34,26 @@ export default function View({ id }: { id: string }) {
     .sort((a, b) => b.signedAt.localeCompare(a.signedAt))
     .map((w) => ({ ...w, current: witnessCurrent(w, s) }));
   const total = summarize(s);
+  const conditions = sessionDisplayConditions(s);
   const assessments = data.assessments.filter((a) => a.sessionId === id);
   const ratings = sessionSeriesRatings(s, assessments);
   const ruleGroups = appliedRuleGroups(s, ratings);
+  const ageGroups = appliedAgeGroups(ratings);
   return (
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">
-            {s.date} · {s.location || tr("common.noLocation")}
-          </span>
-          <h1>{disciplineName(language, s.discipline)}</h1>
+          <span className="eyebrow">{tr("print.shooter")}</span>
+          <h1>{data.profile.displayName || tr("common.notSpecified")}</h1>
           <p>
-            {s.program} ·{" "}
-            {s.context === "practice"
-              ? tr("session.practice")
-              : tr("session.competition")}{" "}
-            {tr("details.revision")} {s.revision}
+            {tr(
+              s.context === "practice"
+                ? "session.practice"
+                : "session.competition",
+            )}{" "}
+            · <time dateTime={s.date}>{s.date}</time>
           </p>
+          <p>{s.location || tr("common.noLocation")}</p>
         </div>
         <div className="actions">
           <SessionPrint id={id} date={s.date} />
@@ -74,23 +77,28 @@ export default function View({ id }: { id: string }) {
         </h2>
         <div className="session-facts">
           <p>
+            {disciplineName(language, s.discipline)}
+            {s.program ? " · " + s.program : ""}
+          </p>
+          <p>
             {tr("sessions.groupPrefix")} {s.group} · {total.shots}{" "}
             {tr("details.shotsSeparator")} {s.results.length}{" "}
             {tr("details.entries")}
           </p>
-          {(s.distance !== undefined || s.target !== undefined) && (
+          {(conditions.distance !== undefined ||
+            conditions.target !== undefined) && (
             <p>
               {tr("details.distance")}{" "}
-              {s.distance !== null && s.distance !== undefined
-                ? s.distance + " m"
+              {conditions.distance !== null && conditions.distance !== undefined
+                ? conditions.distance + " m"
                 : tr("common.notSpecified")}{" "}
-              {tr("details.target")} {targetName(language, s.target)}
+              {tr("details.target")} {targetName(language, conditions.target)}
             </p>
           )}
           <p>
             {tr("details.time")}{" "}
-            {s.seconds !== null && s.seconds !== undefined
-              ? s.seconds + " s"
+            {conditions.seconds !== null && conditions.seconds !== undefined
+              ? conditions.seconds + " s"
               : s.results.some((r) => r.seconds !== undefined)
                 ? tr("details.oldTimes")
                 : tr("common.notSpecified")}
@@ -140,6 +148,18 @@ export default function View({ id }: { id: string }) {
             </p>
           )}
         </div>
+        {s.discipline === "precision" &&
+          ageGroups.map((group, index) => (
+            <p key={index} className="muted">
+              <strong>{tr("details.calculationAge")}: </strong>
+              {group.age === undefined
+                ? tr("details.notRecorded")
+                : tr("basis.age", { age: group.age, year: group.year ?? "" })}
+              {ageGroups.length > 1 && (
+                <span className="subline">{group.series.join(", ")}</span>
+              )}
+            </p>
+          ))}
         <div className="session-assessments">
           <h2>{tr("details.assessments")}</h2>
           <p className="muted">{tr("details.assessmentHelp")}</p>
@@ -184,12 +204,6 @@ export default function View({ id }: { id: string }) {
                     {tr("quick.points", { p0: points })}
                   </span>
                 )}
-                <time
-                  className="assessment-date"
-                  dateTime={a?.createdAt ?? s.date}
-                >
-                  {a?.createdAt.slice(0, 10) ?? s.date}
-                </time>
                 <span className="assessment-toggle">
                   <span className="visually-hidden">
                     {tr("details.showInput")}
@@ -200,6 +214,14 @@ export default function View({ id }: { id: string }) {
             );
             return (
               <div className="assessment" key={result.id}>
+                {signoffs
+                  .filter((w) => w.resultId === result.id)
+                  .map((w) => (
+                    <p key={w.id}>
+                      {tr("print.witnessed", { names: w.name })} ·{" "}
+                      {tr(w.current ? "witness.current" : "witness.changed")}
+                    </p>
+                  ))}
                 <details>
                   <summary
                     className="assessment-summary"
@@ -313,7 +335,7 @@ export default function View({ id }: { id: string }) {
                         status === "not-applicable") && (
                         <p>{localizeMessage(language, a.reason)}</p>
                       )}
-                    {a && <AssessmentBasis assessment={a} />}
+                    {a && <AssessmentBasis assessment={a} showDate={false} />}
                   </div>
                 </details>
               </div>

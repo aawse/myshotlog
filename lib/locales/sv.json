@@ -139,7 +139,6 @@
   "details.penalties": "{points} p / {seconds} s",
   "details.photoAlt": "Foto av tavlan",
   "details.previousResult": "Tidigare resultat",
-  "details.revision": "· revision",
   "details.ruleEditionUnknown": "Regelupplagan saknas i appens katalog",
   "details.ruleVersion": "Regelversion:",
   "details.seriesStage": "Serie / station",
@@ -810,5 +809,6 @@
   "witness.statement": "Jag bevittnade skjutningen och intygar att de resultat som visas här stämmer.",
   "witness.submit": "Intyga och spara namnteckning",
   "witness.unavailable": "Vittneslänken har gått ut, återkallats eller använts, eller resultaten har ändrats. Be ägaren om en ny länk.",
-  "witness.viewSnapshot": "Visa resultaten som intygades"
+  "witness.viewSnapshot": "Visa resultaten som intygades",
+  "details.calculationAge": "Ålder för poängberäkning"
 }

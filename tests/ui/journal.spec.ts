@@ -46,13 +46,11 @@ for (const language of ["sv", "en"] as const) {
     await expect(page.locator(".assessment")).toHaveCount(
       journal.records.sessions[0].results.length,
     );
-    await expect(page.locator(".assessment-date")).not.toContainText(
-      "spsf-2026-21-badge-v1",
-    );
+    await expect(page.locator(".assessment-date")).toHaveCount(0);
     await page.locator(".assessment summary").first().click();
     const basis = page.locator(".assessment-basis").first();
     await expect(basis).toBeVisible();
-    await expect(basis.locator("dt")).toContainText([t["common.date"]]);
+    await expect(basis.locator("dt")).not.toContainText([t["common.date"]]);
     await expect(basis).toContainText(t["basis.recordedResult"]);
     await expect(basis.locator("pre")).toHaveCount(0);
     await expect(basis).toContainText(
@@ -228,7 +226,8 @@ for (const language of ["sv", "en"] as const) {
     const first = rows.first().locator("summary");
     await expect(first).toContainText("Serie 1");
     await expect(first).toContainText("46");
-    await expect(first).toContainText("2026-10-10");
+    await expect(first).not.toContainText("2026-10-10");
+    await expect(page.locator(".page-heading time")).toHaveText(session.date);
     const height = await rows
       .first()
       .evaluate((row) => row.getBoundingClientRect().height);

@@ -1,5 +1,12 @@
-import { it, expect } from "vitest";
-import { PDFDocument, PDFName, PDFArray, PDFDict, PDFString } from "pdf-lib";
+import { it, expect, vi } from "vitest";
+import {
+  PDFDocument,
+  PDFPage,
+  PDFName,
+  PDFArray,
+  PDFDict,
+  PDFString,
+} from "pdf-lib";
 import sharp from "sharp";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createSessionPdf } from "../lib/pdf/session";
@@ -12,6 +19,9 @@ async function fixture() {
   const s: Session = {
     ...session,
     location: "Högdalens skyttebana",
+    distance: 25,
+    seconds: 300,
+    target: "precision25",
     time: "14:30",
     notes: "Träning med Åsa Östergård.",
     results: [
@@ -75,7 +85,12 @@ async function fixture() {
         reason: "",
         source: "",
         createdAt: "2026-10-10T12:40:00Z",
-        input: {},
+        input: {
+          birthYear: 1990,
+          ageReferenceYear: 2025,
+          ageBasis: "previous-calendar-year",
+          ruleSnapshot: { id: "SHB 21 / 2026", edition: "SHB 21 / 2026" },
+        },
       },
     ],
     witnessSignoffs: [signoff],
@@ -161,4 +176,45 @@ it("excludes target photo data and unrelated witness signatures", async () => {
       await PDFDocument.load(await createSessionPdf(data, s, url))
     ).getPageCount(),
   ).toBe(1);
+});
+
+it("prints shared precision details once before series and witnesses at their scope", async () => {
+  const { data, s, signoff } = await fixture();
+  data.witnessSignoffs = [
+    signoff,
+    {
+      ...signoff,
+      id: "series-witness",
+      resultId: s.results[0].id,
+      name: "Series Witness",
+      snapshot: reviewSession(s, s.results[0].id),
+    },
+  ];
+  const draw = vi.spyOn(PDFPage.prototype, "drawText");
+  try {
+    await createSessionPdf(data, s, url);
+    const texts = draw.mock.calls.map(([value]) => value);
+    expect(texts.indexOf("Björn Åkerlund")).toBeLessThan(
+      texts.indexOf("Högdalens skyttebana"),
+    );
+    expect(texts.some((value) => value.includes("14:30"))).toBe(false);
+    expect(
+      texts.filter((value) => value.includes("Regelversion:")),
+    ).toHaveLength(1);
+    expect(texts.filter((value) => value.includes("300 s"))).toHaveLength(1);
+    expect(
+      texts.some((value) => value.includes("35") && value.includes("2025")),
+    ).toBe(true);
+    expect(texts.indexOf("Precision – första serien")).toBeLessThan(
+      texts.findIndex((value) => value.includes("Intygat av Series Witness")),
+    );
+    expect(
+      texts.findIndex((value) => value.includes("Intygat av Series Witness")),
+    ).toBeLessThan(
+      texts.findIndex((value) => value.includes("Intygat av Åsa")),
+    );
+    expect(texts).not.toContain("Träffar / figurer");
+  } finally {
+    draw.mockRestore();
+  }
 });

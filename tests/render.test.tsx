@@ -185,7 +185,8 @@ it("shows the same highest grade and net points once per series in the merged li
   expect(compactSummary).toContain("45 poäng");
   expect(compactSummary).toContain("Silver");
   expect(compactSummary).toContain(scored.results[0].label);
-  expect(compactSummary).toContain("2026-10-13");
+  expect(compactSummary).not.toContain("2026-10-13");
+  expect(html).toContain(`dateTime="${session.date}"`);
   expect(compactSummary).not.toContain("45 av minst 34 poäng");
   expect(html).not.toContain("<details open");
   expect(html).not.toContain("Delprestation uppfylld");
@@ -349,7 +350,7 @@ it("keeps unassessed series expandable with all recorded result details", async 
     /<summary class="assessment-summary"[^>]*>([\s\S]*?)<\/summary>/,
   )?.[1];
   expect(summary).toContain("Fixture stage");
-  expect(summary).toContain(session.date);
+  expect(summary).not.toContain(session.date);
   expect(html.match(/class="assessment"/g)).toHaveLength(1);
   expect(html).toContain('class="series-result-details"');
   expect(html).toContain("4 / 2");
