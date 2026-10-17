@@ -16,9 +16,9 @@
     "surface": "#fcfdfb",
     "white": "#ffffff",
     "danger": "#a44736",
-    "medalGold": "#a27b32",
-    "medalSilver": "#7c868f",
-    "medalBronze": "#a86e45"
+    "medalGold": "#c59616",
+    "medalSilver": "#a4afb9",
+    "medalBronze": "#a65f38"
   },
   "radius": {
     "control": 4,

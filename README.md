@@ -22,7 +22,7 @@ Personlig journal för skytte, träning och tävling, byggd med Next.js och Reac
 
 Appen används för personlig resultatuppföljning. Serier behöver inga signaturer eller verifieringar. Regelunderlag och begränsningar finns i [regeldokumentationen](docs/RULES.md).
 
-Designen delas med den publika webbplatsen och PDF-utskrifterna. Se [varumärkes- och designsynkronisering](docs/BRANDING.md) för uppdateringar och kontroll av typsnitt, färger och logotyper.
+Designen delas med den publika webbplatsen och PDF-utskrifterna. Medaljer skiljs åt med gult guld, ljust blågrått silver och rödbrun brons. Se [varumärkes- och designsynkronisering](docs/BRANDING.md) för uppdateringar och kontroll av typsnitt, färger och logotyper.
 
 ## Lokal utveckling
 
