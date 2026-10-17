@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { createHash } from "node:crypto";
+import { createDecipheriv, createHash, pbkdf2Sync } from "node:crypto";
 import { ImportTransfer } from "../lib/import-transfer";
 import { DatabaseConflict, type GitDatabase } from "../lib/git-database/types";
 import {
@@ -240,4 +240,44 @@ it("publishes a validated backup larger than 3 MB only after all parts arrive", 
   expect((await store.mutate("import", payload)).imported).toBe(700);
   expect((await store.records()).sessions).toHaveLength(700);
   expect((await store.mutate("import", payload)).imported).toBe(0);
+});
+
+it("uses versioned PBKDF2 keys and rejects wrong secrets and unsupported versions", async () => {
+  const f = fixture();
+  await f.upload();
+  const path = `test/v1/imports/users/${owner}/0.json`;
+  const value = JSON.parse(f.files.get(path) ?? "{}");
+  expect(value.version).toBe(2);
+  const key = pbkdf2Sync(
+    secret,
+    `myshotlog-import-v2:test/v1/imports/users/${owner}`,
+    600_000,
+    32,
+    "sha256",
+  );
+  const cipher = createDecipheriv(
+    "aes-256-gcm",
+    key,
+    Buffer.from(value.iv, "base64"),
+  );
+  cipher.setAAD(Buffer.from(`test/v1/imports/users/${owner}:${id}:0`));
+  cipher.setAuthTag(Buffer.from(value.tag, "base64"));
+  expect(
+    Buffer.concat([
+      cipher.update(Buffer.from(value.data, "base64")),
+      cipher.final(),
+    ]),
+  ).toEqual(f.bytes.subarray(0, TRANSFER_CHUNK_BYTES));
+  const wrong = new ImportTransfer(
+    f.provider,
+    owner,
+    "test/v1",
+    "another-fictional-secret-at-least-32-bytes",
+    () => 2000,
+  );
+  await expect(wrong.read({ id })).rejects.toThrow();
+  for (const version of [undefined, 1, 3]) {
+    f.files.set(path, JSON.stringify({ ...value, version }));
+    await expect(f.transfer.read({ id })).rejects.toThrow();
+  }
 });

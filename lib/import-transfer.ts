@@ -3,6 +3,7 @@ import {
   createDecipheriv,
   createHash,
   randomBytes,
+  pbkdf2Sync,
 } from "node:crypto";
 import { z } from "./validation";
 import { InvalidRecord } from "./git-database/store";
@@ -64,9 +65,13 @@ export class ImportTransfer {
   ) {
     this.path = validPath(prefix) + "/imports/users/" + z.uuid().parse(owner);
     if (Buffer.byteLength(secret) < 32) throw new Error("Invalid transfer key");
-    this.key = createHash("sha256")
-      .update("myshotlog-import-v1:" + secret)
-      .digest();
+    this.key = pbkdf2Sync(
+      secret,
+      "myshotlog-import-v2:" + this.path,
+      600_000,
+      32,
+      "sha256",
+    );
   }
   private invalid(): never {
     throw new InvalidRecord(swText("api.invalidData"));
@@ -77,6 +82,7 @@ export class ImportTransfer {
     cipher.setAAD(Buffer.from(`${this.path}:${id}:${index}`));
     const data = Buffer.concat([cipher.update(bytes), cipher.final()]);
     return JSON.stringify({
+      version: 2,
       iv: iv.toString("base64"),
       tag: cipher.getAuthTag().toString("base64"),
       data: data.toString("base64"),
@@ -85,6 +91,7 @@ export class ImportTransfer {
   private decrypt(content: string, id: string, index: number) {
     const value = z
       .object({
+        version: z.literal(2),
         iv: z.string().max(24),
         tag: z.string().max(24),
         data: z.string().max((TRANSFER_CHUNK_BYTES / 3) * 4),
