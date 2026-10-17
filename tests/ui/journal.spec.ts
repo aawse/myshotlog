@@ -220,6 +220,9 @@ for (const language of ["sv", "en"] as const) {
         createdAt: "2026-10-10T12:00:00Z",
       }));
     await page.goto(`/sessions/${session.id}/`);
+    await expect(page.locator(".page-heading")).not.toContainText(
+      journal.records.profile.displayName,
+    );
     const rows = page.locator(".assessment");
     await expect(rows).toHaveCount(8);
     await expect(page.locator(".assessment details[open]")).toHaveCount(0);

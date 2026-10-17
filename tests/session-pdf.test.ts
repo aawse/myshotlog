@@ -18,6 +18,7 @@ const url = "https://myshotlog.example/sessions/" + session.id + "/";
 async function fixture() {
   const s: Session = {
     ...session,
+    firearmSnapshot: session.firearmSnapshot && { ...session.firearmSnapshot },
     location: "Högdalens skyttebana",
     distance: 25,
     seconds: 300,
@@ -198,9 +199,7 @@ it("prints shared precision details once before series and witnesses at their sc
       texts.indexOf("Högdalens skyttebana"),
     );
     expect(texts.some((value) => value.includes("14:30"))).toBe(false);
-    expect(
-      texts.filter((value) => value.includes("Regelversion:")),
-    ).toHaveLength(1);
+    expect(texts.filter((value) => value === "Regelversion:")).toHaveLength(1);
     expect(texts.filter((value) => value.includes("300 s"))).toHaveLength(1);
     expect(
       texts.some((value) => value.includes("35") && value.includes("2025")),
@@ -214,7 +213,66 @@ it("prints shared precision details once before series and witnesses at their sc
       texts.findIndex((value) => value.includes("Intygat av Åsa")),
     );
     expect(texts).not.toContain("Träffar / figurer");
+    const sport = draw.mock.calls.find(
+      ([value]) => value === "Precisionsskjutning",
+    )?.[1];
+    const firearm = draw.mock.calls.find(
+      ([value]) => value === "Test · Test · .22",
+    )?.[1];
+    expect(sport?.y).toBe(firearm?.y);
+    expect(firearm?.x).toBeGreaterThan(sport?.x ?? 0);
   } finally {
     draw.mockRestore();
   }
 });
+
+it.each(["sv", "en"] as const)(
+  "wraps long %s session fields inside their columns",
+  async (language) => {
+    const { data, s } = await fixture();
+    data.profile.language = language;
+    data.witnessSignoffs = [];
+    s.notes = "";
+    s.program = "Fictional training program with a long descriptive name "
+      .repeat(3)
+      .slice(0, 120);
+    if (s.firearmSnapshot) {
+      s.firearmSnapshot.make = "FictionalManufacturerWithoutSpaces"
+        .repeat(3)
+        .slice(0, 100);
+      s.firearmSnapshot.model = "Fictional model with a long name";
+    }
+    const draw = vi.spyOn(PDFPage.prototype, "drawText");
+    try {
+      const bytes = await createSessionPdf(data, s, url);
+      expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
+      const rows = new Map<number, { x: number; right: number }[]>();
+      for (const [value, options] of draw.mock.calls) {
+        if (
+          !options?.font ||
+          options.x === undefined ||
+          options.y === undefined ||
+          options.size === undefined
+        )
+          continue;
+        const entries = rows.get(options.y) ?? [];
+        entries.push({
+          x: options.x,
+          right:
+            options.x + options.font.widthOfTextAtSize(value, options.size),
+        });
+        rows.set(options.y, entries);
+      }
+      for (const entries of rows.values()) {
+        entries.sort((a, b) => a.x - b.x);
+        for (let i = 0; i < entries.length; i++) {
+          expect(entries[i].right).toBeLessThanOrEqual(556);
+          if (i + 1 < entries.length)
+            expect(entries[i].right).toBeLessThan(entries[i + 1].x);
+        }
+      }
+    } finally {
+      draw.mockRestore();
+    }
+  },
+);

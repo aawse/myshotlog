@@ -200,6 +200,9 @@ p {
 .card h3 {
   overflow-wrap: anywhere;
 }
+.page-heading h1 time {
+  white-space: nowrap;
+}
 .page-heading p {
   color: var(--muted);
   font-size: 12px;

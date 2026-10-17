@@ -417,7 +417,6 @@
   "print.page": "Sida {page} av {pages}",
   "print.preparing": "Förbereder PDF…",
   "print.reference": "Pass-ID: {id} · Revision {revision}",
-  "print.shooter": "Skytt",
   "print.title": "Skjutprotokoll",
   "print.witnessed": "Bevittnat: {names}",
   "profile.ageHelp": "Födelsedatum används för åldersregeln vid brons-, silver- och guldserier. Precisionens poängkrav sänks med 1 poäng från 55 år och 2 poäng från 65 år, räknat vid slutet av föregående kalenderår. Tillämpningskraven ändras inte. Regler väljs efter passets datum. Tidigare sparade födelseuppgifter används när de finns; äldre serier utan sådant underlag använder profilen. Utan födelseuppgifter används ordinarie poänggränser utan åldersavdrag.",
@@ -810,5 +809,6 @@
   "witness.submit": "Intyga och spara namnteckning",
   "witness.unavailable": "Vittneslänken har gått ut, återkallats eller använts, eller resultaten har ändrats. Be ägaren om en ny länk.",
   "witness.viewSnapshot": "Visa resultaten som intygades",
-  "details.calculationAge": "Ålder för poängberäkning"
+  "details.calculationAge": "Ålder för poängberäkning",
+  "print.scoringAge": "{age} år (referensår {year})"
 }

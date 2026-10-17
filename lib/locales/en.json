@@ -417,7 +417,6 @@
   "print.page": "Page {page} of {pages}",
   "print.preparing": "Preparing PDF…",
   "print.reference": "Session ID: {id} · Revision {revision}",
-  "print.shooter": "Shooter",
   "print.title": "Shooting record",
   "print.witnessed": "Witnessed: {names}",
   "profile.ageHelp": "Your date of birth is used for the age adjustment for bronze, silver and gold series. Precision thresholds decrease by 1 point from age 55 and 2 points from age 65, using age at the end of the previous calendar year. Application requirements are unchanged. Rules are selected by the session date. Previously recorded birth information is used when available; older series without it use the profile. Without birth information, standard thresholds apply.",
@@ -810,5 +809,6 @@
   "witness.submit": "Confirm and save signature",
   "witness.unavailable": "This witness link has expired, been cancelled or used, or the results have changed. Ask the owner for a new link.",
   "witness.viewSnapshot": "Show the results that were signed",
-  "details.calculationAge": "Age used for scoring"
+  "details.calculationAge": "Age used for scoring",
+  "print.scoringAge": "{age} years (reference year {year})"
 }

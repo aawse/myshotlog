@@ -157,8 +157,34 @@ export async function createSessionPdf(
     text(value, 13, emphasis, green);
     y -= 4;
   }
-  function field(label: string, value: string) {
-    text(label + ": " + value);
+  function fieldRow(fields: [string, string][]) {
+    const gap = 20;
+    const cellWidth = (width - gap * (fields.length - 1)) / fields.length;
+    const cells = fields.map(([label, value]) => ({
+      labels: lines(label, cellWidth, regular, 8),
+      values: lines(value, cellWidth, regular, 10),
+    }));
+    const labelRows = Math.max(...cells.map((cell) => cell.labels.length));
+    const valueRows = Math.max(...cells.map((cell) => cell.values.length));
+    ensure(Math.min(labelRows * 11 + valueRows * 13 + 2, 752 - bottom));
+    for (let row = 0; row < labelRows + valueRows; row++) {
+      const label = row < labelRows;
+      const height = label ? 11 : 13;
+      ensure(height);
+      cells.forEach((cell, column) => {
+        const value = label ? cell.labels[row] : cell.values[row - labelRows];
+        if (value !== undefined)
+          page.drawText(value, {
+            x: left + column * (cellWidth + gap),
+            y,
+            size: label ? 8 : 10,
+            font: regular,
+            color: label ? muted : ink,
+          });
+      });
+      y -= height;
+    }
+    y -= 2;
   }
   function conditions(r: Session["results"][number]) {
     return [
@@ -321,60 +347,94 @@ export async function createSessionPdf(
   );
   text(session.location || tr("common.noLocation"), 13);
   y -= 6;
-  field(tr("session.sport"), disciplineName(language, session.discipline));
-  if (session.program) field(tr("session.program"), session.program);
   const f = session.firearmSnapshot;
-  field(
-    tr("session.firearm"),
-    f
-      ? [f.make, f.model, caliberName(language, f.caliber)]
-          .filter(Boolean)
-          .join(" · ")
-      : tr("common.borrowedFirearm"),
+  const firearm = f
+    ? [
+        f.make,
+        f.model,
+        caliberName(language, f.caliber),
+        f.hasOptic ? tr("firearm.hasOptic") : "",
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : tr("common.borrowedFirearm");
+  fieldRow([
+    [tr("session.sport"), disciplineName(language, session.discipline)],
+    [tr("session.firearm"), firearm],
+  ]);
+  fieldRow([
+    ...(session.program
+      ? [[tr("session.program"), session.program] as [string, string]]
+      : []),
+    [tr("session.group"), session.group],
+  ]);
+  fieldRow([
+    [
+      tr("session.shootingTime"),
+      sharedConditions.seconds != null
+        ? sharedConditions.seconds + " s"
+        : tr("common.notSpecified"),
+    ],
+    [
+      tr("session.distance"),
+      sharedConditions.distance != null
+        ? sharedConditions.distance + " m"
+        : tr("common.notSpecified"),
+    ],
+    [
+      tr("session.target"),
+      sharedConditions.target
+        ? targetName(language, sharedConditions.target)
+        : tr("common.notSpecified"),
+    ],
+  ]);
+  const ruleGroups = appliedRuleGroups(session, ratings);
+  const editions = ruleGroups.map(
+    (group) =>
+      (group.edition
+        ? group.declared
+          ? group.edition
+          : localizeMessage(language, group.edition)
+        : tr("details.ruleEditionUnknown")) +
+      (ruleGroups.length > 1 ? " · " + group.series.join(", ") : ""),
   );
-  if (f?.hasOptic) text(tr("firearm.hasOptic"));
-  field(tr("session.group"), session.group);
+  const ruleField: [string, string] = [
+    tr("details.ruleVersion"),
+    editions.join("\n") || session.ruleReference || tr("details.notRecorded"),
+  ];
+  const ageGroups = appliedAgeGroups(ratings);
+  fieldRow([
+    ruleField,
+    ...(precision
+      ? [
+          [
+            tr("details.calculationAge"),
+            ageGroups
+              .map(
+                (group) =>
+                  (group.age === undefined
+                    ? tr("details.notRecorded")
+                    : tr("print.scoringAge", {
+                        age: group.age,
+                        year: group.year ?? "",
+                      })) +
+                  (ageGroups.length > 1 ? " · " + group.series.join(", ") : ""),
+              )
+              .join("\n") || tr("details.notRecorded"),
+          ] as [string, string],
+        ]
+      : []),
+  ]);
   text(
     tr("common.seriesCount", { count: session.results.length }) +
       " · " +
       session.results.reduce((sum, r) => sum + r.shots, 0) +
       " " +
       tr("session.shots").toLocaleLowerCase(locale),
+    9,
+    regular,
+    muted,
   );
-  if (sharedConditions.seconds != null)
-    field(tr("session.shootingTime"), sharedConditions.seconds + " s");
-  if (sharedConditions.distance != null)
-    field(tr("session.distance"), sharedConditions.distance + " m");
-  if (sharedConditions.target)
-    field(tr("session.target"), targetName(language, sharedConditions.target));
-  const ruleGroups = appliedRuleGroups(session, ratings);
-  for (const group of ruleGroups) {
-    field(
-      tr("details.ruleVersion"),
-      (group.edition
-        ? group.declared
-          ? group.edition
-          : localizeMessage(language, group.edition)
-        : tr("details.ruleEditionUnknown")) +
-        (ruleGroups.length > 1 ? " · " + group.series.join(", ") : ""),
-    );
-  }
-  if (!ruleGroups.length)
-    field(
-      tr("details.ruleVersion"),
-      session.ruleReference || tr("details.notRecorded"),
-    );
-  if (session.discipline === "precision") {
-    const ageGroups = appliedAgeGroups(ratings);
-    for (const group of ageGroups)
-      field(
-        tr("details.calculationAge"),
-        (group.age === undefined
-          ? tr("details.notRecorded")
-          : tr("basis.age", { age: group.age, year: group.year ?? "" })) +
-          (ageGroups.length > 1 ? " · " + group.series.join(", ") : ""),
-      );
-  }
   heading(tr("session.results"));
   headerRow();
   for (const { result: r, medal } of ratings) {

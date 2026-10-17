@@ -43,16 +43,14 @@ export default function View({ id }: { id: string }) {
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">{tr("print.shooter")}</span>
-          <h1>{data.profile.displayName || tr("common.notSpecified")}</h1>
-          <p>
+          <h1>
             {tr(
               s.context === "practice"
                 ? "session.practice"
                 : "session.competition",
             )}{" "}
             · <time dateTime={s.date}>{s.date}</time>
-          </p>
+          </h1>
           <p>{s.location || tr("common.noLocation")}</p>
         </div>
         <div className="actions">
