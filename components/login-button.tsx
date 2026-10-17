@@ -19,32 +19,25 @@ export function LoginButton() {
     return () => window.removeEventListener("pageshow", restore);
   }, []);
   return (
-    <form
-      action="/auth/github/"
-      method="get"
-      onSubmit={(event) => {
-        if (submitted.current) {
-          event.preventDefault();
-          return;
-        }
+    <button
+      type="button"
+      disabled={busy}
+      aria-busy={busy}
+      aria-label={busy ? tr("login.connecting") : undefined}
+      onClick={() => {
+        if (submitted.current) return;
         submitted.current = true;
         setBusy(true);
+        window.location.assign("/auth/github/");
       }}
     >
-      <button
-        type="submit"
-        disabled={busy}
-        aria-busy={busy}
-        aria-label={busy ? tr("login.connecting") : undefined}
-      >
-        {busy ? (
-          <LoadingIndicator label={tr("login.connecting")} />
-        ) : (
-          <>
-            <LogIn size={18} aria-hidden="true" /> {tr("login.github")}
-          </>
-        )}
-      </button>
-    </form>
+      {busy ? (
+        <LoadingIndicator label={tr("login.connecting")} />
+      ) : (
+        <>
+          <LogIn size={18} aria-hidden="true" /> {tr("login.github")}
+        </>
+      )}
+    </button>
   );
 }

@@ -1,5 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest";
 const mock = vi.hoisted(() => ({
+  invitations: vi.fn(),
   create: vi.fn(),
   cancel: vi.fn(),
   preview: vi.fn(),
@@ -27,7 +28,7 @@ vi.mock("../lib/witness/server", () => ({
 import { authenticated, AuthenticationRequired } from "../lib/auth/server";
 import { WitnessUnavailable } from "../lib/witness/store";
 import { RateLimited } from "../lib/auth/security-store";
-import { POST } from "../app/api/witness/route";
+import { GET, POST } from "../app/api/witness/route";
 import { session } from "./fixtures";
 const request = (body: unknown, origin = "https://example.test") =>
   new Request("https://example.test/api/witness/", {
@@ -124,4 +125,25 @@ it("limits anonymous traffic before journal access", async () => {
   expect(response.status).toBe(429);
   expect(response.headers.get("retry-after")).toBe("30");
   expect(mock.preview).not.toHaveBeenCalled();
+});
+
+it("denies unauthenticated invitation reads before owner storage is opened", async () => {
+  vi.mocked(authenticated).mockRejectedValue(new AuthenticationRequired());
+  const response = await GET(
+    new Request("https://example.test/api/witness/?sessionId=" + session.id),
+  );
+  expect(response.status).toBe(401);
+  expect(response.headers.get("cache-control")).toBe("private, no-store");
+  expect(mock.owner).not.toHaveBeenCalled();
+});
+it("reads invitations only from the authenticated owner's store with private response headers", async () => {
+  mock.invitations.mockResolvedValue([]);
+  const response = await GET(
+    new Request("https://example.test/api/witness/?sessionId=" + session.id),
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ invitations: [] });
+  expect(mock.invitations).toHaveBeenCalledWith(session.id);
+  expect(response.headers.get("cache-control")).toBe("private, no-store");
+  expect(response.headers.get("referrer-policy")).toBe("no-referrer");
 });

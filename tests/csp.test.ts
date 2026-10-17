@@ -1,3 +1,4 @@
+import { readdir } from "node:fs/promises";
 import { it, expect, vi, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 import { proxy } from "../proxy";
@@ -13,12 +14,16 @@ it("uses fresh production nonces, overrides forged headers and blocks executable
       }),
     ),
     b = proxy(new NextRequest("https://example.test"));
-  const csp = a.headers.get("Content-Security-Policy")!;
+  const csp = a.headers.get("Content-Security-Policy") ?? "";
   expect(csp).not.toBe(b.headers.get("Content-Security-Policy"));
   expect(csp).toContain("'strict-dynamic'");
   expect(
     csp.split(";").find((v) => v.trim().startsWith("script-src")),
   ).not.toMatch(/unsafe-inline|unsafe-eval/);
+  expect(csp).toContain("form-action 'self'");
+  expect(csp).toContain("connect-src 'self'");
+  expect(csp).toContain("base-uri 'none'");
+  expect(csp).not.toContain("github.com");
   expect(csp).toContain("object-src 'none'");
   expect(csp).toContain("frame-ancestors 'none'");
   expect(csp).toContain("img-src 'self' blob: data:");
@@ -46,12 +51,19 @@ it("does not clone API request bodies through Proxy", async () => {
   const { unstable_doesMiddlewareMatch } =
     await import("next/experimental/testing/server");
   const { config } = await import("../proxy");
-  for (const url of [
-    "/api/records",
-    "/api/records/",
-    "/api/photos/image",
-    "/api/photos/image/",
-  ]) {
+  const routes = (
+    await readdir(new URL("../app/api/", import.meta.url), { recursive: true })
+  )
+    .filter((path) => path.endsWith("route.ts"))
+    .map(
+      (path) =>
+        "/api/" +
+        path
+          .replaceAll("\\", "/")
+          .replace(/route\.ts$/, "")
+          .replaceAll("[id]", "fictional-id"),
+    );
+  for (const url of routes.flatMap((path) => [path, path.replace(/\/$/, "")])) {
     expect(
       unstable_doesMiddlewareMatch({
         config,
@@ -60,11 +72,15 @@ it("does not clone API request bodies through Proxy", async () => {
       }),
     ).toBe(false);
   }
-  expect(
-    unstable_doesMiddlewareMatch({
-      config,
-      nextConfig: {},
-      url: "/sessions/new/",
-    }),
-  ).toBe(true);
+  for (const url of [
+    "/login/",
+    "/sessions/new/",
+    "/auth/github/",
+    "/auth/github/callback/",
+    "/witness/",
+  ]) {
+    expect(unstable_doesMiddlewareMatch({ config, nextConfig: {}, url })).toBe(
+      true,
+    );
+  }
 });

@@ -3,7 +3,7 @@ import { expectLayout } from "./layout";
 import sv from "../../lib/locales/sv.json";
 import en from "../../lib/locales/en.json";
 for (const language of ["sv", "en"] as const) {
-  test(`login blocks repeated submissions and shows progress (${language})`, async ({
+  test(`login follows the real OAuth redirect under CSP without duplicate requests (${language})`, async ({
     page,
     journal,
   }) => {
@@ -12,56 +12,51 @@ for (const language of ["sv", "en"] as const) {
     await page.goto("/settings/");
     await expect(page.locator("html")).toHaveAttribute("lang", language);
     await page.waitForLoadState("networkidle");
-    await page.goto("/login/");
-    let requests = 0;
-    await page.route("**/auth/github/**", async (route) => {
-      requests++;
-      await route.fulfill({
-        contentType: "text/html",
-        body: "<main>Fictional GitHub sign-in</main>",
-      });
+    const login = await page.goto("/login/");
+    expect(login?.headers()["content-security-policy"]).toContain(
+      "form-action 'self'",
+    );
+    expect(login?.headers()["content-security-policy"]).not.toContain(
+      "github.com",
+    );
+    let providerRequests = 0;
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === "/login/oauth/authorize") {
+        providerRequests++;
+        expect(url.hostname).toBe("127.0.0.1");
+        expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+        expect(url.searchParams.get("state")).toBeTruthy();
+      }
     });
     const button = page.getByRole("button", {
       name: labels["login.github"],
       exact: true,
     });
     await expect(button).toBeEnabled();
-    // Observe native submissions after React's handler, holding navigation so
-    // the busy screen remains inspectable across browser engines.
-    await page.evaluate(() => {
-      const intercept = (event: SubmitEvent) => {
-        if (!(event.target instanceof HTMLFormElement)) return;
-        if (!event.defaultPrevented)
-          event.target.dataset.allowedSubmissions = String(
-            Number(event.target.dataset.allowedSubmissions ?? 0) + 1,
-          );
-        event.preventDefault();
-      };
-      window.addEventListener("submit", intercept);
-      window.addEventListener(
-        "allow-login-navigation",
-        () => window.removeEventListener("submit", intercept),
-        { once: true },
-      );
-    });
-    await button.click();
-    const pending = page.getByRole("button", {
-      name: labels["login.connecting"],
-      exact: true,
-    });
-    await expect(pending).toBeDisabled();
-    await expect(pending).toHaveAttribute("aria-busy", "true");
-    await expect(page.getByRole("status")).toHaveText(
-      labels["login.connecting"],
+    const start = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === "/auth/github/",
     );
-    const form = page.locator('form[action="/auth/github/"]');
-    await form.evaluate((form) => {
-      if (!(form instanceof HTMLFormElement))
-        throw new Error("Missing login form");
-      form.requestSubmit();
-      form.requestSubmit();
-    });
-    await expect(form).toHaveAttribute("data-allowed-submissions", "1");
+    await button.click();
+    const response = await start;
+    expect(response.status()).toBe(307);
+    // WebKit does not expose all redirect response headers. Assert the actual
+    // navigation; the test proxy rejects destinations other than GitHub.
+    await expect(page).toHaveURL(
+      /^http:\/\/127\.0\.0\.1:\d+\/login\/oauth\/authorize\?/,
+    );
+    const provider = new URL(page.url());
+    expect(provider.origin).not.toBe(new URL(login?.url() ?? "").origin);
+    expect(provider.searchParams.get("code_challenge_method")).toBe("S256");
+    await expect(
+      page.getByText("Fictional GitHub authorization"),
+    ).toBeVisible();
+    expect(providerRequests).toBe(1);
+    await page.goto("/login/?error=oauth");
+    await expect(page.locator('.notice[role="alert"]')).toHaveText(
+      labels["login.failed"],
+    );
+    await expect(button).toBeEnabled();
     await expectLayout(page);
     await page.screenshot({
       path: test.info().outputPath(`login-${language}.png`),
@@ -73,20 +68,5 @@ for (const language of ["sv", "en"] as const) {
       path: test.info().outputPath(`login-320-${language}.png`),
       fullPage: true,
     });
-    await page.evaluate(() => {
-      window.dispatchEvent(
-        new PageTransitionEvent("pageshow", { persisted: true }),
-      );
-      window.dispatchEvent(new Event("allow-login-navigation"));
-    });
-    await expect(button).toBeEnabled();
-    await button.click();
-    await expect(page).toHaveURL(/\/auth\/github\/\??$/);
-    await page.goto("/login/?error=oauth");
-    await expect(page.locator('.notice[role="alert"]')).toHaveText(
-      labels["login.failed"],
-    );
-    await expect(button).toBeEnabled();
-    expect(requests).toBe(1);
   });
 }

@@ -12,10 +12,23 @@ type Journal = {
   readonly writes: number;
   readonly records: Records;
 };
-export const test = base.extend<{ journal: Journal; browserErrors: void }>({
+export const test = base.extend<{
+  journal: Journal;
+  browserErrors: void;
+  expectedCspDirectives: string[];
+}>({
+  expectedCspDirectives: [[], { option: true }],
   journal: [
-    async ({ context, baseURL }, use) => {
+    async ({ context, baseURL }, use, testInfo) => {
       if (!baseURL) throw new Error("UI test baseURL is required");
+      await context.setExtraHTTPHeaders({
+        "x-ui-client-ip":
+          "192.0.2." +
+          (testInfo.config.projects.findIndex(
+            (project) => project.name === testInfo.project.name,
+          ) +
+            1),
+      });
       let writes = 0;
       let records: Records = {
         profile: { ...profile, displayName: "Fixture Shooter" },
@@ -139,11 +152,79 @@ export const test = base.extend<{ journal: Journal; browserErrors: void }>({
     { auto: true },
   ],
   browserErrors: [
-    async ({ page }, use) => {
+    async (
+      { page, context, baseURL, browserName, expectedCspDirectives },
+      use,
+    ) => {
       const errors: string[] = [];
+      const violations: string[] = [];
+      let screenshotStyleAllowance = 0;
+      const screenshot = page.screenshot.bind(page);
+      page.screenshot = async (options) => {
+        // WebKit's Playwright screenshotter injects and removes `body {}` at
+        // line 5 of its utility script to synchronize animations. Keep CSP
+        // enforced; recognize only that blocked tooling style during capture.
+        screenshotStyleAllowance = browserName === "webkit" ? 1 : 0;
+        try {
+          return await screenshot(options);
+        } finally {
+          screenshotStyleAllowance = 0;
+        }
+      };
+      await context.addInitScript(() => {
+        document.addEventListener("securitypolicyviolation", (event) => {
+          console.error(
+            "MYSHOTLOG_CSP_VIOLATION:" +
+              JSON.stringify({
+                directive: event.effectiveDirective.startsWith("script-src")
+                  ? "script-src"
+                  : event.effectiveDirective,
+                source: event.sourceFile,
+                line: event.lineNumber,
+                blocked: event.blockedURI,
+              }),
+          );
+        });
+      });
+      page.on("console", (message) => {
+        if (
+          message.type() !== "error" ||
+          !message.text().startsWith("MYSHOTLOG_CSP_VIOLATION:")
+        )
+          return;
+        const violation = JSON.parse(
+          message.text().slice("MYSHOTLOG_CSP_VIOLATION:".length),
+        ) as {
+          directive: string;
+          source: string;
+          line: number;
+          blocked: string;
+        };
+        if (
+          screenshotStyleAllowance &&
+          violation.directive === "style-src-elem" &&
+          violation.source === "" &&
+          violation.line === 5 &&
+          violation.blocked === "inline"
+        ) {
+          screenshotStyleAllowance--;
+          return;
+        }
+        violations.push(violation.directive);
+      });
+      page.on("request", (request) => {
+        const url = new URL(request.url());
+        const localProvider =
+          url.protocol === "http:" &&
+          url.hostname === "127.0.0.1" &&
+          url.pathname === "/login/oauth/authorize";
+        if (url.origin !== new URL(baseURL ?? "").origin && !localProvider)
+          errors.push("Unexpected external request: " + url.origin);
+      });
       page.on("pageerror", (error) => errors.push(error.message));
       await use();
       expect(errors).toEqual([]);
+      expect(violations.sort()).toEqual([...expectedCspDirectives].sort());
     },
     { auto: true },
   ],

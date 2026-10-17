@@ -46,10 +46,11 @@ export default defineConfig({
   webServer: {
     command:
       (process.env.UI_SKIP_BUILD === "1" ? "" : "npm run build && ") +
-      "npm run start -- --hostname 127.0.0.1 --port 3096",
+      "node scripts/ui-server.mjs",
     url: "http://127.0.0.1:3096",
     reuseExistingServer: false,
     timeout: 180000,
+    gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },
     env: {
       VERCEL: "0",
       NODE_ENV: "production",
@@ -60,7 +61,8 @@ export default defineConfig({
       GITHUB_CLIENT_SECRET: "ui-fixture",
       GITHUB_ALLOWED_USER_IDS: "111",
       GITHUB_USER_ID_MAP: "{}",
-      GIT_DATABASE_PROVIDER: "github",
+      AUTH_TRUSTED_IP_HEADER: "x-ui-client-ip",
+      GIT_DATABASE_PROVIDER: "git",
       GIT_DATABASE_REPOSITORY: "fictional-myshotlog/ui-data",
       GIT_DATABASE_TOKEN: "ui-fixture-not-a-real-token",
       GIT_DATABASE_BRANCH: "main",
