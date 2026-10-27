@@ -57,3 +57,34 @@ test("production CSP blocks external forms, external fetches and inline scripts"
   ).toBe(false);
   expect(page.url()).toMatch(/\/__csp-inline-probe__\/$/);
 });
+
+test.describe("screenshot CSP monitoring", () => {
+  test.use({ expectedCspDirectives: ["style-src-elem"] });
+
+  test("screenshots retain CSP enforcement for application styles", async ({
+    page,
+  }) => {
+    await page.goto("/login/");
+    await page.screenshot();
+    await page.screenshot();
+    const blocked = page.waitForEvent("console", {
+      predicate: (message) =>
+        message.text().startsWith("MYSHOTLOG_CSP_VIOLATION:") &&
+        JSON.parse(message.text().slice("MYSHOTLOG_CSP_VIOLATION:".length))
+          .directive === "style-src-elem",
+    });
+    await page.evaluate(() => {
+      const style = document.createElement("style");
+      style.textContent = "html { --csp-probe: applied; }";
+      document.head.append(style);
+    });
+    await blocked;
+    expect(
+      await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue(
+          "--csp-probe",
+        ),
+      ),
+    ).toBe("");
+  });
+});

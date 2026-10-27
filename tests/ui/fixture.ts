@@ -4,6 +4,11 @@ import { project, batchSchema } from "../../lib/sync/model";
 import type { Records } from "../../lib/models";
 import { profile, firearm, session } from "../fixtures";
 import { recordSeries } from "../../lib/rules/recorded";
+import {
+  captureWithCspEvent,
+  isScreenshotStyle,
+  type CspViolation,
+} from "./csp-monitor";
 export const uiSigningKey =
   "myshotlog-ui-only-signing-key-not-for-real-deployments-0123456789";
 export const uiOrigin = "https://ui.myshotlog.test";
@@ -166,7 +171,20 @@ export const test = base.extend<{
         // enforced; recognize only that blocked tooling style during capture.
         screenshotStyleAllowance = browserName === "webkit" ? 1 : 0;
         try {
-          return await screenshot(options);
+          if (browserName !== "webkit") return await screenshot(options);
+          const blockedStyle = page.waitForEvent("console", {
+            predicate: (message) =>
+              message.text().startsWith("MYSHOTLOG_CSP_VIOLATION:") &&
+              isScreenshotStyle(
+                JSON.parse(
+                  message.text().slice("MYSHOTLOG_CSP_VIOLATION:".length),
+                ) as CspViolation,
+              ),
+          });
+          return await captureWithCspEvent(
+            () => screenshot(options),
+            blockedStyle,
+          );
         } finally {
           screenshotStyleAllowance = 0;
         }
@@ -194,19 +212,8 @@ export const test = base.extend<{
           return;
         const violation = JSON.parse(
           message.text().slice("MYSHOTLOG_CSP_VIOLATION:".length),
-        ) as {
-          directive: string;
-          source: string;
-          line: number;
-          blocked: string;
-        };
-        if (
-          screenshotStyleAllowance &&
-          violation.directive === "style-src-elem" &&
-          violation.source === "" &&
-          violation.line === 5 &&
-          violation.blocked === "inline"
-        ) {
+        ) as CspViolation;
+        if (screenshotStyleAllowance && isScreenshotStyle(violation)) {
           screenshotStyleAllowance--;
           return;
         }
