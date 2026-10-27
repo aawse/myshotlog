@@ -229,7 +229,11 @@ export const test = base.extend<{
           errors.push("Unexpected external request: " + url.origin);
       });
       page.on("pageerror", (error) => errors.push(error.message));
-      await use();
+      try {
+        await use();
+      } finally {
+        page.screenshot = screenshot;
+      }
       expect(errors).toEqual([]);
       expect(violations.sort()).toEqual([...expectedCspDirectives].sort());
     },
