@@ -2,6 +2,8 @@
 
 Personlig journal för skytte, träning och tävling, byggd med Next.js och React. Inloggning sker med GitHub-konton. Journalen lagras i ett **konfigurerbart privat Git-repository**, med en commit per sparad post. GitHub API används på Vercel; en Git-adapter finns för egen server och lokala bare repositories.
 
+[![Tests](https://github.com/aawse/myshotlog/actions/workflows/tests.yml/badge.svg)](https://github.com/aawse/myshotlog/actions/workflows/tests.yml) [![UI tests](https://github.com/aawse/myshotlog/actions/workflows/ui-tests.yml/badge.svg)](https://github.com/aawse/myshotlog/actions/workflows/ui-tests.yml)
+
 ## Funktioner
 
 - Svenska och engelska, med språkval sparat i profilen. Svenska används om inget språk har valts. Egna namn, platser och anteckningar översätts inte.
