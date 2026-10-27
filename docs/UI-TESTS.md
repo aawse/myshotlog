@@ -96,3 +96,13 @@ Chrome samt Chrome/Edge/Firefox på Windows och Safari på macOS. Kontrollera s�
 Se [Playwrights webbläsare](https://playwright.dev/docs/browsers),
 [enhetsemulering](https://playwright.dev/docs/emulation) och
 [Next.js installationsstöd](https://nextjs.org/docs/app/guides/progressive-web-apps).
+
+## Upprepade körningar
+
+Kör exempelvis `npm run test:ui:repeat -- 5 tests/ui/login.spec.ts tests/ui/csp.spec.ts`
+för att undersöka intermittenta fel. Kommandot bygger en gång med UI-testernas
+publika bygginställningar och startar sedan en ny server med en tom tillfällig
+Git-databas för varje körning. Det stoppar vid första felet. Använd detta i stället
+för `--repeat-each` för OAuth-proven: delad serverstatus når annars gränsen fem
+inloggningsstarter per klient eller tjugo per installation under tio minuter.
+Produktionsgränserna ändras inte.
