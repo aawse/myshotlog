@@ -11,7 +11,11 @@ import {
   type GitSnapshot,
   type EntryCommit,
 } from "../lib/git-database/types";
-import { exportRecords, parseImport } from "../lib/portability";
+import {
+  assessmentSchema,
+  exportRecords,
+  parseImport,
+} from "../lib/portability";
 import { quickEntryInputSchema } from "../lib/models";
 import { profile, session } from "./fixtures";
 vi.mock("next/navigation", () => ({
@@ -278,5 +282,123 @@ it("captures an IPSC rule reference rather than an SPSF assessment version", asy
   await store.mutate("quick-entry", q);
   expect((await store.records()).quickEntries![0].ruleVersion).toBe(
     "IPSC 2026",
+  );
+});
+
+for (const action of ["attach-quick", "session-with-quick"]) {
+  it(`evaluates quick application series with recorded time via ${action}`, async () => {
+    const { store } = setup();
+    const original = quick();
+    const q = {
+      ...original,
+      discipline: "application",
+      result: {
+        id: original.id,
+        label: "Tillämpning",
+        type: "application",
+        shots: 6,
+        hits: 6,
+        elapsedSeconds: 10,
+      },
+    };
+    const application = {
+      ...pass,
+      discipline: "application",
+      seconds: null,
+      results: [{ ...q.result, id: pass.results[0].id }],
+    };
+    await store.mutate("quick-entry", q);
+    if (action === "attach-quick") {
+      await store.mutate("session", application);
+      await store.mutate(action, {
+        ids: [q.id],
+        sessionId: pass.id,
+        revision: pass.revision,
+      });
+    } else {
+      await store.mutate(action, {
+        ids: [q.id],
+        session: { ...application, results: [q.result] },
+      });
+    }
+    const { assessments, quickEntries } = await store.records();
+    expect(quickEntries).toEqual([]);
+    expect(assessments.filter((a) => a.resultId === q.id)).toMatchObject([
+      { level: "bronze", status: "met" },
+      { level: "silver", status: "met" },
+      { level: "gold", status: "met" },
+    ]);
+  });
+}
+
+it("fills missing evaluations without altering the session or completed evaluations", async () => {
+  const { store, db } = setup();
+  const q = quick();
+  await store.mutate("profile", profile);
+  await store.mutate("session", {
+    ...pass,
+    results: [...pass.results, q.result],
+  });
+  const path = db.commits.at(-1)?.changes[0].path;
+  if (!path) throw new Error("Missing session fixture");
+  const saved = JSON.parse(db.files.get(path) ?? "");
+  saved.assessments = assessmentSchema
+    .array()
+    .parse(saved.assessments)
+    .filter((a) => a.resultId !== q.id);
+  db.files.set(path, JSON.stringify(saved));
+  const before = await store.records();
+  expect(before.assessments).toHaveLength(3);
+  const request = { sessionId: pass.id, revision: pass.revision };
+  const other = new GitJournalStore(db, "20000000-0000-4000-8000-000000000002");
+  await expect(
+    other.mutate("evaluate-session", request),
+  ).rejects.toBeInstanceOf(RecordNotFound);
+  await expect(
+    store.mutate("evaluate-session", { ...request, revision: 2 }),
+  ).rejects.toBeInstanceOf(DatabaseConflict);
+  await expect(
+    store.mutate("evaluate-session", { ...request, results: [] }),
+  ).rejects.toThrow();
+  await store.mutate("evaluate-session", request);
+  const after = await store.records();
+  expect(after.sessions).toEqual(before.sessions);
+  expect(after.assessments).toHaveLength(6);
+  expect(after.assessments.slice(0, 3)).toEqual(before.assessments);
+  expect(after.assessments.every((a) => a.status === "met")).toBe(true);
+  const revision = db.revision;
+  await store.mutate("evaluate-session", request);
+  expect(db.revision).toBe(revision);
+  expect(await store.records()).toEqual(after);
+});
+
+it("reruns a stored unevaluated application series using its original birth information", async () => {
+  const { db, store } = setup();
+  const { id, label } = pass.results[0];
+  await store.mutate("profile", { ...profile, birthYear: 1960 });
+  await store.mutate("session", {
+    ...pass,
+    discipline: "application",
+    seconds: null,
+    results: [{ id, label, type: "application", shots: 6, hits: 6 }],
+  });
+  const path = db.commits.at(-1)?.changes[0].path;
+  if (!path) throw new Error("Missing session fixture");
+  const saved = JSON.parse(db.files.get(path) ?? "");
+  saved.entry.results[0].elapsedSeconds = 10;
+  db.files.set(path, JSON.stringify(saved));
+  await store.mutate("profile", profile);
+  const before = await store.records();
+  expect(before.assessments.map((a) => a.status)).toEqual(
+    Array(3).fill("not-evaluated"),
+  );
+  await store.mutate("evaluate-session", {
+    sessionId: pass.id,
+    revision: pass.revision,
+  });
+  const after = await store.records();
+  expect(after.assessments.map((a) => a.status)).toEqual(Array(3).fill("met"));
+  expect(after.assessments.map((a) => a.input)).toMatchObject(
+    Array(3).fill({ birthYear: 1960 }),
   );
 });

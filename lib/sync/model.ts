@@ -15,7 +15,7 @@ import { assessmentSchema } from "../portability";
 import { witnessSchema } from "../witness/model";
 import { photoDraftSchema } from "../photos/schema";
 import { rules } from "../rules/catalog";
-import { recordSeries } from "../rules/recorded";
+import { evaluatePendingSeries, recordSeries } from "../rules/recorded";
 import { sessionSetup } from "../session-setup";
 export const headSchema = z
   .string()
@@ -45,6 +45,7 @@ export const actions = [
   "session",
   "session-with-quick",
   "attach-quick",
+  "evaluate-session",
   "quick-entry",
   "delete-session",
   "delete-quick-entry",
@@ -133,6 +134,12 @@ const linkSchema = z
     revision: z.number().int().optional(),
   })
   .strict();
+export const evaluationRequestSchema = z
+  .object({
+    sessionId: z.uuid(),
+    revision: z.number().int().min(1),
+  })
+  .strict();
 export function normalizePayload(
   action: Operation["action"],
   payload: unknown,
@@ -140,6 +147,8 @@ export function normalizePayload(
   if (action === "profile") return profileSchema.parse(payload);
   if (action === "firearm") return firearmSchema.parse(payload);
   if (action === "session") return sessionSchema.parse(payload);
+  if (action === "evaluate-session")
+    return evaluationRequestSchema.parse(payload);
   if (action === "quick-entry") return quickEntryInputSchema.parse(payload);
   if (action === "delete-session" || action === "delete-quick-entry")
     return z.object({ id: z.uuid() }).strict().parse(payload);
@@ -220,7 +229,31 @@ export function applyOperation(data: Records, operation: Operation): Records {
     next.quickEntries = (next.quickEntries ?? []).filter(
       (e) => e.id !== (payload as { id: string }).id,
     );
-  else if (action === "delete-session") {
+  else if (action === "evaluate-session") {
+    const { sessionId, revision } = evaluationRequestSchema.parse(payload);
+    const session = next.sessions.find((s) => s.id === sessionId);
+    if (!session || session.revision !== revision)
+      throw new Error("sync.missingDependency");
+    const previous = next.assessments.filter((a) => a.sessionId === sessionId);
+    const assessments = evaluatePendingSeries(
+      sessionSetup(session),
+      capturedProfile(next.profile, operation.recording),
+      previous,
+    ).map((assessment, index) => ({
+      ...assessment,
+      id: operation.id.slice(0, 24) + index.toString(16).padStart(12, "0"),
+      createdAt: operation.recording.recordedAt,
+    }));
+    const updated = new Set(assessments.map((a) => a.resultId + ":" + a.level));
+    next.assessments = next.assessments
+      .filter(
+        (a) =>
+          a.sessionId !== sessionId ||
+          a.revision !== revision ||
+          !updated.has(a.resultId + ":" + a.level),
+      )
+      .concat(assessments);
+  } else if (action === "delete-session") {
     const id = (payload as { id: string }).id;
     next.sessions = next.sessions.filter((s) => s.id !== id);
     next.assessments = next.assessments.filter((a) => a.sessionId !== id);

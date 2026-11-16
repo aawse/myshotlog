@@ -250,3 +250,36 @@ it("returns a reviewable conflict for stale session revisions even if the suppli
   ).rejects.toBeInstanceOf(SyncConflict);
   expect(db.count).toBe(before);
 });
+
+it("projects and synchronizes missing assessments without creating a session revision", async () => {
+  const db = new MemoryDatabase(),
+    store = new GitJournalStore(db, owner);
+  await store.mutate("firearm", firearm);
+  await store.mutate("session", session);
+  const path = db.commits.at(-1)?.changes[0].path;
+  if (!path) throw new Error("Missing session fixture");
+  const saved = JSON.parse(db.files.get(path) ?? "");
+  db.files.set(path, JSON.stringify({ ...saved, assessments: [] }));
+  const before = await store.records();
+  const evaluation = operation(
+    "evaluate-session",
+    { sessionId: session.id, revision: session.revision },
+    before,
+  );
+  const expected = applyOperation(before, evaluation);
+  expect(expected.sessions).toEqual(before.sessions);
+  expect(expected.assessments.map((a) => a.status)).toEqual([
+    "met",
+    "met",
+    "met",
+  ]);
+  const synced = await synchronize(db, owner, prefix, [evaluation]);
+  expect(synced.records.sessions).toEqual(expected.sessions);
+  expect(synced.records.assessments.map((a) => a.input)).toEqual(
+    expected.assessments.map((a) => a.input),
+  );
+  const count = db.count;
+  const replay = await synchronize(db, owner, prefix, [evaluation]);
+  expect(replay.acknowledged).toEqual([evaluation.id]);
+  expect(db.count).toBe(count);
+});

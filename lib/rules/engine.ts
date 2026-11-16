@@ -109,22 +109,23 @@ export function evaluate(
         ),
       );
     }
+    const shootingTime = result.seconds ?? (result.elapsedSeconds || undefined);
     if (
       result.type !== "application" ||
       Boolean(result.penaltySeconds) ||
       result.shots !== 6 ||
       result.hits === undefined ||
-      result.seconds === undefined
+      shootingTime === undefined
     )
       return out("not-evaluated", swText("rules.applicationInput"));
     const hits = rule.application[i],
       seconds = rule.applicationSeconds[group][i];
     return out(
-      result.hits >= hits && result.seconds <= seconds ? "met" : "not-met",
+      result.hits >= hits && shootingTime <= seconds ? "met" : "not-met",
       t("sv", "rules.applicationScore", {
         hits: result.hits,
         requiredHits: hits,
-        seconds: result.seconds,
+        seconds: shootingTime,
         allowedSeconds: seconds,
       }),
     );

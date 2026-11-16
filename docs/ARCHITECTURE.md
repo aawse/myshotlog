@@ -34,7 +34,7 @@ API-rutter går förbi Next.js Proxy:s body-kloning. Records-API läser högst 3
 
 ## Resultat och regler
 
-Journalen beräknar brons/silver/guld från råresultat med regelkatalogen för passdatumet. Beräkningsfunktionen skapar inga commits och används för visning. Regel-ID och födelseunderlag följer sparade bedömningar; katalogen styr trösklarna vid läsning. Bevara därför historiska katalogperioder och trösklar när en ny upplaga läggs till.
+Journalen beräknar brons/silver/guld från råresultat med regelkatalogen för passdatumet. Visningen skapar inga commits. Koppling av snabbserier sparar bedömningarna i samma transaktion som passet. En manuell bedömning sparar nya slutsatser för tidigare ej bedömda serier utan att ändra passets revision. Regel-ID och födelseunderlag följer sparade bedömningar; katalogen styr trösklarna vid läsning. Bevara därför historiska katalogperioder och trösklar när en ny upplaga läggs till.
 
 Sparade födelseuppgifter från seriens underlag används när de finns; annars används profilen. Åldersavdrag baseras på året före passåret. Utan födelseuppgifter gäller ordinarie gränser. Automatisk märkesbedömning finns för precision och tillämpning; övriga grenar kan registreras. Se [regeltäckningen](RULES.md).
 

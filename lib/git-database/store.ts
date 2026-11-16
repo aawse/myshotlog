@@ -1,5 +1,6 @@
 import { suggestedRuleReference } from "../events/programs";
 import {
+  evaluationRequestSchema,
   recordingSchema,
   capturedProfile,
   type RecordingContext,
@@ -32,7 +33,7 @@ import { assessmentSchema, parseImport } from "../portability";
 import { sessionSetup } from "../session-setup";
 import { rules } from "../rules/catalog";
 import { evaluate } from "../rules/engine";
-import { recordSeries } from "../rules/recorded";
+import { evaluatePendingSeries, recordSeries } from "../rules/recorded";
 import {
   DatabaseConflict,
   validPath,
@@ -203,9 +204,14 @@ export class GitJournalStore {
     // Preserve the first historical assessment per series, including captured birth
     // information, without scanning the entire journal for every evaluation.
     const history = new Map<string, Assessment>();
+    const latest = new Map<string, Assessment>();
     for (const assessment of records.assessments) {
       const key = assessment.sessionId + ":" + assessment.resultId;
       if (!history.has(key)) history.set(key, assessment);
+      latest.set(
+        key + ":" + assessment.revision + ":" + assessment.level,
+        assessment,
+      );
     }
     records.assessments = records.sessions.flatMap((session) =>
       session.results.flatMap((result) => {
@@ -215,11 +221,25 @@ export class GitJournalStore {
           result,
           records.profile,
           previous ? [previous] : [],
-        ).map((assessment) => ({
-          ...assessment,
-          id: assessmentId(session.id, result.id, assessment.level),
-          createdAt: previous?.createdAt ?? session.date + "T00:00:00Z",
-        }));
+        ).flatMap((assessment) => {
+          const saved = latest.get(
+            session.id +
+              ":" +
+              result.id +
+              ":" +
+              session.revision +
+              ":" +
+              assessment.level,
+          );
+          if (!saved) return [];
+          return [
+            {
+              ...(saved.status === "not-evaluated" ? saved : assessment),
+              id: assessmentId(session.id, result.id, assessment.level),
+              createdAt: previous?.createdAt ?? saved.createdAt,
+            },
+          ];
+        });
       }),
     );
     return records;
@@ -506,6 +526,32 @@ export class GitJournalStore {
               { path: this.entryPath("quick-entries", q.id), content: null },
             ],
           });
+      } else if (action === "evaluate-session") {
+        const { sessionId, revision } = evaluationRequestSchema.parse(payload);
+        const entry = records.sessions.find((s) => s.id === sessionId);
+        if (!entry) throw new RecordNotFound();
+        if (entry.revision !== revision) throw new DatabaseConflict();
+        const previous = records.assessments.filter(
+          (a) => a.sessionId === sessionId,
+        );
+        const createdAt = new Date().toISOString();
+        const assessments = evaluatePendingSeries(
+          sessionSetup(entry),
+          recording
+            ? capturedProfile(records.profile, recording)
+            : records.profile,
+          previous,
+        ).map((assessment) => ({
+          ...assessment,
+          id: crypto.randomUUID(),
+          createdAt,
+        }));
+        if (assessments.length)
+          put(
+            this.entryPath("sessions", entry.id),
+            { version: 1, entry, assessments: [...previous, ...assessments] },
+            `MyShotLog: evaluate session ${entry.id} revision ${entry.revision}`,
+          );
       } else if (action === "delete-session") {
         const { id } = z.object({ id: z.uuid() }).strict().parse(payload);
         if (!records.sessions.some((s) => s.id === id))

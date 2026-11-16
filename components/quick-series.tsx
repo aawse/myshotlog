@@ -357,7 +357,8 @@ export function QuickSeries({
               />
             </label>
           )}
-          {["time", "dynamic", "open"].includes(kind) && (
+          {(sport === "application" ||
+            ["time", "dynamic", "open"].includes(kind)) && (
             <label>
               {tr("session.elapsedSeconds")}
               <input

@@ -6,6 +6,8 @@ import { hitFactor } from "@/lib/result-metrics";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
 import Link from "next/link";
+import { useState } from "react";
+import { mutate } from "@/components/mutate";
 import { PhotoViewer } from "@/components/photo-viewer";
 import { Medal, CircleX, CircleHelp, ChevronDown } from "lucide-react";
 import { JournalMissing } from "../journal-missing";
@@ -21,6 +23,9 @@ import { SessionPrint } from "@/components/session-print";
 import { SessionActions } from "@/components/session-actions";
 export default function View({ id }: { id: string }) {
   const { tr, language } = useI18n();
+  const [evaluating, setEvaluating] = useState(false);
+  const [evaluationDone, setEvaluationDone] = useState(false);
+  const [evaluationError, setEvaluationError] = useState("");
 
   const labels = {
     "not-applicable": tr("assessment.notApplicable"),
@@ -39,6 +44,22 @@ export default function View({ id }: { id: string }) {
   const ratings = sessionSeriesRatings(s, assessments);
   const ruleGroups = appliedRuleGroups(s, ratings);
   const ageGroups = appliedAgeGroups(ratings);
+  const hasUnevaluated = ratings.some(
+    ({ status }) => status === "not-evaluated",
+  );
+  async function evaluateSeries(sessionId: string, revision: number) {
+    setEvaluating(true);
+    setEvaluationDone(false);
+    setEvaluationError("");
+    try {
+      await mutate("evaluate-session", { sessionId, revision });
+      setEvaluationDone(true);
+    } catch (error) {
+      setEvaluationError((error as Error).message);
+    } finally {
+      setEvaluating(false);
+    }
+  }
   return (
     <>
       <div className="page-heading">
@@ -161,6 +182,30 @@ export default function View({ id }: { id: string }) {
         <div className="session-assessments">
           <h2>{tr("details.assessments")}</h2>
           <p className="muted">{tr("details.assessmentHelp")}</p>
+          {(hasUnevaluated || evaluating) && (
+            <div className="actions">
+              <button
+                type="button"
+                className="secondary"
+                disabled={evaluating}
+                onClick={() => evaluateSeries(s.id, s.revision)}
+              >
+                {tr("details.evaluateSeries")}
+              </button>
+            </div>
+          )}
+          {evaluationDone && (
+            <p role="status" className="muted">
+              {tr(
+                hasUnevaluated
+                  ? "details.evaluationIncomplete"
+                  : "details.evaluationDone",
+              )}
+            </p>
+          )}
+          {evaluationError && (
+            <p role="alert">{localizeMessage(language, evaluationError)}</p>
+          )}
           {ratings.map(({ result, medal, status, assessment: a, points }) => {
             const summary = (
               <>

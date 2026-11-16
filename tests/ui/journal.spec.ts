@@ -277,3 +277,39 @@ for (const language of ["sv", "en"] as const) {
     });
   });
 }
+
+for (const language of ["sv", "en"] as const) {
+  test(`evaluates missing series from the session (${language})`, async ({
+    page,
+    journal,
+  }) => {
+    const t = { sv, en }[language];
+    journal.setLanguage(language);
+    const session = journal.records.sessions[0];
+    journal.records.assessments = [];
+    await page.goto(`/sessions/${session.id}/`);
+    const button = page.getByRole("button", {
+      name: t["details.evaluateSeries"],
+    });
+    await expect(button).toBeVisible();
+    await expectLayout(page);
+    await page.screenshot({
+      path: test.info().outputPath("before-evaluation.png"),
+      fullPage: true,
+    });
+    await button.click();
+    await expect(
+      page.getByRole("status").filter({ hasText: t["details.evaluationDone"] }),
+    ).toBeVisible();
+    await expect(button).toHaveCount(0);
+    await expect.poll(() => journal.records.assessments.length).toBe(3);
+    await page.locator(".assessment-summary").click();
+    await expect(page.locator(".assessment-basis")).toBeVisible();
+    await page.screenshot({
+      path: test.info().outputPath("after-evaluation.png"),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 320, height: 740 });
+    await expectLayout(page);
+  });
+}

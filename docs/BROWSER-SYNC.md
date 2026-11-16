@@ -4,7 +4,7 @@ MyShotLog läser journalen från en lokal IndexedDB-kopia och synkroniserar med 
 
 ## Så fungerar sparning
 
-Profil, vapen, pass, snabbserier, koppling av snabbserier och enskilda raderingar sparas först i en atomisk IndexedDB-transaktion tillsammans med en väntande operation. Appen bekräftar lokal sparning först när transaktionen är klar. Listor och formulär uppdateras direkt. Optimerade JPEG-foton följer med kön och kan visas innan de har laddats upp.
+Profil, vapen, pass, snabbserier, koppling av snabbserier, bedömning av serier och enskilda raderingar sparas först i en atomisk IndexedDB-transaktion tillsammans med en väntande operation. Appen bekräftar lokal sparning först när transaktionen är klar. Listor och formulär uppdateras direkt. Optimerade JPEG-foton följer med kön och kan visas innan de har laddats upp.
 
 Den kompakta statusknappen längst ned till höger skiljer **sparat på denna enhet** från **sparat på GitHub**. Synkning startar ungefär 1,5 sekunder efter en sparning, vid återanslutning och fokus samt ungefär var 30:e sekund när appen är synlig. Öppna statusknappen för fullständig information, **Synka nu**, säkerhetskopior och konfliktgranskning. **Synka nu** startar en kontroll manuellt. Flera ändringar skickas i en batch med högst 20 operationer och cirka 2,7 MB operationsdata. Varje journalpost, revision, bild och koppling behåller sin egen Git-commit; hela kedjan blir synlig genom en enda icke-forcerad uppdatering av databranchens referens.
 

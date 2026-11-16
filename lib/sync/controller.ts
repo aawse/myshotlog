@@ -465,7 +465,10 @@ export class BrowserJournal {
               (view.sessions.find((s) => s.id === session.id)?.revision ?? 0) +
               1;
           }
-          if (operation.action === "attach-quick")
+          if (
+            operation.action === "attach-quick" ||
+            operation.action === "evaluate-session"
+          )
             payload.revision = view.sessions.find(
               (s) => s.id === payload.sessionId,
             )?.revision;

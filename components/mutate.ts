@@ -1,5 +1,5 @@
 import type { BrowserJournal } from "@/lib/sync/controller";
-import type { Target } from "@/lib/sync/model";
+import { actions, type Operation, type Target } from "@/lib/sync/model";
 let journal: BrowserJournal | undefined;
 export function installJournal(value: BrowserJournal) {
   journal = value;
@@ -25,19 +25,7 @@ export async function mutate(
   photos: PhotoDraft[] = [],
   expected: Target[] = [],
 ) {
-  if (
-    journal &&
-    [
-      "profile",
-      "firearm",
-      "session",
-      "session-with-quick",
-      "attach-quick",
-      "quick-entry",
-      "delete-session",
-      "delete-quick-entry",
-    ].includes(action)
-  )
+  if (journal && actions.includes(action as Operation["action"]))
     return journal.enqueue(action, payload, photos, expected).catch((error) => {
       throw translateError(error);
     });
