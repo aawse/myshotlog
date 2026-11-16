@@ -131,6 +131,7 @@ eller hemligheter behövs. Mobilprofiler är emulering; kamera, installation och
 operativsystem behöver också kontrolleras på riktiga enheter.
 För upprepade körningar med isolerad serverstatus, använd
 `npm run test:ui:repeat -- 5` i stället för Playwrights `--repeat-each` för OAuth-prov.
+På macOS använder testsvitens Firefox en tillfällig katalog för appdata.
 Se [UI-tester och mobil användning](docs/UI-TESTS.md).
 
 Appen kan läggas till på hemskärmen i webbläsare som stöder installation via

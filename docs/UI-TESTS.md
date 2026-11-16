@@ -14,7 +14,9 @@ Playwright är en separat utvecklingsberoende testkörare. `npm test` kör fortf
 alla enhetstester med Vitest. UI-testerna bygger projektet och startar en egen
 produktionsserver på loopback. En redan startad server återanvänds aldrig.
 Kommandona fungerar på Windows, macOS och Linux. På Linux installerar
-`test:ui:install` även webbläsarnas systembibliotek och kan behöva administratörsrättigheter.
+`test:ui:install` även webbläsarnas systembibliotek och kan behöva administratörsrättigheter. På macOS får Playwrights Firefox en tillfällig katalog
+för appdata så att teststarten fungerar även när macOS skyddar den vanliga
+Firefox-installationens appdata. Katalogen städas när testarbetaren avslutas.
 
 Kör ett projekt med `npx playwright test --project=ios-safari`. Öppna den lokala
 rapporten med `npx playwright show-report`. `UI_SKIP_BUILD=1` får bara användas efter

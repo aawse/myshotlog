@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test as base, expect } from "@playwright/test";
 import { signSession } from "../../lib/auth/session";
 import { project, batchSchema } from "../../lib/sync/model";
@@ -22,6 +25,37 @@ export const test = base.extend<{
   browserErrors: void;
   expectedCspDirectives: string[];
 }>({
+  launchOptions: [
+    async ({ browserName, launchOptions }, use) => {
+      if (process.platform !== "darwin" || browserName !== "firefox") {
+        await use(launchOptions);
+        return;
+      }
+
+      // Playwright's bundled Firefox shares macOS app data with regular Firefox.
+      const appDataHome = await mkdtemp(join(tmpdir(), "myshotlog-firefox-"));
+      try {
+        // macOS adds deny-delete ACLs when it creates these directories itself.
+        await Promise.all([
+          mkdir(join(appDataHome, "Library", "Application Support"), {
+            recursive: true,
+          }),
+          mkdir(join(appDataHome, "Downloads")),
+        ]);
+        await use({
+          ...launchOptions,
+          env: {
+            ...process.env,
+            ...launchOptions.env,
+            CFFIXED_USER_HOME: appDataHome,
+          },
+        });
+      } finally {
+        await rm(appDataHome, { recursive: true, force: true });
+      }
+    },
+    { scope: "worker" },
+  ],
   expectedCspDirectives: [[], { option: true }],
   journal: [
     async ({ context, baseURL }, use, testInfo) => {
