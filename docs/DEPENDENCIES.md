@@ -1,14 +1,22 @@
 # Beroenden och uppdateringar
 
-Den 16 oktober 2026 kontrollerades alla direkta beroenden mot npm-registrets
-senaste stabila `latest`-versioner. Exakta versioner finns i `package.json` och
-hela beroendeträdet låses i `package-lock.json`. Kör `npm ci` efter uppdatering.
+Den 16 november 2026 uppdaterades de sju direkta beroenden som låg efter
+npm-registrets stabila `latest`-versioner. Exakta versioner finns i
+`package.json` och hela beroendeträdet låses i `package-lock.json`. Kör
+`npm ci` efter uppdatering och `npm run test:ui:install` för webbläsarna som
+matchar den nya Playwright-versionen.
 
-Next.js 16.4.2, React 19.3.1, Lucide 1.57.0, Zod 4.6.7, TypeScript 7.0.2,
-Vitest 5.0.5 och Prettier 3.9.10 ingår. Övriga direkta paket kontrollerades också;
-paket som redan var aktuella behölls. `npm update` uppdaterade indirekta beroenden
-inom respektive pakets tillåtna intervall. Inga tvingande `overrides` används:
-exempelvis Next.js och PDF-biblioteken väljer egna kompatibla underversioner.
+Next.js 16.4.6 innehåller säkerhetsrättningarna från
+[Next.js 16.4.5](https://github.com/vercel/next.js/releases/tag/v16.4.5).
+npm rapporterade inga sårbarheter i trädet före uppdateringen, trots
+säkerhetsrättningarna i Next.js utgivningsnoteringar. Efter uppdateringen
+rapporterade både `npm audit` och `npm audit --omit=dev` noll sårbarheter.
+`npm update` uppdaterade indirekta beroenden inom tillåtna versionsintervall.
+
+Den lokala säkerhetsgranskningen omfattade OAuth och sessionskontroller,
+ägarskap vid journalåtkomst, Origin-kontroller, storleksbegränsad
+begäransläsning och CSP. Granskningen avsåg appkoden och det låsta
+beroendeträdet i detta repo.
 
 TypeScript 7 används för typkontroll och produktionsbyggen. De befintliga
 språktesterna behöver TypeScripts JavaScript-API för att upptäcka dubbla JSON-nycklar

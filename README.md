@@ -58,7 +58,7 @@ Git måste finnas i PATH för integrationstesterna. Tester och byggen behöver i
 
 GitHub-workflowen **Tests** kör installation, Vitest-tester, typkontroll, formateringskontroll och produktionsbygge på **`ubuntu-latest` med Node.js 24**. Den startar vid pull requests, pushar till `main` och manuellt via **Actions → Tests → Run workflow**. Actions är fästa vid commit-SHA:n och uppdateras genom Dependabot.
 
-Se även [beroenden och uppdateringar](docs/DEPENDENCIES.md) samt [validering, prestanda och SEO, 13 oktober 2026](docs/VALIDATION-2026-10-13.md).
+Beroende- och säkerhetskontrollen från 16 november 2026 finns i [beroenden och uppdateringar](docs/DEPENDENCIES.md). Se även [validering, prestanda och SEO, 13 oktober 2026](docs/VALIDATION-2026-10-13.md).
 
 Resultat för oanvänd kod och komprimerad JavaScript-storlek finns i [paketgranskningen, 16 oktober 2026](docs/BUNDLE-AUDIT-2026-10-16.md).
 
