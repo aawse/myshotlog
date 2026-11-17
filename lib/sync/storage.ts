@@ -3,7 +3,7 @@ import {
   recordsSchema,
   operationSchema,
   headSchema,
-  targetSchema,
+  conflictSchema,
   type Operation,
 } from "./model";
 export const stateSchema = z
@@ -21,13 +21,11 @@ export const stateSchema = z
         .max(250000)
         .regex(/^data:image\/(?:jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/),
     ),
-    conflict: z
-      .object({ id: z.uuid(), current: z.array(targetSchema).max(101) })
-      .strict()
-      .nullable(),
+    conflict: conflictSchema.nullable(),
   })
   .strict();
 export type BrowserState = z.infer<typeof stateSchema>;
+export type SyncIssue = NonNullable<BrowserState["conflict"]>;
 export function initialState(scope: string): BrowserState {
   return {
     version: 1,
@@ -192,10 +190,30 @@ export function pendingBatch(operations: Operation[]): Operation[] {
   if (operations.length && !batch.length) throw new Error("sync.queueFull");
   return batch;
 }
-export function affectedBy(operation: Operation, earlier: Operation) {
-  return operation.base.some((a) =>
-    earlier.base.some((b) => a.kind === b.kind && a.id === b.id),
+const firearmReference = z.object({ firearmId: z.uuid().nullable() });
+const linkedFirearmReference = z.object({ session: firearmReference });
+function affectedBy(operation: Operation, earlier: Operation) {
+  if (
+    operation.base.some((a) =>
+      earlier.base.some((b) => a.kind === b.kind && a.id === b.id),
+    )
+  )
+    return true;
+  const introducedFirearm = earlier.base.find(
+    (target) => target.kind === "firearm" && target.value === null,
   );
+  if (!introducedFirearm?.id) return false;
+  if (operation.action === "session")
+    return (
+      firearmReference.safeParse(operation.payload).data?.firearmId ===
+      introducedFirearm.id
+    );
+  if (operation.action === "session-with-quick")
+    return (
+      linkedFirearmReference.safeParse(operation.payload).data?.session
+        .firearmId === introducedFirearm.id
+    );
+  return false;
 }
 export function dependentIds(operations: Operation[], id: string) {
   const selected: Operation[] = [];

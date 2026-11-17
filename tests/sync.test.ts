@@ -8,7 +8,7 @@ import {
   emptyRecords,
   type Operation,
 } from "../lib/sync/model";
-import { GitJournalStore, InvalidRecord } from "../lib/git-database/store";
+import { GitJournalStore } from "../lib/git-database/store";
 import {
   DatabaseConflict,
   type GitDatabase,
@@ -102,7 +102,7 @@ it("retries after lost responses without duplicating commits, including later ed
     synchronize(db, owner, prefix, [
       { ...first, payload: { ...firearm, model: "Different request" } },
     ]),
-  ).rejects.toBeInstanceOf(InvalidRecord);
+  ).rejects.toMatchObject({ reason: "invalid", operation: first.id });
 });
 it("does not partially publish a batch when a later operation conflicts", async () => {
   const db = new MemoryDatabase(),
@@ -282,4 +282,18 @@ it("projects and synchronizes missing assessments without creating a session rev
   const replay = await synchronize(db, owner, prefix, [evaluation]);
   expect(replay.acknowledged).toEqual([evaluation.id]);
   expect(db.count).toBe(count);
+});
+
+it("identifies the change with a missing dependency without committing earlier valid changes", async () => {
+  const db = new MemoryDatabase();
+  const rejected = operation("session", session);
+  await expect(
+    synchronize(db, owner, prefix, [operation("profile", profile), rejected]),
+  ).rejects.toMatchObject({
+    operation: rejected.id,
+    acknowledged: [],
+    reason: "dependency",
+  });
+  expect(db.publishCalls).toBe(0);
+  expect(db.files.size).toBe(0);
 });

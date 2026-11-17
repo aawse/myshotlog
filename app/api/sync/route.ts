@@ -98,7 +98,8 @@ export async function POST(request: Request) {
         const snapshot = await store.syncSnapshot();
         const operation = body.operations.find(
           (operation) => operation.id === error.operation,
-        )!;
+        );
+        if (!operation) throw error;
         return respond(
           {
             scope,
@@ -106,11 +107,14 @@ export async function POST(request: Request) {
             acknowledged: error.acknowledged,
             conflict: {
               id: error.operation,
-              current: targetsFor(
-                operation.action,
-                operation.payload,
-                snapshot.records,
-              ),
+              current: error.reason
+                ? []
+                : targetsFor(
+                    operation.action,
+                    operation.payload,
+                    snapshot.records,
+                  ),
+              ...(error.reason ? { reason: error.reason } : {}),
             },
             ...snapshot,
           },

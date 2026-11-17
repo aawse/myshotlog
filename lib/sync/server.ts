@@ -19,7 +19,6 @@ import {
   sameTargets,
   operationSchema,
   type Operation,
-  type Target,
 } from "./model";
 export function browserScope(owner: string) {
   return createHash("sha256")
@@ -63,8 +62,8 @@ class StagedDatabase implements GitDatabase {
 export class SyncConflict extends Error {
   constructor(
     public readonly operation: string,
-    public readonly current: Target[],
     public readonly acknowledged: string[] = [],
+    public readonly reason?: "invalid" | "dependency" | "photo",
   ) {
     super("conflict");
   }
@@ -93,18 +92,18 @@ export async function synchronize(
         .digest("hex");
       if (receipts[operation.id]) {
         if (receipts[operation.id] !== digest)
-          throw new InvalidRecord("sync.operationChanged");
+          throw new SyncConflict(operation.id, confirmed, "invalid");
         acknowledged.push(operation.id);
         confirmed.push(operation.id);
         continue;
       }
       const records = await store.records();
-      const payload = normalizePayload(operation.action, operation.payload);
-      const current = targetsFor(operation.action, payload, records);
-      if (!sameTargets(operation.base, current))
-        throw new SyncConflict(operation.id, current, confirmed);
       const before = staged.entries.length;
       try {
+        const payload = normalizePayload(operation.action, operation.payload);
+        const current = targetsFor(operation.action, payload, records);
+        if (!sameTargets(operation.base, current))
+          throw new SyncConflict(operation.id, confirmed);
         await store.mutate(
           operation.action,
           payload,
@@ -112,11 +111,18 @@ export async function synchronize(
           operation.recording,
         );
       } catch (error) {
-        if (
-          error instanceof DatabaseConflict ||
-          error instanceof RecordNotFound
-        )
-          throw new SyncConflict(operation.id, current, confirmed);
+        if (error instanceof DatabaseConflict)
+          throw new SyncConflict(operation.id, confirmed);
+        if (error instanceof RecordNotFound)
+          throw new SyncConflict(operation.id, confirmed, "dependency");
+        if (error instanceof InvalidRecord)
+          throw new SyncConflict(
+            operation.id,
+            confirmed,
+            error.syncReason ?? "invalid",
+          );
+        if (error instanceof z.ZodError)
+          throw new SyncConflict(operation.id, confirmed, "invalid");
         throw error;
       }
       receipts[operation.id] = digest;

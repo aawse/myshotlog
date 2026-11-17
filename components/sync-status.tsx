@@ -3,14 +3,25 @@ import { useEffect, useRef, useState } from "react";
 import { Cloud, CloudUpload, WifiOff, TriangleAlert, X } from "lucide-react";
 import { useI18n } from "./language-provider";
 import { useJournal, useJournalState } from "./journal-provider";
-import { dependentIds, MAX_LOCAL_BYTES } from "@/lib/sync/storage";
+import {
+  dependentIds,
+  MAX_LOCAL_BYTES,
+  type SyncIssue,
+} from "@/lib/sync/storage";
 import type { MessageKey } from "@/lib/i18n";
+import { SyncComparison } from "./sync-comparison";
 export function SyncStatus() {
   const provider = useJournal(),
     { state, status, error } = useJournalState(),
     { tr } = useI18n();
-  const [failed, setFailed] = useState(false),
-    [resolving, setResolving] = useState(false);
+  const [actionError, setActionError] = useState<MessageKey>(),
+    [resolving, setResolving] = useState(false),
+    [confirmation, setConfirmation] = useState<{
+      issue: SyncIssue;
+      keep: boolean;
+      count: number;
+    }>();
+  const confirmButton = useRef<HTMLButtonElement>(null);
   const restore = useRef<HTMLInputElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -20,9 +31,24 @@ export function SyncStatus() {
     if (open && modal && !modal.open) modal.showModal();
     else if (!open && modal?.open) modal.close();
   }, [open]);
+  useEffect(() => {
+    if (confirmation) confirmButton.current?.focus();
+  }, [confirmation]);
   if (!provider) throw new Error("JournalProvider required");
   const journal = provider;
-  const operation = state.pending.find((o) => o.id === state.conflict?.id);
+  const conflict = state.conflict;
+  const operation = state.pending.find((o) => o.id === conflict?.id);
+  const count = operation ? dependentIds(state.pending, operation.id).size : 0;
+  const choice =
+    confirmation?.issue.id === operation?.id ? confirmation : undefined;
+  const recoveryMessage =
+    conflict?.reason === "invalid"
+      ? "sync.rejectedHelp"
+      : conflict?.reason === "dependency"
+        ? "sync.dependencyHelp"
+        : conflict?.reason === "photo"
+          ? "sync.photoHelp"
+          : "sync.conflictHelp";
   const labels = {
     loading: "loading.journal",
     synced: "sync.synced",
@@ -48,7 +74,15 @@ export function SyncStatus() {
   const attention = ["error", "conflict", "storage", "authentication"].includes(
     status,
   );
-  const message = tr(labels[status], { count: state.pending.length });
+  const message = tr(
+    error &&
+      error.startsWith("sync.") &&
+      status !== "offline" &&
+      status !== "conflict"
+      ? (error as MessageKey)
+      : labels[status],
+    { count: state.pending.length },
+  );
   const Icon =
     status === "synced"
       ? Cloud
@@ -82,15 +116,31 @@ export function SyncStatus() {
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  async function resolve(keep: boolean) {
+  async function resolve() {
+    if (!choice) return;
     setResolving(true);
-    setFailed(false);
+    setActionError(undefined);
     try {
-      await journal.resolve(keep);
-    } catch {
-      setFailed(true);
+      await journal.resolve(choice.issue, choice.keep, choice.count);
+    } catch (error) {
+      setActionError(
+        error instanceof Error &&
+          (error.message === "sync.reviewChanged" ||
+            error.message === "sync.missingDependency" ||
+            error.message === "sync.storageError")
+          ? error.message
+          : "sync.resolveFailed",
+      );
     } finally {
       setResolving(false);
+      setConfirmation(undefined);
+      requestAnimationFrame(() => {
+        if (!dialog.current?.open) return;
+        const control = dialog.current.querySelector<HTMLButtonElement>(
+          ".sync-choice, .sync-retry:not(:disabled)",
+        );
+        control?.focus();
+      });
     }
   }
   return (
@@ -121,6 +171,8 @@ export function SyncStatus() {
         aria-labelledby="sync-heading"
         onClose={() => {
           setOpen(false);
+          setConfirmation(undefined);
+          setActionError(undefined);
           trigger.current?.focus({ preventScroll: true });
         }}
       >
@@ -139,6 +191,7 @@ export function SyncStatus() {
           <Icon size={20} aria-hidden="true" />
           {message}
         </p>
+        {status === "offline" && <p>{tr("sync.offlineHelp")}</p>}
         {status === "authentication" && (
           <p>
             <a className="button" href="/login/">
@@ -149,11 +202,25 @@ export function SyncStatus() {
         <div className="sync-line">
           <button
             type="button"
-            className="text-button"
-            disabled={status === "syncing" || status === "loading" || resolving}
-            onClick={() => void journal.sync()}
+            className="text-button sync-retry"
+            disabled={
+              status === "syncing" ||
+              status === "loading" ||
+              status === "offline" ||
+              Boolean(choice) ||
+              resolving
+            }
+            onClick={async () => {
+              setActionError(undefined);
+              setResolving(true);
+              try {
+                await journal.sync(operation?.id);
+              } finally {
+                setResolving(false);
+              }
+            }}
           >
-            {tr("sync.now")}
+            {tr(operation ? "sync.checkAgain" : "sync.now")}
           </button>
           {state.pending.length > 0 && (
             <button type="button" className="text-button" onClick={backup}>
@@ -161,56 +228,87 @@ export function SyncStatus() {
             </button>
           )}
         </div>
-        {error && error !== labels[status] && error.startsWith("sync.") && (
-          <p role="alert">{tr(error as MessageKey)}</p>
-        )}
-        {state.pending.length > 0 && (
+        {state.pending.length > 0 && !operation && (
           <p className="muted">{tr("sync.pendingHelp")}</p>
         )}
-        {operation && state.conflict && (
+        {operation && conflict && (
           <div className="sync-conflict">
-            <p>{tr("sync.conflictHelp")}</p>
-            <details>
-              <summary>{tr("sync.compare")}</summary>
-              <div className="sync-comparison">
-                <div>
-                  <h3>{tr("sync.deviceVersion")}</h3>
-                  <pre>{JSON.stringify(operation.payload, null, 2)}</pre>
-                </div>
-                <div>
-                  <h3>{tr("sync.serverVersion")}</h3>
-                  <pre>
-                    {JSON.stringify(
-                      state.conflict.current.map((t) => t.value),
-                      null,
-                      2,
+            <p>{tr(recoveryMessage)}</p>
+            <SyncComparison operation={operation} current={conflict.current} />
+            {choice ? (
+              <div>
+                <p id="sync-confirm-detail">
+                  {choice.keep
+                    ? tr("sync.confirmDeviceHelp")
+                    : tr("sync.confirmDiscardHelp", { count: choice.count })}
+                </p>
+                <div className="actions sync-actions">
+                  <button
+                    ref={confirmButton}
+                    type="button"
+                    disabled={resolving}
+                    aria-describedby="sync-confirm-detail"
+                    onClick={() => void resolve()}
+                  >
+                    {tr(
+                      choice.keep
+                        ? "sync.confirmDevice"
+                        : "sync.confirmDiscard",
                     )}
-                  </pre>
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={resolving}
+                    onClick={() => {
+                      setConfirmation(undefined);
+                      requestAnimationFrame(() =>
+                        dialog.current
+                          ?.querySelector<HTMLButtonElement>(".sync-choice")
+                          ?.focus(),
+                      );
+                    }}
+                  >
+                    {tr("common.cancel")}
+                  </button>
                 </div>
               </div>
-            </details>
-            <div className="actions">
-              <button
-                type="button"
-                disabled={resolving}
-                onClick={() => void resolve(true)}
-              >
-                {tr("sync.keepDevice")}
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                disabled={resolving}
-                onClick={() => void resolve(false)}
-              >
-                {tr("sync.keepServer", {
-                  count: dependentIds(state.pending, operation.id).size,
-                })}
-              </button>
-            </div>
+            ) : (
+              <div className="actions sync-actions">
+                {!conflict.reason && (
+                  <button
+                    type="button"
+                    className="sync-choice"
+                    disabled={resolving || status === "syncing"}
+                    onClick={() => {
+                      setActionError(undefined);
+                      setConfirmation({ issue: conflict, keep: true, count });
+                    }}
+                  >
+                    {tr("sync.keepDevice")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="secondary sync-choice"
+                  disabled={resolving || status === "syncing"}
+                  onClick={() => {
+                    setActionError(undefined);
+                    setConfirmation({ issue: conflict, keep: false, count });
+                  }}
+                >
+                  {conflict.reason
+                    ? tr("sync.discardRejected", { count })
+                    : tr("sync.keepServer", { count })}
+                </button>
+              </div>
+            )}
+            {!choice && !conflict.reason && (
+              <p className="muted">{tr("sync.manualHelp")}</p>
+            )}
           </div>
         )}
-        {failed && <p role="alert">{tr("sync.resolveFailed")}</p>}
+        {actionError && <p role="alert">{tr(actionError)}</p>}
         <details className="sync-options">
           <summary>{tr("sync.browserOptions")}</summary>
           <p>{tr("sync.browserHelp")}</p>
@@ -231,12 +329,12 @@ export function SyncStatus() {
               const file = event.target.files?.[0];
               event.target.value = "";
               if (!file) return;
-              setFailed(false);
+              setActionError(undefined);
               try {
                 if (file.size > MAX_LOCAL_BYTES) throw new Error();
                 await journal.restore(JSON.parse(await file.text()));
               } catch {
-                setFailed(true);
+                setActionError("sync.restoreFailed");
               }
             }}
           />

@@ -9,6 +9,7 @@ import {
   canonical,
   applyOperation,
   headSchema,
+  conflictSchema,
   type Operation,
   type Target,
 } from "./model";
@@ -19,6 +20,7 @@ import {
   prunePhotos,
   type BrowserState,
   type BrowserStorage,
+  type SyncIssue,
 } from "./storage";
 import { prepareQueuedPhotos } from "./photos";
 import type { PhotoDraft } from "../photos/schema";
@@ -45,22 +47,7 @@ const replySchema = z.object({
   records: recordsSchema.optional(),
   unchanged: z.boolean().optional(),
   acknowledged: z.array(z.uuid()).optional(),
-  conflict: z
-    .object({
-      id: z.uuid(),
-      current: z
-        .array(
-          z
-            .object({
-              kind: z.enum(["profile", "firearm", "session", "quick-entry"]),
-              id: z.uuid().nullable(),
-              value: z.unknown(),
-            })
-            .strict(),
-        )
-        .max(101),
-    })
-    .optional(),
+  conflict: conflictSchema.optional(),
 });
 export class BrowserJournal {
   private state: BrowserState;
@@ -72,7 +59,6 @@ export class BrowserJournal {
   private disposed = false;
   private starting?: Promise<void>;
   private channel?: BroadcastChannel;
-  private instance = crypto.randomUUID();
   private photoRequests = new Map<string, Promise<string>>();
   private problem?: string;
   private authenticationBlocked = false;
@@ -95,6 +81,14 @@ export class BrowserJournal {
   };
   private emit(status?: SyncStatus) {
     if (this.disposed) return;
+    const problemStatus =
+      this.problem === "sync.storageError"
+        ? "storage"
+        : !this.online()
+          ? "offline"
+          : this.problem
+            ? "error"
+            : undefined;
     this.snapshot = {
       state: this.state,
       records:
@@ -106,6 +100,7 @@ export class BrowserJournal {
       status: this.authenticationBlocked
         ? "authentication"
         : (status ??
+          problemStatus ??
           (this.state.conflict
             ? "conflict"
             : !this.state.records
@@ -148,9 +143,11 @@ export class BrowserJournal {
     try {
       this.state = await this.storage.load(this.scope);
       this.emit();
+      return true;
     } catch {
       this.problem = "sync.storageError";
       this.emit("storage");
+      return false;
     }
   }
   schedule(delay = 1500) {
@@ -165,77 +162,99 @@ export class BrowserJournal {
     }, delay);
   }
   private async readResponse(response: Response) {
-    if (response.status === 401 || response.status === 403) {
-      this.authenticationBlocked = true;
-      this.problem = "sync.authentication";
-      this.emit("authentication");
-      throw new Error("sync.authentication");
+    if (response.status === 401) return this.deny("sync.authentication");
+    if (response.status === 403) {
+      const denial = z
+        .object({ error: z.enum(["origin", "scope"]) })
+        .safeParse(await response.json().catch(() => null));
+      if (denial.success && denial.data.error === "origin")
+        throw new Error("sync.origin");
+      return this.deny(denial.success ? "sync.scope" : "sync.authentication");
     }
-    if (response.status === 429) {
-      this.problem = "sync.rateLimited";
-      throw new Error("sync.rateLimited");
-    }
-    if (!response.ok && response.status !== 409)
-      throw new Error(
-        response.status === 400 || response.status === 413
-          ? "sync.invalid"
-          : "sync.failed",
-      );
-    const data = replySchema.parse(await response.json());
-    if (data.scope !== this.scope) throw new Error("sync.authentication");
+    if (response.status === 429) throw new Error("sync.rateLimited");
+    if (response.status === 413) throw new Error("sync.tooLarge");
+    if (response.status === 400) throw new Error("sync.invalid");
+    if (response.status === 503) throw new Error("sync.unavailable");
+    if (!response.ok && response.status !== 409) throw new Error("sync.failed");
+    const body: unknown = await response.json();
+    if (
+      response.status === 409 &&
+      z.object({ error: z.literal("retry") }).safeParse(body).success
+    )
+      throw new Error("sync.serverBusy");
+    const data = replySchema.parse(body);
+    if (data.scope !== this.scope) return this.deny("sync.scope");
     this.authenticationBlocked = false;
     return data;
   }
-  sync = (): Promise<void> => {
-    if (this.running) return this.running;
-    this.running = this.coordinateSync().finally(() => {
+  private deny(problem: "sync.authentication" | "sync.scope"): never {
+    this.authenticationBlocked = true;
+    this.problem = problem;
+    this.emit("authentication");
+    throw new Error(problem);
+  }
+  sync = (reviewId?: string): Promise<void> => {
+    if (this.running)
+      return reviewId
+        ? this.running.then(() => this.sync(reviewId))
+        : this.running;
+    this.running = this.coordinateSync(reviewId).finally(() => {
       this.running = undefined;
     });
     return this.running;
   };
-  private async coordinateSync() {
+  private async withSyncLock(work: () => Promise<void>) {
     if (typeof navigator !== "undefined" && navigator.locks) {
+      let entered = false;
       try {
-        await navigator.locks.request(
+        return await navigator.locks.request(
           "myshotlog-sync-" + this.scope,
           { ifAvailable: true },
           async (lock) => {
-            if (!lock) {
-              await this.reload();
-              this.schedule(3000);
-              return;
-            }
-            await this.performSync(false);
+            if (!lock) return false;
+            entered = true;
+            await work();
+            return true;
           },
         );
-        return;
-      } catch {
-        /* Fall back to an atomic IndexedDB lease where Web Locks are unavailable. */
+      } catch (error) {
+        if (entered) throw error;
       }
     }
-    await this.performSync(true);
+    const owner = crypto.randomUUID();
+    if (!(await this.storage.claim(this.scope, owner, Date.now())))
+      return false;
+    try {
+      await work();
+      return true;
+    } finally {
+      await this.storage.release(this.scope, owner).catch(() => {});
+    }
   }
-  private async performSync(useLease = true) {
+  private async coordinateSync(reviewId?: string) {
     if (this.disposed) return;
     if (!this.online()) {
       this.emit("offline");
       this.schedule(30000);
       return;
     }
-    let leased = false;
-    let deadline: ReturnType<typeof setTimeout> | undefined;
     try {
-      leased =
-        !useLease ||
-        (await this.storage.claim(this.scope, this.instance, Date.now()));
-      if (!leased) {
+      if (!(await this.withSyncLock(() => this.performSync(reviewId)))) {
         await this.reload();
         this.schedule(3000);
-        return;
       }
-      await this.reload();
-      if (this.state.conflict) {
-        this.emit("conflict");
+    } catch {
+      this.problem = "sync.storageError";
+      this.emit("storage");
+      this.schedule(30000);
+    }
+  }
+  private async performSync(reviewId?: string) {
+    if (this.disposed) return;
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    try {
+      if (!(await this.reload())) return;
+      if (this.state.conflict && this.state.conflict.id !== reviewId) {
         return;
       }
       this.problem = undefined;
@@ -257,12 +276,14 @@ export class BrowserJournal {
           signal,
         }),
       );
-      if (!remote.unchanged) {
-        if (!remote.records) throw new Error("sync.failed");
+      // A failed recheck must leave the reviewed GitHub record and base together.
+      if (!remote.unchanged && !this.state.conflict) {
+        const records = remote.records;
+        if (!records) throw new Error("sync.failed");
         await this.update((state) => ({
           ...state,
           head: remote.head,
-          records: remote.records!,
+          records,
           syncedAt: new Date().toISOString(),
         }));
       }
@@ -275,46 +296,45 @@ export class BrowserJournal {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             scope: this.scope,
-            head: this.state.head,
+            head: remote.head,
             operations: batch,
           }),
           signal,
         });
         const result = await this.readResponse(response);
-        if (!result.records) throw new Error("sync.failed");
+        const { records, conflict } = result;
+        if (!records) throw new Error("sync.failed");
+        const ids = new Set(batch.map((operation) => operation.id));
+        const acknowledged = new Set(result.acknowledged);
+        if (
+          acknowledged.size !== (result.acknowledged?.length ?? 0) ||
+          [...acknowledged].some((id) => !ids.has(id))
+        )
+          throw new Error("sync.failed");
         if (response.status === 409) {
-          const confirmed = new Set(result.acknowledged ?? []);
           if (
-            [...confirmed].some(
-              (id) => !batch.some((operation) => operation.id === id),
-            )
+            !conflict ||
+            !ids.has(conflict.id) ||
+            acknowledged.has(conflict.id)
           )
             throw new Error("sync.failed");
-          if (!result.conflict) throw new Error("sync.failed");
           await this.update((state) => ({
             ...state,
             head: result.head,
-            records: result.records!,
-            conflict: result.conflict!,
+            records,
+            conflict,
             pending: state.pending.filter(
-              (operation) => !confirmed.has(operation.id),
+              (operation) => !acknowledged.has(operation.id),
             ),
           }));
           this.emit("conflict");
           return;
         }
-        const ids = new Set(batch.map((o) => o.id));
-        if (
-          !result.acknowledged ||
-          result.acknowledged.length !== ids.size ||
-          result.acknowledged.some((id) => !ids.has(id))
-        )
-          throw new Error("sync.failed");
-        const acknowledged = new Set(result.acknowledged);
+        if (acknowledged.size !== ids.size) throw new Error("sync.failed");
         await this.update((state) => ({
           ...state,
           head: result.head,
-          records: result.records!,
+          records,
           pending: state.pending.filter((o) => !acknowledged.has(o.id)),
           syncedAt: new Date().toISOString(),
           conflict: null,
@@ -325,8 +345,12 @@ export class BrowserJournal {
     } catch (error) {
       if (this.disposed) return;
       const message = error instanceof Error ? error.message : "sync.failed";
-      if (this.problem !== "sync.authentication") {
-        this.problem = message.startsWith("sync.") ? message : "sync.failed";
+      if (!this.authenticationBlocked || this.problem === undefined) {
+        this.problem = this.controller?.signal.aborted
+          ? "sync.timedOut"
+          : message.startsWith("sync.")
+            ? message
+            : "sync.failed";
         this.emit(
           this.problem === "sync.storageError"
             ? "storage"
@@ -337,13 +361,14 @@ export class BrowserJournal {
       }
     } finally {
       clearTimeout(deadline);
-      if (leased && useLease)
-        await this.storage.release(this.scope, this.instance).catch(() => {});
+      this.controller = undefined;
       if (
         !this.disposed &&
         !this.state.conflict &&
-        this.problem !== "sync.authentication" &&
-        this.problem !== "sync.invalid"
+        !this.authenticationBlocked &&
+        !["sync.invalid", "sync.tooLarge", "sync.origin"].includes(
+          this.problem ?? "",
+        )
       )
         this.schedule(
           this.state.pending.length && !this.problem ? 1500 : 30000,
@@ -405,8 +430,7 @@ export class BrowserJournal {
   async ensureSynced() {
     for (let attempt = 0; attempt < 12; attempt++) {
       await this.sync();
-      if (!this.state.pending.length && !this.problem && !this.state.conflict)
-        return;
+      if (this.snapshot.status === "synced") return;
       if (this.problem || this.state.conflict || !this.online()) break;
     }
     throw new Error("sync.mustSync");
@@ -437,21 +461,40 @@ export class BrowserJournal {
     }));
     await this.sync();
   }
-  async resolve(keepLocal: boolean) {
-    await this.update((state) => {
-      if (!state.conflict || !state.records) return state;
-      const related = dependentIds(state.pending, state.conflict.id);
-      if (!keepLocal)
-        return {
-          ...state,
-          pending: state.pending.filter((o) => !related.has(o.id)),
-          conflict: null,
-        };
-      let view = state.records;
-      const pending = state.pending.map((operation) => {
-        let next = operation;
-        if (related.has(operation.id)) {
-          let payload = structuredClone(operation.payload) as Record<
+  async resolve(
+    reviewed: SyncIssue,
+    keepLocal: boolean,
+    discardCount?: number,
+  ) {
+    const { id } = reviewed;
+    await this.running;
+    try {
+      const acquired = await this.withSyncLock(async () => {
+        await this.update((state) => {
+          const index = state.pending.findIndex(
+            (operation) => operation.id === id,
+          );
+          if (
+            state.conflict?.id !== id ||
+            !state.records ||
+            index < 0 ||
+            canonical(state.conflict) !== canonical(reviewed)
+          )
+            throw new Error("sync.reviewChanged");
+          if (!keepLocal) {
+            const related = dependentIds(state.pending, id);
+            if (!related.size || related.size !== discardCount)
+              throw new Error("sync.reviewChanged");
+            return {
+              ...state,
+              pending: state.pending.filter((o) => !related.has(o.id)),
+              conflict: null,
+            };
+          }
+          if (state.conflict.reason) throw new Error("sync.resolveFailed");
+          const operation = state.pending[index];
+          const view = project(state.records, state.pending.slice(0, index));
+          const payload = structuredClone(operation.payload) as Record<
             string,
             unknown
           >;
@@ -468,24 +511,32 @@ export class BrowserJournal {
           if (
             operation.action === "attach-quick" ||
             operation.action === "evaluate-session"
-          )
-            payload.revision = view.sessions.find(
+          ) {
+            const revision = view.sessions.find(
               (s) => s.id === payload.sessionId,
             )?.revision;
-          next = operationSchema.parse({
+            if (revision === undefined)
+              throw new Error("sync.missingDependency");
+            payload.revision = revision;
+          }
+          const next = operationSchema.parse({
             ...operation,
             id: crypto.randomUUID(),
             payload,
             base: targetsFor(operation.action, payload, view),
           });
-        }
-        view = related.has(operation.id)
-          ? applyOperation(view, next)
-          : project(view, [next]);
-        return next;
+          applyOperation(view, next);
+          pendingBatch([next]);
+          const pending = [...state.pending];
+          pending[index] = next;
+          return { ...state, pending, conflict: null };
+        });
       });
-      return { ...state, pending, conflict: null };
-    });
+      if (!acquired) throw new Error("sync.reviewChanged");
+    } catch (error) {
+      await this.reload();
+      throw error;
+    }
     this.problem = undefined;
     this.emit();
     this.schedule(0);

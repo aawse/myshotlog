@@ -63,3 +63,11 @@ CI kör tester, typkontroll och produktionsbygge på Ubuntu med Node.js 24. Loka
 Se [lokal lagring och synkronisering](BROWSER-SYNC.md) för användarbeteende, begränsningar och återhämtning. `BrowserJournal` samordnar en atomisk IndexedDB-kopia, kö, fotocache och commit-kontrollpunkt. `JournalProvider` är gemensam för alla privata vyer. Native History API uppdaterar `usePathname` och `useSearchParams` utan att hämta journalen eller en RSC-sida vid intern navigering; vyernas kod laddas separat och förladdas för en öppen apps offline-navigering. Serverlokalisering använder en kontobunden språkledtråd från profilen, så sidans skal inte behöver läsa Git. Profilen i browser-state styr UI-språket efter inläsning.
 
 `/api/sync/` verifierar autentisering, scope och origin vid skrivning. `synchronize` bygger operationerna mot ett färskt snapshot i en staging-adapter och återanvänder `GitJournalStore.mutate` för validering och postplaner. Först efter att hela batchen passerat publiceras commitkedjan atomiskt. Beständiga kvittenser under användarens prefix gör osäkra nätverksretries idempotenta. Varje kvittens läggs till i operationens befintliga postcommit, så vanlig synkning inte behöver en separat kvittenscommit. GitHub-adaptern erbjuder en billig head-kontroll och en begränsad cache av immutabla blobbar (32 MiB/10 000 poster), isolerad av providerinstansen och dess tokenkonfiguration. Aktuell repositorysekretess kontrolleras före snapshot/head-läsning även när blobbar redan finns i minnet.
+
+Synk-API:et kan dessutom identifiera en avvisad operation med en fast orsakskod
+för validering, saknat beroende eller foto. Ingen del av den nya batchen
+publiceras. Webbläsaren behåller den väntande kön och synkärendet tillsammans.
+Manuell omkontroll och konfliktval samordnas med samma lås som synkningen. Ett
+misslyckat omkontrollsanrop behåller den granskade basversionen, och en ändrad
+granskning eller ändrat antal beroende operationer kräver ett nytt val. Befintliga
+sparade konflikter utan orsakskod kan fortfarande läsas.

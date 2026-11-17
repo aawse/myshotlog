@@ -253,12 +253,12 @@ export class GitJournalStore {
     const recording = context ? recordingSchema.parse(context) : undefined;
     const drafts = z.array(photoDraftSchema).max(10).parse(photoDrafts);
     if (new Set(drafts.map((p) => p.id)).size !== drafts.length)
-      throw new InvalidRecord(swText("store.duplicatePhotos"));
+      throw new InvalidRecord(swText("store.duplicatePhotos"), "photo");
     if (
       drafts.length &&
       !["session", "session-with-quick", "quick-entry"].includes(action)
     )
-      throw new InvalidRecord(swText("store.photoSeries"));
+      throw new InvalidRecord(swText("store.photoSeries"), "photo");
     const prepared = new Map<string, PhotoAsset>();
     const replacements = new Map<string, string>();
     try {
@@ -270,7 +270,7 @@ export class GitJournalStore {
         replacements.set(draft.id, photo.id);
       }
     } catch {
-      throw new InvalidRecord(swText("store.photoOptimized"));
+      throw new InvalidRecord(swText("store.photoOptimized"), "photo");
     }
     const patchResult = (result: unknown) => {
       if (!result || typeof result !== "object") return result;
@@ -474,7 +474,10 @@ export class GitJournalStore {
               (f) => f.id === entry.firearmId && !f.archived,
             );
             if (!firearm)
-              throw new InvalidRecord(swText("store.firearmMissing"));
+              throw new InvalidRecord(
+                swText("store.firearmMissing"),
+                "dependency",
+              );
             const { serial, notes, archived, defaultDiscipline, ...saved } =
               firearm;
             void serial;
@@ -690,11 +693,12 @@ export class GitJournalStore {
         nextIds = photoIds(this.decode({ ...snapshot, files: nextFiles }));
       for (const id of prepared.keys())
         if (!nextIds.has(id))
-          throw new InvalidRecord(swText("store.orphanPhoto"));
+          throw new InvalidRecord(swText("store.orphanPhoto"), "photo");
       for (const id of nextIds) {
         if (previousIds.has(id)) continue;
         const photo = prepared.get(id) ?? importedPhotos.get(id);
-        if (!photo) throw new InvalidRecord(swText("store.missingPhoto"));
+        if (!photo)
+          throw new InvalidRecord(swText("store.missingPhoto"), "photo");
         entries.unshift({
           message: "MyShotLog: save optimized target photo " + id,
           changes: [
@@ -732,4 +736,11 @@ export class RecordNotFound extends Error {
     super(swText("store.notFound"));
   }
 }
-export class InvalidRecord extends Error {}
+export class InvalidRecord extends Error {
+  constructor(
+    message: string,
+    readonly syncReason?: "dependency" | "photo",
+  ) {
+    super(message);
+  }
+}

@@ -58,6 +58,13 @@ export const targetSchema = z
   })
   .strict();
 export type Target = z.infer<typeof targetSchema>;
+export const conflictSchema = z
+  .object({
+    id: z.uuid(),
+    current: z.array(targetSchema).max(101),
+    reason: z.enum(["invalid", "dependency", "photo"]).optional(),
+  })
+  .strict();
 export const operationSchema = z
   .object({
     id: z.uuid(),

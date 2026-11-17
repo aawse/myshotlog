@@ -3,6 +3,7 @@ import type { Page } from "@playwright/test";
 import { test, expect } from "./fixture";
 import { expectLayout } from "./layout";
 import sv from "../../lib/locales/sv.json";
+import en from "../../lib/locales/en.json";
 import { batchSchema } from "../../lib/sync/model";
 async function expectDock(page: Page) {
   const rectangles = await page
@@ -176,7 +177,7 @@ test("offline changes remain downloadable and sync can be run from the compact d
     buffer: Buffer.from('{"scope":"different-account"}'),
   });
   await expect(dialog.getByRole("alert")).toContainText(
-    sv["sync.resolveFailed"],
+    sv["sync.restoreFailed"],
   );
   await expect(page.locator(".quick-series-row")).toHaveCount(1);
 });
@@ -209,17 +210,28 @@ test("expired authentication removes an open feedback form and its draft", async
   ).toBeVisible();
 });
 
-for (const keepDevice of [true, false]) {
+for (const [keepDevice, language, messages] of [
+  [true, "sv", sv],
+  [false, "en", en],
+] as const) {
   test(`conflicts can be reviewed and resolved with the ${keepDevice ? "device" : "server"} version`, async ({
     page,
     context,
     journal,
-  }) => {
+  }, testInfo) => {
+    journal.setLanguage(language);
     await page.goto("/quick/");
-    await page.getByLabel(sv["session.points"], { exact: true }).fill("45");
+    await page
+      .getByLabel(messages["session.points"], { exact: true })
+      .fill("45");
+    const longNote = "Fictional practice note ".repeat(7).trim();
+    await page.getByText(messages["quick.more"], { exact: true }).click();
+    await page
+      .getByLabel(messages["quick.note"], { exact: true })
+      .fill(longNote);
     await context.setOffline(true);
     await page
-      .getByRole("button", { name: sv["quick.saveNext"], exact: true })
+      .getByRole("button", { name: messages["quick.saveNext"], exact: true })
       .click();
     await expect(page.locator(".quick-series-row")).toHaveCount(1);
     let conflicting = true;
@@ -243,37 +255,75 @@ for (const keepDevice of [true, false]) {
     await context.setOffline(false);
     await page.getByRole("heading").first().click();
     await expect(page.locator(".sync-trigger")).toContainText(
-      sv["sync.compactAttention"],
+      messages["sync.compactAttention"],
     );
     await page.locator(".sync-trigger").click();
-    const dialog = page.getByRole("dialog", { name: sv["sync.heading"] });
+    const dialog = page.getByRole("dialog", { name: messages["sync.heading"] });
     await expect(
-      dialog.getByText(sv["sync.conflictHelp"], { exact: true }),
+      dialog.getByText(messages["sync.conflictHelp"], { exact: true }),
     ).toBeVisible();
-    await dialog.getByText(sv["sync.compare"], { exact: true }).click();
+    await page.screenshot({
+      path: testInfo.outputPath(`sync-collapsed-${language}.png`),
+    });
+    await dialog.getByText(messages["sync.compare"], { exact: true }).click();
     await expect(
       dialog.getByRole("heading", {
-        name: sv["sync.deviceVersion"],
+        name: messages["sync.deviceVersion"],
         exact: true,
       }),
     ).toBeVisible();
     await expect(
       dialog.getByRole("heading", {
-        name: sv["sync.serverVersion"],
+        name: messages["sync.serverVersion"],
         exact: true,
       }),
     ).toBeVisible();
+    await expect(
+      dialog.getByText(messages["session.points"], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByText(messages["sync.noRecord"], { exact: true }),
+    ).toBeVisible();
+    await expect(dialog.getByText(longNote, { exact: true })).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath(`sync-expanded-${language}.png`),
+    });
+    await page.setViewportSize({ width: 320, height: 720 });
+    await expect(dialog).toBeVisible();
+    expect(
+      await dialog.evaluate((element) => element.scrollWidth),
+    ).toBeLessThanOrEqual(320);
+    await page.screenshot({
+      path: testInfo.outputPath(`sync-320-expanded-${language}.png`),
+    });
+    const recheck = page.waitForResponse(
+      (reply) =>
+        new URL(reply.url()).pathname === "/api/sync/" &&
+        reply.request().method() === "POST",
+    );
+    await dialog
+      .getByRole("button", { name: messages["sync.checkAgain"], exact: true })
+      .click();
+    expect((await recheck).status()).toBe(409);
     conflicting = false;
     await dialog
       .getByRole("button", {
         name: keepDevice
-          ? sv["sync.keepDevice"]
-          : sv["sync.keepServer"].replace("{count}", "1"),
+          ? messages["sync.keepDevice"]
+          : messages["sync.keepServer"].replace("{count}", "1"),
+        exact: true,
+      })
+      .click();
+    await dialog
+      .getByRole("button", {
+        name: messages[
+          keepDevice ? "sync.confirmDevice" : "sync.confirmDiscard"
+        ],
         exact: true,
       })
       .click();
     await expect(
-      dialog.getByText(sv["sync.synced"], { exact: true }),
+      dialog.getByText(messages["sync.synced"], { exact: true }),
     ).toBeVisible();
     await expect(page.locator(".quick-series-row")).toHaveCount(
       keepDevice ? 1 : 0,
@@ -282,3 +332,73 @@ for (const keepDevice of [true, false]) {
       await expect.poll(() => journal.records.quickEntries?.length).toBe(1);
   });
 }
+
+test("explains a storage outage and provides a recovery path for a rejected change", async ({
+  page,
+  context,
+  journal,
+}) => {
+  await page.goto("/quick/");
+  await page.getByLabel(sv["session.points"], { exact: true }).fill("45");
+  await context.setOffline(true);
+  await page
+    .getByRole("button", { name: sv["quick.saveNext"], exact: true })
+    .click();
+  await expect(page.locator(".quick-series-row")).toHaveCount(1);
+  let unavailable = true;
+  await context.route("**/api/sync/**", async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    if (unavailable)
+      return route.fulfill({ status: 503, json: { error: "unavailable" } });
+    const batch = batchSchema.parse(route.request().postDataJSON());
+    await route.fulfill({
+      status: 409,
+      json: {
+        scope: batch.scope,
+        head: batch.head,
+        records: journal.records,
+        conflict: { id: batch.operations[0].id, current: [], reason: "photo" },
+      },
+    });
+  });
+  await context.setOffline(false);
+  await page.getByRole("heading").first().click();
+  await expect(page.locator(".sync-trigger")).toContainText(
+    sv["sync.compactAttention"],
+  );
+  await page.locator(".sync-trigger").click();
+  const dialog = page.getByRole("dialog", { name: sv["sync.heading"] });
+  await expect(
+    dialog.getByText(sv["sync.unavailable"], { exact: true }),
+  ).toBeVisible();
+  unavailable = false;
+  await dialog
+    .getByRole("button", { name: sv["sync.now"], exact: true })
+    .click();
+  await expect(
+    dialog.getByText(sv["sync.photoHelp"], { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: sv["sync.backup"], exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: sv["sync.keepDevice"], exact: true }),
+  ).toHaveCount(0);
+  const discard = dialog.getByRole("button", {
+    name: sv["sync.discardRejected"].replace("{count}", "1"),
+    exact: true,
+  });
+  await discard.click();
+  await dialog
+    .getByRole("button", { name: sv["common.cancel"], exact: true })
+    .click();
+  await expect(page.locator(".quick-series-row")).toHaveCount(1);
+  await discard.click();
+  await dialog
+    .getByRole("button", { name: sv["sync.confirmDiscard"], exact: true })
+    .click();
+  await expect(
+    dialog.getByText(sv["sync.synced"], { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".quick-series-row")).toHaveCount(0);
+});

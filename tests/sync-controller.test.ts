@@ -153,6 +153,11 @@ it("retains all pending changes after a failed or ambiguous response", async () 
   await journal.sync();
   expect(storage.state.pending).toEqual(queued);
   expect(journal.getSnapshot().status).toBe("error");
+  await journal.enqueue("profile", profile);
+  expect(journal.getSnapshot()).toMatchObject({
+    status: "error",
+    error: "sync.unavailable",
+  });
 });
 it("never discards operations on an incorrect acknowledgement", async () => {
   const storage = new MemoryStorage();
@@ -278,7 +283,9 @@ it("retains both versions on conflict and rebases only after the user chooses th
   expect(storage.state.records?.firearms[0].model).toBe("Remote");
   expect(journal.getSnapshot().records?.firearms[0].model).toBe("Local");
   const oldId = storage.state.pending[0].id;
-  await journal.resolve(true);
+  const issue = storage.state.conflict;
+  if (!issue) throw new Error("Missing test issue");
+  await journal.resolve(issue, true);
   expect(storage.state.pending[0].id).not.toBe(oldId);
   expect(storage.state.pending[0].base[0].value).toMatchObject({
     model: "Remote",
@@ -295,12 +302,14 @@ it("discards dependent edits together only when the user chooses the server vers
   await journal.start();
   await journal.enqueue("firearm", firearm);
   await journal.enqueue("firearm", { ...firearm, model: "Later" });
+  await journal.enqueue("session", session);
   await journal.enqueue("profile", profile);
   const id = storage.state.pending[0].id;
-  expect(dependentIds(storage.state.pending, id).size).toBe(2);
-  await storage.update(scope, (s) => ({ ...s, conflict: { id, current: [] } }));
+  expect(dependentIds(storage.state.pending, id).size).toBe(3);
+  const issue = { id, current: [] };
+  await storage.update(scope, (s) => ({ ...s, conflict: issue }));
   await journal.reload();
-  await journal.resolve(false);
+  await journal.resolve(issue, false, 3);
   expect(storage.state.pending.map((o) => o.action)).toEqual(["profile"]);
 });
 it("restores a scoped backup idempotently and rejects a different repository/account", async () => {
@@ -456,4 +465,85 @@ it("bounds viewed-photo caches without evicting pending images and removes delet
     Object.keys(photos)[0],
   );
   expect(prunePhotos({ ...base, records: emptyRecords() }).photos).toEqual({});
+});
+
+it("retains and recovers a rejected operation across reloads without discarding unrelated changes", async () => {
+  const storage = new MemoryStorage();
+  const remote = server(storage);
+  let online = false;
+  const request: typeof fetch = async (url, options) => {
+    if (options?.method === "POST") {
+      const { operations } = JSON.parse(String(options.body)) as {
+        operations: Operation[];
+      };
+      const rejected = operations.find(
+        (operation) => operation.action === "firearm",
+      );
+      if (rejected)
+        return Response.json(
+          {
+            scope,
+            head,
+            records: emptyRecords(),
+            acknowledged: [],
+            conflict: { id: rejected.id, current: [], reason: "photo" },
+          },
+          { status: 409 },
+        );
+    }
+    return remote.request(url, options);
+  };
+  const first = engine(storage, request, () => online);
+  await first.start();
+  await first.enqueue("firearm", firearm);
+  await first.enqueue("profile", profile);
+  online = true;
+  await first.sync();
+  const issue = storage.state.conflict;
+  if (!issue) throw new Error("Missing test issue");
+  expect(issue.reason).toBe("photo");
+  expect(storage.state.pending).toHaveLength(2);
+  first.dispose();
+
+  const next = engine(storage, request);
+  await next.start();
+  expect(next.getSnapshot().status).toBe("conflict");
+  await expect(next.resolve(issue, true)).rejects.toThrow("sync.resolveFailed");
+  await expect(next.resolve(issue, false, 2)).rejects.toThrow(
+    "sync.reviewChanged",
+  );
+  expect(storage.state.pending).toHaveLength(2);
+  await next.resolve(issue, false, 1);
+  await next.sync();
+  expect(storage.state.pending).toEqual([]);
+  expect(
+    remote.received.map((batch) => batch.map((operation) => operation.action)),
+  ).toEqual([["profile"]]);
+});
+
+it("preserves the reviewed GitHub version on a failed recheck and rejects a stale confirmation", async () => {
+  const storage = new MemoryStorage();
+  storage.state.records = { ...emptyRecords(), firearms: [firearm] };
+  let online = false;
+  const request: typeof fetch = async (_url, options) =>
+    options?.method === "POST"
+      ? Response.json({ error: "retry" }, { status: 409 })
+      : Response.json({ scope, head: "c".repeat(40), records: emptyRecords() });
+  const journal = engine(storage, request, () => online);
+  await journal.start();
+  await journal.enqueue("firearm", { ...firearm, model: "Local" });
+  const [pending] = storage.state.pending;
+  const reviewed = { id: pending.id, current: pending.base };
+  storage.state.conflict = reviewed;
+  await journal.reload();
+  online = true;
+  await journal.sync(reviewed.id);
+  expect(journal.getSnapshot().error).toBe("sync.serverBusy");
+  expect(storage.state.records?.firearms).toEqual([firearm]);
+  expect(storage.state.conflict).toEqual(reviewed);
+  storage.state.conflict = { ...reviewed, reason: "dependency" };
+  await expect(journal.resolve(reviewed, true)).rejects.toThrow(
+    "sync.reviewChanged",
+  );
+  expect(storage.state.pending).toEqual([pending]);
 });

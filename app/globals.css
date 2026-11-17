@@ -1779,18 +1779,37 @@ body:has(.issue-dialog[open], .sync-dialog[open]) {
 }
 .sync-comparison {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
   gap: 16px;
 }
 .sync-comparison > div {
   min-width: 0;
 }
-.sync-comparison pre {
-  max-height: 280px;
-  white-space: pre-wrap;
+.sync-comparison h3 {
+  margin-block: 12px 8px;
+}
+.sync-fields {
+  margin-block: 8px 16px;
   overflow-wrap: anywhere;
-  overflow: auto;
-  font-size: 12px;
+}
+.sync-fields dt {
+  font-weight: 600;
+}
+.sync-fields dd {
+  margin: 0 0 6px;
+  white-space: pre-wrap;
+}
+.sync-series {
+  padding-block: 8px;
+}
+.sync-conflict summary,
+.sync-actions button {
+  min-height: 44px;
+}
+.sync-actions button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* Shared rhythm for repeated panels, and legible controls on small screens. */

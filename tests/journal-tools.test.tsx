@@ -4,6 +4,7 @@ import type { SyncSnapshot, SyncStatus } from "../lib/sync/controller";
 import { initialState } from "../lib/sync/storage";
 import { JournalTools } from "../components/journal-tools";
 import { LanguageProvider } from "../components/language-provider";
+import { profile } from "./fixtures";
 import { t } from "../lib/i18n";
 const fixture = vi.hoisted(() => ({
   snapshot: undefined as SyncSnapshot | undefined,
@@ -73,7 +74,7 @@ it("retains pending backup and conflict recovery in the sync dialog", () => {
     {
       id: "30000000-0000-4000-8000-000000000001",
       action: "profile",
-      payload: { displayName: "Fixture draft" },
+      payload: { ...profile, displayName: "Fixture draft" },
       photos: [],
       recording: {
         recordedAt: "2026-10-16T12:00:00Z",
@@ -86,7 +87,11 @@ it("retains pending backup and conflict recovery in the sync dialog", () => {
   fixture.snapshot.state.conflict = {
     id: fixture.snapshot.state.pending[0].id,
     current: [
-      { kind: "profile", id: null, value: { displayName: "Fixture server" } },
+      {
+        kind: "profile",
+        id: null,
+        value: { ...profile, displayName: "Fixture server" },
+      },
     ],
   };
   const html = render();
@@ -99,5 +104,7 @@ it("retains pending backup and conflict recovery in the sync dialog", () => {
     expect(html).toContain(t("sv", key));
   expect(html).toContain("Fixture draft");
   expect(html).toContain("Fixture server");
+  expect(html).toContain(t("sv", "profile.displayName"));
+  expect(html).not.toContain("<pre>");
   expect(html).toContain(t("sv", "sync.keepServer", { count: 1 }));
 });

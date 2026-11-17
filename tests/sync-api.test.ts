@@ -20,10 +20,10 @@ vi.mock("../lib/git-database/store", () => ({
   },
   InvalidRecord: class extends Error {},
 }));
-vi.mock("../lib/sync/server", () => ({
+vi.mock("../lib/sync/server", async (original) => ({
+  ...(await original<typeof import("../lib/sync/server")>()),
   browserScope: () => "b".repeat(64),
   synchronize: vi.fn(),
-  SyncConflict: class extends Error {},
 }));
 vi.mock("../lib/updates/rate-limit", async (original) => ({
   ...(await original<typeof import("../lib/updates/rate-limit")>()),
@@ -32,7 +32,7 @@ vi.mock("../lib/updates/rate-limit", async (original) => ({
 import { authenticated, AuthenticationRequired } from "../lib/auth/server";
 import { database } from "../lib/git-database/config";
 import { journalPrefix } from "../lib/git-database/journal-prefix";
-import { synchronize } from "../lib/sync/server";
+import { synchronize, SyncConflict } from "../lib/sync/server";
 import { limitUpdates, UpdateRateLimited } from "../lib/updates/rate-limit";
 import { GET, POST } from "../app/api/sync/route";
 import { targetsFor, emptyRecords } from "../lib/sync/model";
@@ -149,4 +149,47 @@ it("limits probes without touching Git and gives a retry time", async () => {
   expect(result.status).toBe(429);
   expect(result.headers.get("retry-after")).toBe("30");
   expect(database).not.toHaveBeenCalled();
+});
+
+it("returns a bounded recovery reason only for a rejected operation in the authorized batch", async () => {
+  const operation = {
+    id: "20000000-0000-4000-8000-000000000002",
+    action: "profile",
+    payload: {},
+    photos: [],
+    recording: {
+      recordedAt: "2026-10-14T12:00:00Z",
+      birthDate: null,
+      birthYear: null,
+    },
+    base: [{ kind: "profile", id: null, value: null }],
+  };
+  function submit() {
+    return POST(
+      new Request("https://journal.example/api/sync/", {
+        method: "POST",
+        headers: { origin: "https://journal.example" },
+        body: JSON.stringify({ scope, head, operations: [operation] }),
+      }),
+    );
+  }
+  vi.mocked(synchronize).mockRejectedValueOnce(
+    new SyncConflict(operation.id, [], "photo"),
+  );
+  const result = await submit();
+  expect(result.status).toBe(409);
+  expect(result.headers.get("cache-control")).toBe("private, no-store");
+  expect(await result.json()).toMatchObject({
+    error: "conflict",
+    scope,
+    acknowledged: [],
+    conflict: { id: operation.id, current: [], reason: "photo" },
+  });
+
+  vi.mocked(synchronize).mockRejectedValueOnce(
+    new SyncConflict(crypto.randomUUID(), [], "invalid"),
+  );
+  const unrelated = await submit();
+  expect(unrelated.status).toBe(503);
+  expect(await unrelated.json()).toEqual({ error: "unavailable" });
 });
