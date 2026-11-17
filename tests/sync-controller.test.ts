@@ -312,25 +312,40 @@ it("discards dependent edits together only when the user chooses the server vers
   await journal.resolve(issue, false, 3);
   expect(storage.state.pending.map((o) => o.action)).toEqual(["profile"]);
 });
-it("restores a scoped backup idempotently and rejects a different repository/account", async () => {
+it("uploads a restored session with its series and preserves backup operation IDs", async () => {
   const storage = new MemoryStorage(),
-    remote = server(storage),
-    journal = engine(storage, remote.request, () => false);
+    remote = server(storage);
+  let online = false;
+  const journal = engine(storage, remote.request, () => online);
   await journal.start();
   await journal.enqueue("firearm", firearm);
+  await journal.enqueue("session", session);
+  const localSession = journal.getSnapshot().records?.sessions[0];
+  expect(localSession).toMatchObject({ id: session.id });
   const backup = {
     format: "myshotlog-pending",
     version: 1,
     scope,
-    operations: storage.state.pending,
+    operations: structuredClone(storage.state.pending),
     photos: {},
   };
-  await journal.restore(backup);
-  expect(storage.state.pending).toHaveLength(1);
+  await storage.update(scope, (state) => ({ ...state, pending: [] }));
   await expect(
     journal.restore({ ...backup, scope: "c".repeat(64) }),
   ).rejects.toThrow();
-  expect(storage.state.pending).toHaveLength(1);
+  await expect(
+    journal.restore({ ...backup, operations: [] }),
+  ).rejects.toThrow();
+  expect(storage.state.pending).toHaveLength(0);
+  await journal.restore(backup);
+  await journal.restore(backup);
+  expect(storage.state.pending).toEqual(backup.operations);
+
+  online = true;
+  await journal.sync();
+  expect(remote.received).toEqual([backup.operations]);
+  expect(storage.state.records?.sessions[0]).toEqual(localSession);
+  expect(storage.state.pending).toHaveLength(0);
 });
 it("keeps queued edits after authentication expiry and prevents new saves until reauthenticated", async () => {
   const storage = new MemoryStorage();
@@ -348,6 +363,15 @@ it("keeps queued edits after authentication expiry and prevents new saves until 
   await expect(journal.enqueue("profile", profile)).rejects.toThrow(
     "sync.authentication",
   );
+  await expect(
+    journal.restore({
+      format: "myshotlog-pending",
+      version: 1,
+      scope,
+      operations: storage.state.pending,
+      photos: {},
+    }),
+  ).rejects.toThrow("sync.authentication");
 });
 it("coordinates two engines through an atomic lease and never overlaps their network batches", async () => {
   const storage = new MemoryStorage();

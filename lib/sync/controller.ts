@@ -677,12 +677,13 @@ export class BrowserJournal {
     return data;
   }
   async restore(value: unknown) {
+    if (this.authenticationBlocked) throw new Error("sync.authentication");
     const backup = z
       .object({
         format: z.literal("myshotlog-pending"),
         version: z.literal(1),
         scope: z.literal(this.scope),
-        operations: z.array(operationSchema).max(200),
+        operations: z.array(operationSchema).min(1).max(200),
         photos: z.record(z.string(), z.string()),
       })
       .strict()

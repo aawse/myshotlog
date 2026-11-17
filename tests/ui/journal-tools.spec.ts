@@ -167,7 +167,6 @@ test("offline changes remain downloadable and sync can be run from the compact d
   await expect(
     dialog.getByText(sv["sync.synced"], { exact: true }),
   ).toBeVisible();
-  await dialog.getByText(sv["sync.browserOptions"], { exact: true }).click();
   await expect(
     dialog.getByRole("button", { name: sv["sync.restore"], exact: true }),
   ).toBeVisible();
@@ -353,8 +352,10 @@ for (const [language, messages] of [
       .click();
     await expect(page.locator(".quick-series-row")).toHaveCount(1);
     let unavailable = true;
+    let recovered = false;
     await context.route("**/api/sync/**", async (route) => {
-      if (route.request().method() !== "POST") return route.fallback();
+      if (route.request().method() !== "POST" || recovered)
+        return route.fallback();
       if (unavailable)
         return route.fulfill({ status: 503, json: { error: "unavailable" } });
       if (language === "en") return route.fulfill({ status: 413 });
@@ -426,6 +427,12 @@ for (const [language, messages] of [
         exact: true,
       }),
     ).toHaveCount(0);
+    const downloaded = page.waitForEvent("download");
+    await dialog
+      .getByRole("button", { name: messages["sync.backup"], exact: true })
+      .click();
+    const backup = await (await downloaded).path();
+    if (!backup) throw new Error("Missing pending-changes backup");
     const discard = dialog.getByRole("button", {
       name: messages["sync.discardRejected"].replace("{count}", "1"),
       exact: true,
@@ -446,5 +453,22 @@ for (const [language, messages] of [
       dialog.getByText(messages["sync.synced"], { exact: true }),
     ).toBeVisible();
     await expect(page.locator(".quick-series-row")).toHaveCount(0);
+    recovered = true;
+    const upload = dialog.getByRole("button", {
+      name: messages["sync.restore"],
+      exact: true,
+    });
+    await expect(upload).toBeVisible();
+    const choosing = page.waitForEvent("filechooser");
+    await upload.click();
+    await (await choosing).setFiles(backup);
+    await expect(
+      dialog.getByText(messages["sync.restored"], { exact: true }),
+    ).toBeVisible();
+    await expect.poll(() => journal.records.quickEntries?.length).toBe(1);
+    await expect(dialog.locator(".sync-message")).toHaveText(
+      messages["sync.synced"],
+    );
+    await expect(page.locator(".quick-series-row")).toHaveCount(1);
   });
 }

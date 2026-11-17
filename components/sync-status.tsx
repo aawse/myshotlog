@@ -16,6 +16,8 @@ export function SyncStatus() {
     { tr, language } = useI18n();
   const [actionError, setActionError] = useState<MessageKey>(),
     [resolving, setResolving] = useState(false),
+    [restoring, setRestoring] = useState(false),
+    [restored, setRestored] = useState(false),
     [confirmation, setConfirmation] = useState<{
       issue: SyncIssue;
       keep: boolean;
@@ -94,17 +96,13 @@ export function SyncStatus() {
     const url = URL.createObjectURL(
       new Blob(
         [
-          JSON.stringify(
-            {
-              format: "myshotlog-pending",
-              version: 1,
-              scope: state.scope,
-              operations: state.pending,
-              photos: state.photos,
-            },
-            null,
-            2,
-          ),
+          JSON.stringify({
+            format: "myshotlog-pending",
+            version: 1,
+            scope: state.scope,
+            operations: state.pending,
+            photos: state.photos,
+          }),
         ],
         { type: "application/json" },
       ),
@@ -172,6 +170,7 @@ export function SyncStatus() {
           setOpen(false);
           setConfirmation(undefined);
           setActionError(undefined);
+          setRestored(false);
           trigger.current?.focus({ preventScroll: true });
         }}
       >
@@ -226,7 +225,45 @@ export function SyncStatus() {
               {tr("sync.backup")}
             </button>
           )}
+          <button
+            className="text-button"
+            type="button"
+            disabled={
+              restoring ||
+              resolving ||
+              Boolean(choice) ||
+              status === "authentication"
+            }
+            onClick={() => restore.current?.click()}
+          >
+            {tr("sync.restore")}
+          </button>
+          <input
+            ref={restore}
+            className="photo-file-input"
+            aria-label={tr("sync.restore")}
+            type="file"
+            accept="application/json,.json"
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (!file) return;
+              setActionError(undefined);
+              setRestored(false);
+              setRestoring(true);
+              try {
+                if (file.size > MAX_LOCAL_BYTES) throw new Error();
+                await journal.restore(JSON.parse(await file.text()));
+                setRestored(true);
+              } catch {
+                setActionError("sync.restoreFailed");
+              } finally {
+                setRestoring(false);
+              }
+            }}
+          />
         </div>
+        {restored && <p role="status">{tr("sync.restored")}</p>}
         {state.pending.length > 0 && !operation && (
           <p className="muted">{tr("sync.pendingHelp")}</p>
         )}
@@ -342,32 +379,6 @@ export function SyncStatus() {
         <details className="sync-options">
           <summary>{tr("sync.browserOptions")}</summary>
           <p>{tr("sync.browserHelp")}</p>
-          <button
-            className="text-button"
-            type="button"
-            onClick={() => restore.current?.click()}
-          >
-            {tr("sync.restore")}
-          </button>
-          <input
-            ref={restore}
-            className="photo-file-input"
-            aria-label={tr("sync.restore")}
-            type="file"
-            accept="application/json,.json"
-            onChange={async (event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (!file) return;
-              setActionError(undefined);
-              try {
-                if (file.size > MAX_LOCAL_BYTES) throw new Error();
-                await journal.restore(JSON.parse(await file.text()));
-              } catch {
-                setActionError("sync.restoreFailed");
-              }
-            }}
-          />
         </details>
       </dialog>
     </div>
