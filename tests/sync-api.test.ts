@@ -16,7 +16,7 @@ vi.mock("../lib/git-database/journal-prefix", () => ({
 }));
 vi.mock("../lib/git-database/store", () => ({
   GitJournalStore: class {
-    syncSnapshot = vi.fn(async () => ({ head: "a".repeat(40), records: {} }));
+    syncSnapshot = vi.fn(async () => ({ head, records: largeJournal() }));
   },
   InvalidRecord: class extends Error {},
 }));
@@ -36,9 +36,21 @@ import { synchronize, SyncConflict } from "../lib/sync/server";
 import { limitUpdates, UpdateRateLimited } from "../lib/updates/rate-limit";
 import { GET, POST } from "../app/api/sync/route";
 import { targetsFor, emptyRecords } from "../lib/sync/model";
+import { firearm, session } from "./fixtures";
 const scope = "b".repeat(64),
   head = "a".repeat(40),
   currentHead = vi.fn(async () => head);
+function largeJournal() {
+  return {
+    ...emptyRecords(),
+    firearms: [firearm],
+    sessions: Array.from({ length: 5 }, (_, index) => ({
+      ...session,
+      id: "10000000-0000-4000-8000-" + String(index).padStart(12, "0"),
+      notes: "Fictional test data. ".repeat(200),
+    })),
+  };
+}
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(authenticated).mockResolvedValue({
@@ -72,6 +84,25 @@ it("returns unchanged for matching commit hashes without reading journal files o
   expect(await result.json()).toEqual({ scope, head, unchanged: true });
   expect(journalPrefix).not.toHaveBeenCalled();
   expect(result.headers.get("cache-control")).toBe("private, no-store");
+});
+it("returns readable JSON for a large journal when the browser accepts gzip", async () => {
+  expect(Buffer.byteLength(JSON.stringify(largeJournal()))).toBeGreaterThan(
+    16384,
+  );
+  const response = await GET(
+    new Request("https://journal.example/api/sync/?scope=" + scope, {
+      headers: { "Accept-Encoding": "gzip, deflate, br" },
+    }),
+  );
+  expect(response.status).toBe(200);
+  expect(response.headers.get("cache-control")).toBe("private, no-store");
+  expect(response.headers.has("content-encoding")).toBe(false);
+  expect(await response.json()).toEqual({
+    scope,
+    head,
+    records: largeJournal(),
+    unchanged: false,
+  });
 });
 it("rejects a different account/repository scope before any GitHub head lookup", async () => {
   const result = await GET(

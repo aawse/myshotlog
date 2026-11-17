@@ -1,4 +1,4 @@
-import { privateJson } from "@/lib/sync/response";
+import { privateJson as respond } from "@/lib/sync/response";
 import { authenticated, AuthenticationRequired } from "@/lib/auth/server";
 import { oauthConfig } from "@/lib/auth/github";
 import { database, databasePrefix } from "@/lib/git-database/config";
@@ -13,11 +13,6 @@ import { z } from "@/lib/validation";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 60;
-const responseFor =
-  (request: Request) =>
-  (value: unknown, status = 200, extra: Record<string, string> = {}) =>
-    privateJson(request, value, status, extra);
-
 async function context() {
   const { user } = await authenticated();
   limitUpdates(user.id + ":sync");
@@ -37,7 +32,7 @@ async function journalContext(value: Awaited<ReturnType<typeof context>>) {
     store: new GitJournalStore(provider, user.id, prefix),
   };
 }
-function failure(error: unknown, respond: ReturnType<typeof responseFor>) {
+function failure(error: unknown) {
   if (error instanceof AuthenticationRequired)
     return respond({ error: "authentication" }, 401);
   if (error instanceof UpdateRateLimited)
@@ -56,7 +51,6 @@ function failure(error: unknown, respond: ReturnType<typeof responseFor>) {
   return respond({ error: "unavailable" }, 503);
 }
 export async function GET(request: Request) {
-  const respond = responseFor(request);
   try {
     const value = await context();
     const { provider, scope } = value;
@@ -75,11 +69,10 @@ export async function GET(request: Request) {
     const snapshot = await store.syncSnapshot();
     return respond({ scope, ...snapshot, unchanged: false });
   } catch (error) {
-    return failure(error, respond);
+    return failure(error);
   }
 }
 export async function POST(request: Request) {
-  const respond = responseFor(request);
   try {
     if (request.headers.get("origin") !== oauthConfig().siteUrl)
       return respond({ error: "origin" }, 403);
@@ -124,6 +117,6 @@ export async function POST(request: Request) {
       throw error;
     }
   } catch (error) {
-    return failure(error, respond);
+    return failure(error);
   }
 }
