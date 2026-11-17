@@ -6,14 +6,16 @@ import {
   summarize,
 } from "../lib/rules/engine";
 import { rules, levels } from "../lib/rules/catalog";
+import { evaluatePendingSeries } from "../lib/rules/recorded";
 import { disciplines } from "../lib/disciplines";
 import { session, result, profile } from "./fixtures";
 describe("SPSF 2026 normal badge path", () => {
-  for (const group of ["A", "B", "C"] as const)
+  for (const group of ["A", "A optisk", "B", "C"] as const)
     for (const [i, level] of levels.entries())
       for (const delta of [-1, 0, 1])
         it(`${group} ${level} precision boundary ${delta}`, () => {
-          const points = rules[0].precision[group][i] + delta;
+          const points =
+            rules[0].precision[group === "A optisk" ? "A" : group][i] + delta;
           const a = evaluate(
             { ...session, group },
             { ...result, points },
@@ -21,8 +23,9 @@ describe("SPSF 2026 normal badge path", () => {
           )[i];
           expect(a.status).toBe(delta >= 0 ? "met" : "not-met");
           expect(a.source).toContain("5.1.1");
+          expect(a.input).toMatchObject({ group });
         });
-  for (const group of ["A", "B", "C"] as const)
+  for (const group of ["A", "A optisk", "B", "C"] as const)
     for (const [i, level] of levels.entries())
       for (const delta of [-1, 0, 1])
         it(`${group} ${level} application time ${delta}`, () => {
@@ -34,7 +37,10 @@ describe("SPSF 2026 normal badge path", () => {
               shots: 6,
               hits: rules[0].application[i],
               target: "C30",
-              seconds: rules[0].applicationSeconds[group][i] + delta,
+              seconds:
+                rules[0].applicationSeconds[group === "A optisk" ? "A" : group][
+                  i
+                ] + delta,
             },
             profile,
           )[i];
@@ -76,13 +82,46 @@ describe("SPSF 2026 normal badge path", () => {
       )[2].status,
     ).toBe("met");
   });
-  it("does not evaluate missing age or unsupported weapon/date", () => {
+  it("does not evaluate unsupported weapon groups or dates", () => {
     for (const a of [
-      evaluate({ ...session, group: "A optisk" }, result, profile),
+      evaluate({ ...session, group: "R" }, result, profile),
       evaluate({ ...session, date: "2025-12-31" }, result, profile),
       evaluate({ ...session, date: "2028-01-01" }, result, profile),
     ])
       expect(a.every((x) => x.status === "not-evaluated")).toBe(true);
+  });
+  it("reassesses a saved A optisk series using its captured birth year", () => {
+    const opticalResult = { ...result, points: 42 };
+    const optical = {
+      ...session,
+      group: "A optisk",
+      results: [opticalResult],
+    };
+    const previous = evaluate({ ...optical, group: "R" }, opticalResult, {
+      ...profile,
+      birthYear: 1970,
+    }).map((assessment) => ({
+      ...assessment,
+      id: crypto.randomUUID(),
+      createdAt: "2026-10-10T12:00:00Z",
+      input: { group: optical.group, birthYear: 1970, evaluatorVersion: 3 },
+    }));
+    const reassessed = evaluatePendingSeries(optical, profile, previous);
+    expect(reassessed).toHaveLength(3);
+    expect(reassessed[2]).toMatchObject({
+      status: "met",
+      revision: optical.revision,
+      input: { group: "A optisk", birthYear: 1970 },
+    });
+    const saved = reassessed.map((assessment) => ({
+      ...assessment,
+      id: crypto.randomUUID(),
+      createdAt: "2026-10-11T12:00:00Z",
+    }));
+    expect(
+      progress([optical], [...previous, ...saved], 2026, "A", "gold"),
+    ).toMatchObject({ precision: 1, application: 0 });
+    expect(progress([optical], saved, 2026, "C", "gold").precision).toBe(0);
   });
   it("rejects unsuitable trial conditions", () => {
     for (const p of [{ shots: 6 }])
@@ -211,7 +250,7 @@ it("personal series need no supervisor, confirmation or signature", () => {
   const personal = { ...result, conditionsConfirmed: false, evidence: "" };
   expect(evaluate(session, personal, profile)[2].status).toBe("met");
   expect(evaluate(session, personal, profile)[2].input).toMatchObject({
-    evaluatorVersion: 3,
+    evaluatorVersion: 4,
   });
   expect(
     evaluate(

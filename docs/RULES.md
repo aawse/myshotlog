@@ -47,6 +47,8 @@ Motorn använder regelkatalogen i `lib/rules/versions.json` och väljer version 
 
 Precision: fem skott och heltalspoäng 0–50, minus registrerat poängavdrag, jämförs med brons/silver/guld för A/B/C. Mål, avstånd och tid kan lagras men är inga spärrar för personlig poängklassificering. Åldersavdrag baseras på föregående kalenderår: 1 poäng från 55 år och 2 poäng från 65 år. Tidigare sparade födelseuppgifter används om de finns, annars profilen. Utan födelseuppgifter används ordinarie gränser utan avdrag. Tillämpning kräver sex skott och registrerade träffar och tid. Om skjuttid saknas i passets eller etappens villkor används seriens registrerade tid.
 
+A optisk använder grupp A:s gränser för precision och tillämpning och räknas under A i årsöversikten. Passet och bedömningsunderlaget behåller gruppnamnet A optisk. För tidigare ej bedömda A optisk-serier, använd **Bedöm ej bedömda serier** på passidan.
+
 Andra grenar och datum utan regelversion kan fortfarande vara ej bedömda. Översikten räknar tre precision och tre tillämpning per valör och kalenderår. Alternativa provvägar och standardmedaljer är inte implementerade. Detta är personlig resultatuppföljning.
 
 ## Ny upplaga

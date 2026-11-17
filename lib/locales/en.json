@@ -467,7 +467,7 @@
   "qualifications.source": "Read the source document ↗",
   "qualifications.sourceColumn": "Source",
   "qualifications.sourceHelp": "The edition is published by SPSF and obtained through Svenska PPC-cupen. Later amendments have not been fully reviewed. Current metadata and limitations are documented in docs/RULES.md. Assessments are shown for each session. Rules are selected by the session date; previously recorded birth information is used when available, otherwise the profile is used.",
-  "qualifications.standardTests": "Standard partial tests, A/B/C",
+  "qualifications.standardTests": "Standard partial tests, A/B/C (A optisk is evaluated as A)",
   "qualifications.viewSessions": "View sessions and assessments →",
   "qualifications.year": "Calendar year",
   "quick.atRange": "At the range",

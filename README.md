@@ -9,7 +9,7 @@ Personlig journal för skytte, träning och tävling, byggd med Next.js och Reac
 - Svenska och engelska, med språkval sparat i profilen. Svenska används om inget språk har valts. Egna namn, platser och anteckningar översätts inte.
 - Vapen med tillverkare, modell, kaliber och förvald gren.
 - Pass med platsförslag, starttid och gemensamt avstånd, måltyp och skjuttid för serierna.
-- Resultat med brons-, silver- och guldmarkeringar för precision och tillämpning. Regelversion väljs efter passdatum; övriga grenar kan registreras utan automatisk märkesbedömning.
+- Resultat med brons-, silver- och guldmarkeringar för precision och tillämpning. A optisk bedöms enligt grupp A. Regelversion väljs efter passdatum; övriga grenar kan registreras utan automatisk märkesbedömning.
 - Födelsedatum i profilen för precisionens åldersavdrag. Sparade födelseuppgifter används när de finns i seriens underlag; annars används profilen.
 - Mobilanpassad **Snabbserie** som sparas direkt och senare kan kopplas till ett pass med samma datum och gren. Serien bedöms vid koppling. På passidan går det att bedöma serier som fortfarande saknar en bedömning.
 - Ett valfritt tavelfoto per serie. Välj en bild; formatet avgör automatiskt om den kan användas direkt eller behöver konverteras och optimeras i webbläsaren före uppladdning.

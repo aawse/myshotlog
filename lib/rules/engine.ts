@@ -12,6 +12,11 @@ import {
   type Profile,
 } from "../models";
 import { rules, levels, type RuleVersion } from "./catalog";
+function badgeGroup(group: string) {
+  if (group === "A optisk") return "A";
+  if (group === "A" || group === "B" || group === "C") return group;
+  return undefined;
+}
 export function ageReduction(birthYear: number, year: number) {
   const age = year - 1 - birthYear;
   return age >= 65 ? 2 : age >= 55 ? 1 : 0;
@@ -30,6 +35,7 @@ export function evaluate(
   );
   const birthYear = profileBirthYear(profile),
     year = Number(session.date.slice(0, 4));
+  const group = badgeGroup(session.group);
   return levels.map((level, i) => {
     const base = {
       sessionId: session.id,
@@ -57,7 +63,7 @@ export function evaluate(
         ageBasis: rule?.ageBasis ?? null,
         ageReferenceYear: year - 1,
         ruleSnapshot: rule ? structuredClone(rule) : null,
-        evaluatorVersion: 3,
+        evaluatorVersion: 4,
         result,
       },
     };
@@ -82,9 +88,7 @@ export function evaluate(
     if (!rule) return out("not-evaluated", swText("rules.noVersion"));
     if (session.date < rule.from || session.date >= rule.until)
       return out("not-evaluated", swText("rules.outsideVersion"));
-    if (!["A", "B", "C"].includes(session.group))
-      return out("not-evaluated", swText("rules.unsupportedGroup"));
-    const group = session.group as "A" | "B" | "C";
+    if (!group) return out("not-evaluated", swText("rules.unsupportedGroup"));
     if (session.discipline === "precision") {
       if (
         result.type !== "score" ||
@@ -138,10 +142,12 @@ export function progress(
   group: string,
   level: (typeof levels)[number],
 ) {
+  const qualificationGroup = badgeGroup(group);
   const relevant = sessions.filter(
     (s) =>
+      qualificationGroup &&
       s.date.startsWith(String(year)) &&
-      s.group === group &&
+      badgeGroup(s.group) === qualificationGroup &&
       ["precision", "application"].includes(s.discipline),
   );
   const saved = relevant.flatMap((s) =>
@@ -175,7 +181,7 @@ export function progress(
     application,
     required: 3,
     status:
-      !["A", "B", "C"].includes(group) || (!complete && unknown)
+      !qualificationGroup || (!complete && unknown)
         ? "not-evaluated"
         : complete
           ? "met"

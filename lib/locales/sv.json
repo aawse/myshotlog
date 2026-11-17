@@ -467,7 +467,7 @@
   "qualifications.source": "Läs källdokumentet ↗",
   "qualifications.sourceColumn": "Källa",
   "qualifications.sourceHelp": "Utgåvan är publicerad av SPSF och hämtad via Svenska PPC-cupen. Senare ändringar är inte fullständigt inventerade. Gällande metadata och begränsningar finns i docs/RULES.md. Sparade bedömningar finns på varje pass; denna översikt räknar enbart sparade bedömningar från aktuell revision. Nya regler och ändrade födelseuppgifter påverkar bara nya serier.",
-  "qualifications.standardTests": "Ordinarie delprov, A/B/C",
+  "qualifications.standardTests": "Ordinarie delprov, A/B/C (A optisk bedöms som A)",
   "qualifications.viewSessions": "Visa pass och sparade bedömningar →",
   "qualifications.year": "Kalenderår",
   "quick.atRange": "På banan",
