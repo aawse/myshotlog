@@ -547,3 +547,85 @@ it("preserves the reviewed GitHub version on a failed recheck and rejects a stal
   );
   expect(storage.state.pending).toEqual([pending]);
 });
+
+it("keeps a bounded history without retaining response bodies or exceptions", async () => {
+  const storage = new MemoryStorage();
+  let failing = true;
+  const journal = engine(storage, async () => {
+    if (failing)
+      return new Response("private fixture response", { status: 200 });
+    return Response.json({ scope, head, unchanged: true });
+  });
+  await journal.start();
+  for (let i = 0; i < 11; i++) await journal.sync();
+  failing = false;
+  await journal.sync();
+  const snapshot = journal.getSnapshot();
+  expect(snapshot.status).toBe("synced");
+  expect(snapshot.failures).toHaveLength(10);
+  expect(snapshot.failures[0]).toMatchObject({
+    stage: "read",
+    reason: "sync.badResponse",
+    httpStatus: 200,
+  });
+  expect(JSON.stringify(snapshot.failures)).not.toContain(
+    "private fixture response",
+  );
+});
+
+it("retries oversized batches in order and preserves a blocked change for explicit review", async () => {
+  const storage = new MemoryStorage();
+  const remote = server(storage);
+  let online = false;
+  let rejectEveryUpload = false;
+  const attempts: string[][] = [];
+  const journal = engine(
+    storage,
+    async (url, init) => {
+      if (init?.method === "POST") {
+        const operations = JSON.parse(String(init.body))
+          .operations as Operation[];
+        attempts.push(operations.map((operation) => operation.id));
+        if (rejectEveryUpload || operations.length > 1)
+          return new Response("upload too large", { status: 413 });
+      }
+      return remote.request(url, init);
+    },
+    () => online,
+  );
+  await journal.start();
+  await journal.enqueue("firearm", firearm);
+  await journal.enqueue("session", session);
+  const [first, second] = storage.state.pending.map(
+    (operation) => operation.id,
+  );
+  online = true;
+  await journal.sync();
+  expect(attempts).toEqual([[first, second], [first]]);
+  expect(storage.state.pending.map((operation) => operation.id)).toEqual([
+    second,
+  ]);
+  expect(journal.getSnapshot().failures[0]).toMatchObject({
+    stage: "upload",
+    reason: "sync.batchReduced",
+    uploadCount: 2,
+    httpStatus: 413,
+  });
+
+  rejectEveryUpload = true;
+  await journal.sync();
+  const issue = journal.getSnapshot().state.conflict;
+  expect(issue).toEqual({ id: second, current: [], reason: "size" });
+  expect(storage.state.pending.map((operation) => operation.id)).toEqual([
+    second,
+  ]);
+  if (!issue) throw new Error("Missing size review");
+  await expect(journal.resolve(issue, true)).rejects.toThrow(
+    "sync.resolveFailed",
+  );
+
+  rejectEveryUpload = false;
+  await journal.sync(second);
+  expect(storage.state.pending).toEqual([]);
+  expect(journal.getSnapshot().status).toBe("synced");
+});

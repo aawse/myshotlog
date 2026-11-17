@@ -21,6 +21,7 @@ beforeEach(() => {
     state: initialState("a".repeat(64)),
     records: null,
     status: "synced",
+    failures: [],
   };
 });
 function render(language: "sv" | "en" = "sv") {

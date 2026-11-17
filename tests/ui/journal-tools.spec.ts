@@ -333,72 +333,118 @@ for (const [keepDevice, language, messages] of [
   });
 }
 
-test("explains a storage outage and provides a recovery path for a rejected change", async ({
-  page,
-  context,
-  journal,
-}) => {
-  await page.goto("/quick/");
-  await page.getByLabel(sv["session.points"], { exact: true }).fill("45");
-  await context.setOffline(true);
-  await page
-    .getByRole("button", { name: sv["quick.saveNext"], exact: true })
-    .click();
-  await expect(page.locator(".quick-series-row")).toHaveCount(1);
-  let unavailable = true;
-  await context.route("**/api/sync/**", async (route) => {
-    if (route.request().method() !== "POST") return route.fallback();
-    if (unavailable)
-      return route.fulfill({ status: 503, json: { error: "unavailable" } });
-    const batch = batchSchema.parse(route.request().postDataJSON());
-    await route.fulfill({
-      status: 409,
-      json: {
-        scope: batch.scope,
-        head: batch.head,
-        records: journal.records,
-        conflict: { id: batch.operations[0].id, current: [], reason: "photo" },
-      },
+for (const [language, messages] of [
+  ["sv", sv],
+  ["en", en],
+] as const) {
+  test(`shows recovery steps and sync history in ${language}`, async ({
+    page,
+    context,
+    journal,
+  }, testInfo) => {
+    journal.setLanguage(language);
+    await page.goto("/quick/");
+    await page
+      .getByLabel(messages["session.points"], { exact: true })
+      .fill("45");
+    await context.setOffline(true);
+    await page
+      .getByRole("button", { name: messages["quick.saveNext"], exact: true })
+      .click();
+    await expect(page.locator(".quick-series-row")).toHaveCount(1);
+    let unavailable = true;
+    await context.route("**/api/sync/**", async (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      if (unavailable)
+        return route.fulfill({ status: 503, json: { error: "unavailable" } });
+      if (language === "en") return route.fulfill({ status: 413 });
+      const batch = batchSchema.parse(route.request().postDataJSON());
+      await route.fulfill({
+        status: 409,
+        json: {
+          scope: batch.scope,
+          head: batch.head,
+          records: journal.records,
+          conflict: {
+            id: batch.operations[0].id,
+            current: [],
+            reason: "photo",
+          },
+        },
+      });
     });
+    await context.setOffline(false);
+    await page.getByRole("heading").first().click();
+    await expect(page.locator(".sync-trigger")).toContainText(
+      messages["sync.compactAttention"],
+    );
+    await page.locator(".sync-trigger").click();
+    const dialog = page.getByRole("dialog", { name: messages["sync.heading"] });
+    await expect(dialog.locator(".sync-message")).toHaveText(
+      messages["sync.unavailable"],
+    );
+    await page.screenshot({
+      path: testInfo.outputPath(`sync-errors-collapsed-${language}.png`),
+    });
+    await dialog.getByText(messages["sync.history"], { exact: true }).click();
+    const history = dialog.locator(".sync-history");
+    await expect(
+      history.getByText(messages["sync.stageUpload"], { exact: false }).first(),
+    ).toContainText("HTTP 503");
+    await expect(history.locator("time").first()).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath(`sync-errors-expanded-${language}.png`),
+    });
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error("Missing viewport");
+    await page.setViewportSize({ width: 320, height: viewport.height });
+    await expectLayout(page);
+    await page.screenshot({
+      path: testInfo.outputPath(`sync-errors-320-${language}.png`),
+    });
+    await page.setViewportSize(viewport);
+    await dialog.getByText(messages["sync.history"], { exact: true }).click();
+    unavailable = false;
+    await dialog
+      .getByRole("button", { name: messages["sync.now"], exact: true })
+      .click();
+    await expect(
+      dialog.getByText(
+        messages[language === "en" ? "sync.sizeHelp" : "sync.photoHelp"],
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole("button", {
+        name: messages["sync.backup"],
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole("button", {
+        name: messages["sync.keepDevice"],
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    const discard = dialog.getByRole("button", {
+      name: messages["sync.discardRejected"].replace("{count}", "1"),
+      exact: true,
+    });
+    await discard.click();
+    await dialog
+      .getByRole("button", { name: messages["common.cancel"], exact: true })
+      .click();
+    await expect(page.locator(".quick-series-row")).toHaveCount(1);
+    await discard.click();
+    await dialog
+      .getByRole("button", {
+        name: messages["sync.confirmDiscard"],
+        exact: true,
+      })
+      .click();
+    await expect(
+      dialog.getByText(messages["sync.synced"], { exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".quick-series-row")).toHaveCount(0);
   });
-  await context.setOffline(false);
-  await page.getByRole("heading").first().click();
-  await expect(page.locator(".sync-trigger")).toContainText(
-    sv["sync.compactAttention"],
-  );
-  await page.locator(".sync-trigger").click();
-  const dialog = page.getByRole("dialog", { name: sv["sync.heading"] });
-  await expect(
-    dialog.getByText(sv["sync.unavailable"], { exact: true }),
-  ).toBeVisible();
-  unavailable = false;
-  await dialog
-    .getByRole("button", { name: sv["sync.now"], exact: true })
-    .click();
-  await expect(
-    dialog.getByText(sv["sync.photoHelp"], { exact: true }),
-  ).toBeVisible();
-  await expect(
-    dialog.getByRole("button", { name: sv["sync.backup"], exact: true }),
-  ).toBeVisible();
-  await expect(
-    dialog.getByRole("button", { name: sv["sync.keepDevice"], exact: true }),
-  ).toHaveCount(0);
-  const discard = dialog.getByRole("button", {
-    name: sv["sync.discardRejected"].replace("{count}", "1"),
-    exact: true,
-  });
-  await discard.click();
-  await dialog
-    .getByRole("button", { name: sv["common.cancel"], exact: true })
-    .click();
-  await expect(page.locator(".quick-series-row")).toHaveCount(1);
-  await discard.click();
-  await dialog
-    .getByRole("button", { name: sv["sync.confirmDiscard"], exact: true })
-    .click();
-  await expect(
-    dialog.getByText(sv["sync.synced"], { exact: true }),
-  ).toBeVisible();
-  await expect(page.locator(".quick-series-row")).toHaveCount(0);
-});
+}

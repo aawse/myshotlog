@@ -35,11 +35,40 @@ export type SyncStatus =
   | "authentication"
   | "error"
   | "storage";
+type FailureStage = "read" | "upload" | "storage";
+type SyncFailure = {
+  at: string;
+  stage: FailureStage;
+  reason: FailureReason | "sync.conflict" | "sync.batchReduced";
+  httpStatus?: number;
+  uploadCount?: number;
+};
+class SyncError extends Error {
+  constructor(readonly reason: FailureReason) {
+    super(reason);
+  }
+}
+type FailureReason =
+  | "sync.authentication"
+  | "sync.scope"
+  | "sync.origin"
+  | "sync.rateLimited"
+  | "sync.tooLarge"
+  | "sync.invalid"
+  | "sync.unavailable"
+  | "sync.failed"
+  | "sync.serverBusy"
+  | "sync.network"
+  | "sync.badResponse"
+  | "sync.storageError"
+  | "sync.timedOut";
+
 export type SyncSnapshot = {
   state: BrowserState;
   records: Records | null;
   status: SyncStatus;
-  error?: string;
+  error?: FailureReason;
+  failures: readonly SyncFailure[];
 };
 const replySchema = z.object({
   scope: z.string(),
@@ -60,7 +89,8 @@ export class BrowserJournal {
   private starting?: Promise<void>;
   private channel?: BroadcastChannel;
   private photoRequests = new Map<string, Promise<string>>();
-  private problem?: string;
+  private problem?: FailureReason;
+  private failures: readonly SyncFailure[] = [];
   private authenticationBlocked = false;
   constructor(
     readonly scope: string,
@@ -70,7 +100,12 @@ export class BrowserJournal {
     private online: () => boolean = () => navigator.onLine,
   ) {
     this.state = initialState(scope);
-    this.snapshot = { state: this.state, records: null, status: "loading" };
+    this.snapshot = {
+      state: this.state,
+      records: null,
+      status: "loading",
+      failures: [],
+    };
   }
   getSnapshot = () => this.snapshot;
   subscribe = (listener: () => void) => {
@@ -109,8 +144,25 @@ export class BrowserJournal {
                 ? "pending"
                 : "synced")),
       ...(this.problem ? { error: this.problem } : {}),
+      failures: this.failures,
     };
     this.listeners.forEach((listener) => listener());
+  }
+  private recordFailure(
+    reason: SyncFailure["reason"],
+    stage: FailureStage,
+    httpStatus?: number,
+    uploadCount?: number,
+  ) {
+    this.failures = [
+      { at: new Date().toISOString(), stage, reason, httpStatus, uploadCount },
+      ...this.failures.slice(0, 9),
+    ];
+  }
+  private storageFailure() {
+    this.problem = "sync.storageError";
+    this.recordFailure(this.problem, "storage");
+    this.emit("storage");
   }
   private async update(change: (state: BrowserState) => BrowserState) {
     this.state = await this.storage.update(this.scope, (state) =>
@@ -127,8 +179,7 @@ export class BrowserJournal {
       this.state = await this.storage.load(this.scope);
       this.emit();
     } catch {
-      this.problem = "sync.storageError";
-      this.emit("storage");
+      this.storageFailure();
     }
     if (this.disposed) return;
     if (typeof BroadcastChannel !== "undefined") {
@@ -145,8 +196,7 @@ export class BrowserJournal {
       this.emit();
       return true;
     } catch {
-      this.problem = "sync.storageError";
-      this.emit("storage");
+      this.storageFailure();
       return false;
     }
   }
@@ -168,30 +218,33 @@ export class BrowserJournal {
         .object({ error: z.enum(["origin", "scope"]) })
         .safeParse(await response.json().catch(() => null));
       if (denial.success && denial.data.error === "origin")
-        throw new Error("sync.origin");
+        throw new SyncError("sync.origin");
       return this.deny(denial.success ? "sync.scope" : "sync.authentication");
     }
-    if (response.status === 429) throw new Error("sync.rateLimited");
-    if (response.status === 413) throw new Error("sync.tooLarge");
-    if (response.status === 400) throw new Error("sync.invalid");
-    if (response.status === 503) throw new Error("sync.unavailable");
-    if (!response.ok && response.status !== 409) throw new Error("sync.failed");
-    const body: unknown = await response.json();
+    if (response.status === 429) throw new SyncError("sync.rateLimited");
+    if (response.status === 413) throw new SyncError("sync.tooLarge");
+    if (response.status === 400) throw new SyncError("sync.invalid");
+    if (response.status === 503) throw new SyncError("sync.unavailable");
+    if (!response.ok && response.status !== 409)
+      throw new SyncError("sync.failed");
+    const body: unknown = await response.json().catch(() => {
+      throw new SyncError("sync.badResponse");
+    });
     if (
       response.status === 409 &&
       z.object({ error: z.literal("retry") }).safeParse(body).success
     )
-      throw new Error("sync.serverBusy");
-    const data = replySchema.parse(body);
+      throw new SyncError("sync.serverBusy");
+    const parsed = replySchema.safeParse(body);
+    if (!parsed.success) throw new SyncError("sync.badResponse");
+    const data = parsed.data;
     if (data.scope !== this.scope) return this.deny("sync.scope");
     this.authenticationBlocked = false;
     return data;
   }
   private deny(problem: "sync.authentication" | "sync.scope"): never {
     this.authenticationBlocked = true;
-    this.problem = problem;
-    this.emit("authentication");
-    throw new Error(problem);
+    throw new SyncError(problem);
   }
   sync = (reviewId?: string): Promise<void> => {
     if (this.running)
@@ -244,14 +297,23 @@ export class BrowserJournal {
         this.schedule(3000);
       }
     } catch {
-      this.problem = "sync.storageError";
-      this.emit("storage");
+      this.storageFailure();
       this.schedule(30000);
+    }
+  }
+  private async send(url: string, options: RequestInit) {
+    try {
+      return await this.request(url, options);
+    } catch {
+      throw new SyncError("sync.network");
     }
   }
   private async performSync(reviewId?: string) {
     if (this.disposed) return;
     let deadline: ReturnType<typeof setTimeout> | undefined;
+    let stage: FailureStage = "read";
+    let httpStatus: number | undefined;
+    let uploadCount: number | undefined;
     try {
       if (!(await this.reload())) return;
       if (this.state.conflict && this.state.conflict.id !== reviewId) {
@@ -270,16 +332,18 @@ export class BrowserJournal {
         scope: this.scope,
         ...(this.state.head ? { head: this.state.head } : {}),
       });
-      const remote = await this.readResponse(
-        await this.request("/api/sync/?" + query, {
-          cache: "no-store",
-          signal,
-        }),
-      );
+      const read = await this.send("/api/sync/?" + query, {
+        cache: "no-store",
+        signal,
+      });
+      httpStatus = read.status;
+      const remote = await this.readResponse(read);
       // A failed recheck must leave the reviewed GitHub record and base together.
       if (!remote.unchanged && !this.state.conflict) {
         const records = remote.records;
-        if (!records) throw new Error("sync.failed");
+        if (!records) throw new SyncError("sync.badResponse");
+        stage = "storage";
+        httpStatus = undefined;
         await this.update((state) => ({
           ...state,
           head: remote.head,
@@ -288,36 +352,76 @@ export class BrowserJournal {
         }));
       }
       if (this.disposed) return;
-      const batch = pendingBatch(this.state.pending);
+      stage = "upload";
+      httpStatus = undefined;
+      let batch = pendingBatch(this.state.pending);
       if (batch.length) {
         this.emit("syncing");
-        const response = await this.request("/api/sync/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            scope: this.scope,
-            head: remote.head,
-            operations: batch,
-          }),
-          signal,
-        });
+        const upload = async () => {
+          uploadCount = batch.length;
+          httpStatus = undefined;
+          const response = await this.send("/api/sync/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              scope: this.scope,
+              head: remote.head,
+              operations: batch,
+            }),
+            signal,
+          });
+          httpStatus = response.status;
+          return response;
+        };
+        let response = await upload();
+        while (response.status === 413 && batch.length > 1) {
+          this.recordFailure(
+            "sync.batchReduced",
+            stage,
+            httpStatus,
+            uploadCount,
+          );
+          batch = batch.slice(0, Math.floor(batch.length / 2));
+          response = await upload();
+        }
+        if (
+          response.status === 413 &&
+          this.state.records &&
+          !this.state.conflict
+        ) {
+          const id = batch[0].id;
+          this.recordFailure("sync.tooLarge", stage, httpStatus, uploadCount);
+          stage = "storage";
+          httpStatus = undefined;
+          await this.update((state) => ({
+            ...state,
+            conflict: state.pending.some((operation) => operation.id === id)
+              ? { id, current: [], reason: "size" }
+              : state.conflict,
+          }));
+          this.emit();
+          return;
+        }
         const result = await this.readResponse(response);
         const { records, conflict } = result;
-        if (!records) throw new Error("sync.failed");
+        if (!records) throw new SyncError("sync.badResponse");
         const ids = new Set(batch.map((operation) => operation.id));
         const acknowledged = new Set(result.acknowledged);
         if (
           acknowledged.size !== (result.acknowledged?.length ?? 0) ||
           [...acknowledged].some((id) => !ids.has(id))
         )
-          throw new Error("sync.failed");
+          throw new SyncError("sync.badResponse");
         if (response.status === 409) {
           if (
             !conflict ||
             !ids.has(conflict.id) ||
             acknowledged.has(conflict.id)
           )
-            throw new Error("sync.failed");
+            throw new SyncError("sync.badResponse");
+          this.recordFailure("sync.conflict", stage, httpStatus, uploadCount);
+          stage = "storage";
+          httpStatus = undefined;
           await this.update((state) => ({
             ...state,
             head: result.head,
@@ -330,7 +434,10 @@ export class BrowserJournal {
           this.emit("conflict");
           return;
         }
-        if (acknowledged.size !== ids.size) throw new Error("sync.failed");
+        if (acknowledged.size !== ids.size)
+          throw new SyncError("sync.badResponse");
+        stage = "storage";
+        httpStatus = undefined;
         await this.update((state) => ({
           ...state,
           head: result.head,
@@ -344,21 +451,18 @@ export class BrowserJournal {
       this.emit();
     } catch (error) {
       if (this.disposed) return;
-      const message = error instanceof Error ? error.message : "sync.failed";
-      if (!this.authenticationBlocked || this.problem === undefined) {
-        this.problem = this.controller?.signal.aborted
-          ? "sync.timedOut"
-          : message.startsWith("sync.")
-            ? message
+      this.problem =
+        error instanceof SyncError
+          ? (error.reason === "sync.network" ||
+              error.reason === "sync.badResponse") &&
+            this.controller?.signal.aborted
+            ? "sync.timedOut"
+            : error.reason
+          : stage === "storage"
+            ? "sync.storageError"
             : "sync.failed";
-        this.emit(
-          this.problem === "sync.storageError"
-            ? "storage"
-            : this.online()
-              ? "error"
-              : "offline",
-        );
-      }
+      this.recordFailure(this.problem, stage, httpStatus, uploadCount);
+      this.emit();
     } finally {
       clearTimeout(deadline);
       this.controller = undefined;

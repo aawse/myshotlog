@@ -1774,6 +1774,18 @@ body:has(.issue-dialog[open], .sync-dialog[open]) {
   font-size: 12px;
   color: var(--muted);
 }
+.sync-history ol {
+  padding-inline-start: var(--space-24);
+}
+.sync-history li + li {
+  margin-top: var(--space-16);
+}
+.sync-history p {
+  margin-block: var(--space-4);
+}
+.sync-dialog > .sync-history > summary {
+  min-height: 44px;
+}
 .sync-conflict {
   margin-top: 16px;
 }

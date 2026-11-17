@@ -21,7 +21,11 @@ export const stateSchema = z
         .max(250000)
         .regex(/^data:image\/(?:jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/),
     ),
-    conflict: conflictSchema.nullable(),
+    conflict: conflictSchema
+      .extend({
+        reason: z.enum(["invalid", "dependency", "photo", "size"]).optional(),
+      })
+      .nullable(),
   })
   .strict();
 export type BrowserState = z.infer<typeof stateSchema>;

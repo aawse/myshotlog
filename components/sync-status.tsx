@@ -12,8 +12,8 @@ import type { MessageKey } from "@/lib/i18n";
 import { SyncComparison } from "./sync-comparison";
 export function SyncStatus() {
   const provider = useJournal(),
-    { state, status, error } = useJournalState(),
-    { tr } = useI18n();
+    { state, status, error, failures } = useJournalState(),
+    { tr, language } = useI18n();
   const [actionError, setActionError] = useState<MessageKey>(),
     [resolving, setResolving] = useState(false),
     [confirmation, setConfirmation] = useState<{
@@ -42,13 +42,15 @@ export function SyncStatus() {
   const choice =
     confirmation?.issue.id === operation?.id ? confirmation : undefined;
   const recoveryMessage =
-    conflict?.reason === "invalid"
-      ? "sync.rejectedHelp"
-      : conflict?.reason === "dependency"
-        ? "sync.dependencyHelp"
-        : conflict?.reason === "photo"
-          ? "sync.photoHelp"
-          : "sync.conflictHelp";
+    conflict?.reason === "size"
+      ? "sync.sizeHelp"
+      : conflict?.reason === "invalid"
+        ? "sync.rejectedHelp"
+        : conflict?.reason === "dependency"
+          ? "sync.dependencyHelp"
+          : conflict?.reason === "photo"
+            ? "sync.photoHelp"
+            : "sync.conflictHelp";
   const labels = {
     loading: "loading.journal",
     synced: "sync.synced",
@@ -75,12 +77,9 @@ export function SyncStatus() {
     status,
   );
   const message = tr(
-    error &&
-      error.startsWith("sync.") &&
-      status !== "offline" &&
-      status !== "conflict"
-      ? (error as MessageKey)
-      : labels[status],
+    status === "offline" || status === "conflict"
+      ? labels[status]
+      : (error ?? labels[status]),
     { count: state.pending.length },
   );
   const Icon =
@@ -309,6 +308,37 @@ export function SyncStatus() {
           </div>
         )}
         {actionError && <p role="alert">{tr(actionError)}</p>}
+        {failures.length > 0 && (
+          <details className="sync-history">
+            <summary>{tr("sync.history")}</summary>
+            <ol>
+              {failures.map((failure, index) => (
+                <li key={failures.length - index}>
+                  <time dateTime={failure.at}>
+                    {new Intl.DateTimeFormat(language, {
+                      dateStyle: "short",
+                      timeStyle: "medium",
+                    }).format(new Date(failure.at))}
+                  </time>
+                  <p>
+                    {tr(
+                      failure.stage === "read"
+                        ? "sync.stageRead"
+                        : failure.stage === "upload"
+                          ? "sync.stageUpload"
+                          : "sync.stageStorage",
+                    )}
+                    {failure.httpStatus !== undefined &&
+                      ` · HTTP ${failure.httpStatus}`}
+                    {failure.uploadCount !== undefined &&
+                      ` · ${tr("sync.uploadCount", { count: failure.uploadCount })}`}
+                  </p>
+                  <p>{tr(failure.reason)}</p>
+                </li>
+              ))}
+            </ol>
+          </details>
+        )}
         <details className="sync-options">
           <summary>{tr("sync.browserOptions")}</summary>
           <p>{tr("sync.browserHelp")}</p>
