@@ -56,6 +56,8 @@ Slutanropet kontrollerar fullständighet, autentiseringstaggar, totalstorlek, ha
 
 Records-rutten tillåter 300 sekunder med Vercel Fluid compute på Hobby. Exportens små fotoanrop undviker en enda stor serverfunktion och stora svar; JSON-filen laddas ned direkt från webbläsaren. Slutlig import behåller en atomisk postkedja och kan fortfarande ta tid för många poster eller långsam Git-provider. Vid timeout visas fel och användaren kan försöka igen; inga delvis publicerade journaler accepteras. Detta är inte ett bakgrundsjobb eller en garanti att alla 32 MB-importer ryms i 300 sekunder.
 
+Journalverktyget körs lokalt av den som har installationens Git-behörighet. Tillåtelselistan och ägarmappningen väljer journalen från ett uttryckligt GitHub-ID. Vanliga JSON-filer går genom samma importtransaktion som webbappen. Väntande ändringar kontrolleras mot samma browser-scope och spelas upp genom batchsynkningen med revisionskontroll och kvittenser. Exporten kontrollerar att journalposter och refererade foton lästs från samma Git-revision innan filen skapas.
+
 CI kör tester, typkontroll och produktionsbygge på Ubuntu med Node.js 24. Lokal utveckling använder samma npm-kommandon på Windows, macOS och Linux. GitHub-adaptern behöver ingen Git-binär i driftruntimen, medan Git-adaptern och integrationstesterna behöver Git i PATH.
 
 ## Browser-cache och batchsynkning

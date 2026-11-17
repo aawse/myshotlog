@@ -249,6 +249,20 @@ Radering i appen tar bort aktuella journalposter men Git behåller äldre versio
 
 Behåll en framåtgående databranch och undvik force-push eller manuella filändringar under appskrivningar. Efter återställning av en backup eller säkerhetshistorik ska `AUTH_SESSION_SECRET` roteras, för att ogiltigförklara befintliga cookies och undvika återanvändning av återställt OAuth-tillstånd. GitHub API-gränser, trädstorlek och funktionernas körtid begränsar kapaciteten; installationen är avsedd för små personliga journaler.
 
+### Journalverktyg för Git-administratörer
+
+Kör från appens checkout med Node.js 22.15 eller senare och beroenden installerade med `npm ci`. Verktyget använder Git-konfigurationen och `GITHUB_ALLOWED_USER_IDS` från processmiljön eller filen i `--env-file`. Befintliga miljövariabler har företräde. Ange journalägarens numeriska GitHub-ID med `--github-id`. Verktyget använder samma ägarmappning och äldre prefix som appen. Åtkomsten sker med installationens Git-behörighet.
+
+```sh
+npm run journal -- sync myshotlog-v2.json --github-id 12345 --env-file .env.local
+npm run journal -- sync myshotlog-pending.json --github-id 12345 --env-file .env.local
+npm run journal -- export journal.json --github-id 12345 --env-file .env.local
+```
+
+En journalexport importeras atomärt och befintliga post-ID:n hoppas över. En fil med väntande ändringar spelas upp atomärt mot samma konto och Git-konfiguration som i webbläsaren. Redan kvitterade operationer hoppas över. Vid konflikt avvisas hela den återstående filen och ändringarna kan granskas i webbappens synkstatus.
+
+Exporten innehåller en journal med refererade foton och vittnesintyg. Importera filen från **Inställningar**. Båda kommandona har en filgräns på 32 MB. Exporten skapar en ny privat fil och avvisar en befintlig målfil. Förvara filerna privat.
+
 ## Foton och passvillkor
 
 Vapen kan ha en förvald gren. Avstånd, måltyp, starttid och skjuttid anges på passet. Måltyp och kaliber väljs i dropdowns. Platsfältet föreslår tidigare sparade platser. Nya precisionspass börjar med 25 meter, pistoltavla precision och 300 sekunder som ändringsbara standardvärden.

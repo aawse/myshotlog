@@ -852,5 +852,12 @@
   "witness.unavailable": "This witness link has expired, been cancelled or used, or the results have changed. Ask the owner for a new link.",
   "witness.viewSnapshot": "Show the results that were signed",
   "details.calculationAge": "Age used for scoring",
-  "print.scoringAge": "{age} years (reference year {year})"
+  "print.scoringAge": "{age} years (reference year {year})",
+  "cli.usage": "Usage: npm run journal -- <sync|export> <file.json> --github-id <id> [--env-file <path>] [--language en|sv]",
+  "cli.config": "Check the Git configuration, allowed GitHub ID and journal owner mapping.",
+  "cli.syncError": "Sync failed. Check the JSON file, its size and repository access.",
+  "cli.exportError": "Export failed. Check repository access, the 32 MB limit and whether the destination already exists.",
+  "cli.scope": "The pending changes belong to a different journal or database configuration.",
+  "cli.conflict": "The journal has a conflict. Review pending changes in the web app or retry the export.",
+  "cli.synced": "Sync complete."
 }

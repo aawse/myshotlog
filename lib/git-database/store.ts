@@ -134,12 +134,30 @@ export class GitJournalStore {
     return photo;
   }
   async photos(): Promise<PhotoAsset[]> {
-    const snapshot = await this.readSnapshot(this.photosPath);
+    return this.decodePhotos(await this.readSnapshot(this.photosPath));
+  }
+  async exportSnapshot(): Promise<Records> {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const read = (path: string) =>
+        attempt ? this.provider.snapshot(path) : this.readSnapshot(path);
+      const journal = await read(this.path);
+      const records = await this.records(journal);
+      const ids = photoIds(records);
+      if (!ids.size) return records;
+      const photos = await read(this.photosPath);
+      if (journal.head !== photos.head) continue;
+      return { ...records, photos: this.decodePhotos(photos, ids) };
+    }
+    throw new DatabaseConflict();
+  }
+  private decodePhotos(snapshot: GitSnapshot, ids?: Set<string>): PhotoAsset[] {
+    const paths = ids && new Set([...ids].map((id) => this.photoPath(id)));
     return [...snapshot.files]
-      .filter(
-        ([path]) =>
-          path.startsWith(this.photosPath + "/") &&
-          path.endsWith("/image.json"),
+      .filter(([path]) =>
+        paths
+          ? paths.has(path)
+          : path.startsWith(this.photosPath + "/") &&
+            path.endsWith("/image.json"),
       )
       .map(([path, content]) => {
         const photo = photoFile.parse(JSON.parse(content)).entry;

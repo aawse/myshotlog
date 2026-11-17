@@ -15,6 +15,7 @@
     "rules:sync": "npm run rules:check && node scripts/sync-rules.mjs",
     "format": "prettier --write app components lib tests scripts \"*.ts\" \"*.json\"",
     "format:check": "prettier --check app components lib tests scripts \"*.ts\" \"*.json\"",
+    "journal": "node scripts/journal.mjs",
     "setup:local": "node scripts/setup-local.mjs",
     "test:ui": "playwright test",
     "test:ui:install": "playwright install --with-deps chromium firefox webkit",

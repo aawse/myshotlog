@@ -852,5 +852,12 @@
   "witness.unavailable": "Vittneslänken har gått ut, återkallats eller använts, eller resultaten har ändrats. Be ägaren om en ny länk.",
   "witness.viewSnapshot": "Visa resultaten som intygades",
   "details.calculationAge": "Ålder för poängberäkning",
-  "print.scoringAge": "{age} år (referensår {year})"
+  "print.scoringAge": "{age} år (referensår {year})",
+  "cli.usage": "Användning: npm run journal -- <sync|export> <fil.json> --github-id <id> [--env-file <sökväg>] [--language en|sv]",
+  "cli.config": "Kontrollera Git-konfigurationen, tillåtet GitHub-ID och mappningen till journalägare.",
+  "cli.syncError": "Synkningen misslyckades. Kontrollera JSON-filen, filstorleken och åtkomsten till datalagringen.",
+  "cli.exportError": "Exporten misslyckades. Kontrollera åtkomst, gränsen på 32 MB och om målfilen redan finns.",
+  "cli.scope": "De väntande ändringarna hör till en annan journal eller databaskonfiguration.",
+  "cli.conflict": "Journalen har en konflikt. Granska väntande ändringar i webbappen eller försök exportera igen.",
+  "cli.synced": "Synkningen är klar."
 }
