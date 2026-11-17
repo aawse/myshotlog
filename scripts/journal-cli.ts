@@ -21,6 +21,11 @@ import { TRANSFER_MAX_BYTES } from "../lib/transfer-limits";
 import { z } from "../lib/validation";
 import { validateSignoff } from "../lib/witness/store";
 import { PurgeIncomplete, truncateJournal } from "./truncate-journal";
+import {
+  isGitRemote,
+  RemoteTruncateUnverified,
+  truncateRemoteJournal,
+} from "./truncate-remote-journal";
 
 const pendingSchema = z
   .object({
@@ -76,6 +81,31 @@ async function writeBackup(path: string, contents: string) {
   }
 }
 
+function configuredRemote() {
+  const provider = process.env.GIT_DATABASE_PROVIDER ?? "github";
+  if (provider === "git") return process.env.GIT_DATABASE_REMOTE ?? "";
+  if (provider !== "github") throw new Error();
+  const repository = process.env.GIT_DATABASE_REPOSITORY ?? "";
+  const api = new URL(
+    process.env.GIT_DATABASE_API_URL ?? "https://api.github.com",
+  );
+  if (
+    !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository) ||
+    repository.split("/").some((part) => part === "." || part === "..") ||
+    api.protocol !== "https:" ||
+    api.username ||
+    api.password ||
+    api.search ||
+    api.hash
+  )
+    throw new Error();
+  const path = api.pathname.replace(/\/$/, "");
+  if (api.origin === "https://api.github.com" && !path)
+    return "https://github.com/" + repository + ".git";
+  if (path === "/api/v3") return api.origin + "/" + repository + ".git";
+  throw new Error();
+}
+
 async function main() {
   let language = languageOrDefault(undefined);
   let failure:
@@ -84,7 +114,8 @@ async function main() {
     | "cli.syncError"
     | "cli.exportError"
     | "cli.truncateError"
-    | "cli.truncateUnsupported" = "cli.usage";
+    | "cli.truncateUnsupported"
+    | "cli.truncateRemoteError" = "cli.usage";
   try {
     const { values, positionals } = parseArgs({
       allowPositionals: true,
@@ -92,6 +123,7 @@ async function main() {
         help: { type: "boolean", short: "h" },
         "github-id": { type: "string" },
         "confirm-repository": { type: "string" },
+        "remote-refs-only": { type: "boolean" },
         "env-file": { type: "string" },
         language: { type: "string" },
       },
@@ -112,6 +144,16 @@ async function main() {
         throw new Error();
       failure = "cli.config";
       if (values["env-file"]) process.loadEnvFile(values["env-file"]);
+      if (values["remote-refs-only"]) {
+        failure = "cli.truncateRemoteError";
+        const remote = configuredRemote();
+        if (remote !== confirmation || !isGitRemote(remote)) throw new Error();
+        if ((process.env.GIT_DATABASE_PROVIDER ?? "github") === "github")
+          await database().currentHead?.();
+        await truncateRemoteJournal(remote, confirmation);
+        console.log(t(language, "cli.truncatedRemote"));
+        return;
+      }
       const repository = process.env.GIT_DATABASE_REMOTE;
       failure = "cli.truncateUnsupported";
       if (
@@ -130,6 +172,7 @@ async function main() {
       !path ||
       positionals.length !== 2 ||
       values["confirm-repository"] !== undefined ||
+      values["remote-refs-only"] ||
       !values["github-id"]
     )
       throw new Error();
@@ -196,7 +239,9 @@ async function main() {
           ? "cli.conflict"
           : error instanceof PurgeIncomplete
             ? "cli.truncateIncomplete"
-            : failure,
+            : error instanceof RemoteTruncateUnverified
+              ? "cli.truncateRemoteUnverified"
+              : failure,
       ),
     );
     process.exitCode = 1;

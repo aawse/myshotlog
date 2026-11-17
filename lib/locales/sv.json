@@ -853,15 +853,18 @@
   "witness.viewSnapshot": "Visa resultaten som intygades",
   "details.calculationAge": "Ålder för poängberäkning",
   "print.scoringAge": "{age} år (referensår {year})",
-  "cli.usage": "Användning: npm run journal -- <sync|export> <fil.json> --github-id <id> [--env-file <sökväg>] [--language en|sv]\n            npm run journal -- truncate --confirm-repository <absolut sökväg> [--env-file <sökväg>] [--language en|sv]",
+  "cli.usage": "Användning: npm run journal -- <sync|export> <fil.json> --github-id <id> [--env-file <sökväg>] [--language en|sv]\n            npm run journal -- truncate --confirm-repository <absolut sökväg> [--env-file <sökväg>] [--language en|sv]\n       npm run journal -- truncate --remote-refs-only --confirm-repository <URL> [--env-file <sökväg>]",
   "cli.config": "Kontrollera Git-konfigurationen, tillåtet GitHub-ID och mappningen till journalägare.",
   "cli.syncError": "Synkningen misslyckades. Kontrollera JSON-filen, filstorleken och åtkomsten till datalagringen.",
   "cli.exportError": "Exporten misslyckades. Kontrollera åtkomst, gränsen på 32 MB och om målfilen redan finns.",
   "cli.scope": "De väntande ändringarna hör till en annan journal eller databaskonfiguration.",
   "cli.conflict": "Journalen har en konflikt. Granska väntande ändringar i webbappen eller försök exportera igen.",
   "cli.synced": "Synkningen är klar.",
-  "cli.truncateUnsupported": "Tömning kräver Git-providern och en absolut sökväg till ett lokalt bare-repository.",
+  "cli.truncateUnsupported": "För att rensa Git-lagringen krävs en absolut sökväg till ett lokalt bare-repository. Använd --remote-refs-only för att tömma fjärrreferenser.",
   "cli.truncateError": "Tömningen avbröts före radering. Kontrollera bekräftelsesökvägen och använd ett fristående bare-repository utan delad eller skyddad objektlagring.",
   "cli.truncateIncomplete": "Fullständig radering kunde inte verifieras. Viss data kan redan vara raderad. Håll åtkomsten till repositoryt stängd och kontrollera Git-lagringen innan du försöker igen.",
-  "cli.truncated": "Repositoryt har tömts. Inga Git-objekt finns kvar."
+  "cli.truncated": "Repositoryt har tömts. Inga Git-objekt finns kvar.",
+  "cli.truncateRemoteError": "Fjärrtömningen avbröts före push. Kontrollera den bekräftade URL:en, Git-behörighet och fjärrkonfigurationen.",
+  "cli.truncateRemoteUnverified": "Fjärrtömningen kunde inte verifieras. Kontrollera fjärrreferenser, skrivbehörighet och stöd för atomisk push innan du försöker igen.",
+  "cli.truncatedRemote": "Fjärrreferenserna har tömts. Servern kan fortfarande behålla äldre Git-objekt."
 }

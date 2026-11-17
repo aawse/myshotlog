@@ -853,15 +853,18 @@
   "witness.viewSnapshot": "Show the results that were signed",
   "details.calculationAge": "Age used for scoring",
   "print.scoringAge": "{age} years (reference year {year})",
-  "cli.usage": "Usage: npm run journal -- <sync|export> <file.json> --github-id <id> [--env-file <path>] [--language en|sv]\n       npm run journal -- truncate --confirm-repository <absolute path> [--env-file <path>] [--language en|sv]",
+  "cli.usage": "Usage: npm run journal -- <sync|export> <file.json> --github-id <id> [--env-file <path>] [--language en|sv]\n       npm run journal -- truncate --confirm-repository <absolute path> [--env-file <path>] [--language en|sv]\n       npm run journal -- truncate --remote-refs-only --confirm-repository <URL> [--env-file <path>]",
   "cli.config": "Check the Git configuration, allowed GitHub ID and journal owner mapping.",
   "cli.syncError": "Sync failed. Check the JSON file, its size and repository access.",
   "cli.exportError": "Export failed. Check repository access, the 32 MB limit and whether the destination already exists.",
   "cli.scope": "The pending changes belong to a different journal or database configuration.",
   "cli.conflict": "The journal has a conflict. Review pending changes in the web app or retry the export.",
   "cli.synced": "Sync complete.",
-  "cli.truncateUnsupported": "Truncate requires the Git provider and an absolute path to a local bare repository.",
+  "cli.truncateUnsupported": "Truncating Git storage requires an absolute path to a local bare repository. Use --remote-refs-only to truncate remote refs.",
   "cli.truncateError": "Truncate failed before deletion. Check the confirmation path and use a standalone bare repository with no shared or protected object storage.",
   "cli.truncateIncomplete": "Truncate could not verify a complete purge. Some data may already be deleted. Keep access to the repository stopped and check Git storage before retrying.",
-  "cli.truncated": "Repository truncated. No Git objects remain."
+  "cli.truncated": "Repository truncated. No Git objects remain.",
+  "cli.truncateRemoteError": "Remote truncate stopped before the push. Check the confirmed URL, Git credentials and remote configuration.",
+  "cli.truncateRemoteUnverified": "Remote truncate could not be verified. Check remote refs, write permissions and atomic push support before retrying.",
+  "cli.truncatedRemote": "Remote refs truncated. The server may still retain old Git objects."
 }

@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm, truncate, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import sharp from "sharp";
 import { afterEach, beforeEach, expect, it } from "vitest";
@@ -288,4 +288,66 @@ it("refuses to truncate without explicit confirmation, across targets, or on hos
     stderr: expect.stringContaining("before deletion"),
   });
   expect(await store.syncSnapshot()).toEqual(before);
+});
+
+it("truncates advertised remote refs with one empty root and keeps the configured and default branches usable", async () => {
+  const git = async (...args: string[]) =>
+    (await exec("git", ["--git-dir", remote, ...args])).stdout.trim();
+  const store = new GitJournalStore(db, owner);
+  const old = await store.mutate("profile", profile);
+  if (!old.head) throw new Error("Expected a commit");
+  await git("branch", "production", old.head);
+  await git("symbolic-ref", "HEAD", "refs/heads/production");
+  await git("branch", "archive", old.head);
+  await git("tag", "backup", old.head);
+  const url = pathToFileURL(remote).href;
+  const args = ["truncate", "--remote-refs-only", "--confirm-repository", url];
+  const config = { GIT_DATABASE_REMOTE: url };
+  const before = await git("show-ref");
+  await git("config", "receive.denyDeletes", "true");
+  await expect(journalCommand(args, config)).rejects.toMatchObject({
+    code: 1,
+    stderr: expect.stringContaining("could not be verified"),
+  });
+  expect(await git("show-ref")).toBe(before);
+  await git("config", "--unset", "receive.denyDeletes");
+  await journalCommand(args, config);
+  const head = await git("rev-parse", branch);
+  expect(await git("rev-parse", "HEAD")).toBe(head);
+  expect(await git("rev-list", "--all")).toBe(head);
+  expect(await git("ls-tree", "-r", head)).toBe("");
+  expect(await git("for-each-ref", "--format=%(refname)")).toBe(
+    "refs/heads/" + branch + "\nrefs/heads/production",
+  );
+  await git("cat-file", "-e", old.head);
+  await store.mutate("profile", profile);
+  expect(await git("rev-list", "--count", branch)).toBe("2");
+});
+
+it("rejects unconfirmed remote URLs and Git push URL redirects before modifying refs", async () => {
+  const store = new GitJournalStore(db, owner);
+  const before = await store.mutate("profile", profile);
+  const url = pathToFileURL(remote).href;
+  const other = pathToFileURL(join(workspace, "other.git")).href;
+  await expect(
+    journalCommand(
+      ["truncate", "--remote-refs-only", "--confirm-repository", other],
+      { GIT_DATABASE_REMOTE: url },
+    ),
+  ).rejects.toMatchObject({ code: 1 });
+  await expect(
+    journalCommand(
+      ["truncate", "--remote-refs-only", "--confirm-repository", url],
+      {
+        GIT_DATABASE_REMOTE: url,
+        GIT_CONFIG_COUNT: "1",
+        GIT_CONFIG_KEY_0: "url." + other + ".pushInsteadOf",
+        GIT_CONFIG_VALUE_0: url,
+      },
+    ),
+  ).rejects.toMatchObject({
+    code: 1,
+    stderr: expect.stringContaining("before the push"),
+  });
+  expect((await store.syncSnapshot()).head).toBe(before.head);
 });

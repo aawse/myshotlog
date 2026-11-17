@@ -273,7 +273,22 @@ npm run journal -- truncate --env-file .env.local --confirm-repository /ABSOLUTE
 
 Kommandot tömmer hela det lokala bare-repositoryt för alla användare, inklusive journaler, foton, synkkvittenser och säkerhetstillstånd. Det tar bort Git-referenser, refloggar och objekt och verifierar att objektlagret är tomt. Appen kan sedan använda samma repository igen. Vid ett fel efter att raderingen börjat kan en del data redan vara borta. Håll repositoryt offline och åtgärda Git-felet innan du kör om kommandot.
 
-Rotera `AUTH_SESSION_SECRET` och rensa webbläsarnas lokala journalcache och väntande köer innan appen startas igen. Hantera nedladdade filer, kloner och säkerhetskopior där de lagras. För GitHub och andra fjärrlagrade repositoryn behövs administratörsåtkomst till serverns lagring för att rensa historiken där.
+Rotera `AUTH_SESSION_SECRET` och rensa webbläsarnas lokala journalcache och väntande köer innan appen startas igen. Hantera nedladdade filer, kloner och säkerhetskopior där de lagras. Fullständig radering av Git-objekt på en fjärrserver kräver åtkomst till dess lagring.
+
+#### Töm ett fjärrrepository
+
+Stoppa appen och andra skrivare före körningen. Använd Git med en konfigurerad SSH-nyckel eller HTTPS-behörighet via en credential helper. För Git-providern anger du exakt samma URL som i `GIT_DATABASE_REMOTE`.
+
+```sh
+npm run journal -- truncate --env-file .env.local --remote-refs-only \
+  --confirm-repository ssh://git@example.com/srv/git/myshotlog-data.git
+```
+
+Med GitHub-providern bekräftar du repositoryts HTTPS-URL, exempelvis `https://github.com/OWNER/REPO.git`. CLI:t använder appens API-konfiguration för att kontrollera att repositoryt är privat. Git använder sin egen credential helper för pushen.
+
+Kommandot ersätter den konfigurerade databranchens historik och fjärrens standardbranch med samma tomma rotcommit. Övriga referenser som fjärren annonserar tas bort i samma atomiska push. Om servern saknar stöd för atomisk push eller avvisar någon uppdatering faller hela pushen. CLI:t kontrollerar referenserna igen efteråt. Följ samma anvisningar för sessionshemlighet och browser-cache som vid lokal tömning.
+
+`--remote-refs-only` bekräftar att servern kan behålla gamla Git-objekt, dolda referenser och säkerhetskopior. För permanent radering på en egen Git-server, kör den lokala varianten på servern mot repositoryts absoluta sökväg.
 
 ## Foton och passvillkor
 
