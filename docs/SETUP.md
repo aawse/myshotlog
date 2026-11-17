@@ -245,7 +245,7 @@ Git-backup bevarar även historiken:
 git clone --mirror REMOTE BACKUP_DIRECTORY
 ```
 
-Radering i appen tar bort aktuella journalposter men Git behåller äldre versioner och foton. Backups och kloner måste skyddas lika noggrant som originalet. Fullständig historikradering kräver separat repository-administration.
+Radering i appen tar bort aktuella journalposter men Git behåller äldre versioner och foton. Backups och kloner måste skyddas lika noggrant som originalet. För ett lokalt bare-repository kan Git-administratören tömma hela datalagret med journalverktyget.
 
 Behåll en framåtgående databranch och undvik force-push eller manuella filändringar under appskrivningar. Efter återställning av en backup eller säkerhetshistorik ska `AUTH_SESSION_SECRET` roteras, för att ogiltigförklara befintliga cookies och undvika återanvändning av återställt OAuth-tillstånd. GitHub API-gränser, trädstorlek och funktionernas körtid begränsar kapaciteten; installationen är avsedd för små personliga journaler.
 
@@ -262,6 +262,18 @@ npm run journal -- export journal.json --github-id 12345 --env-file .env.local
 En journalexport importeras atomärt och befintliga post-ID:n hoppas över. En fil med väntande ändringar spelas upp atomärt mot samma konto och Git-konfiguration som i webbläsaren. Redan kvitterade operationer hoppas över. Vid konflikt avvisas hela den återstående filen och ändringarna kan granskas i webbappens synkstatus.
 
 Exporten innehåller en journal med refererade foton och vittnesintyg. Importera filen från **Inställningar**. Båda kommandona har en filgräns på 32 MB. Exporten skapar en ny privat fil och avvisar en befintlig målfil. Förvara filerna privat.
+
+#### Töm lokal datalagring permanent
+
+Stoppa appen och övriga Git-processer som använder repositoryt innan du kör kommandot. Ange samma absoluta sökväg som i `GIT_DATABASE_REMOTE` (med `GIT_DATABASE_PROVIDER=git`).
+
+```sh
+npm run journal -- truncate --env-file .env.local --confirm-repository /ABSOLUTE/PATH/myshotlog-data.git
+```
+
+Kommandot tömmer hela det lokala bare-repositoryt för alla användare, inklusive journaler, foton, synkkvittenser och säkerhetstillstånd. Det tar bort Git-referenser, refloggar och objekt och verifierar att objektlagret är tomt. Appen kan sedan använda samma repository igen. Vid ett fel efter att raderingen börjat kan en del data redan vara borta. Håll repositoryt offline och åtgärda Git-felet innan du kör om kommandot.
+
+Rotera `AUTH_SESSION_SECRET` och rensa webbläsarnas lokala journalcache och väntande köer innan appen startas igen. Hantera nedladdade filer, kloner och säkerhetskopior där de lagras. För GitHub och andra fjärrlagrade repositoryn behövs administratörsåtkomst till serverns lagring för att rensa historiken där.
 
 ## Foton och passvillkor
 

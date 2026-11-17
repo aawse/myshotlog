@@ -58,6 +58,8 @@ Records-rutten tillåter 300 sekunder med Vercel Fluid compute på Hobby. Export
 
 Journalverktyget körs lokalt av den som har installationens Git-behörighet. Tillåtelselistan och ägarmappningen väljer journalen från ett uttryckligt GitHub-ID. Vanliga JSON-filer går genom samma importtransaktion som webbappen. Väntande ändringar kontrolleras mot samma browser-scope och spelas upp genom batchsynkningen med revisionskontroll och kvittenser. Exporten kontrollerar att journalposter och refererade foton lästs från samma Git-revision innan filen skapas.
 
+Journalverktygets `truncate` körs vid driftstopp mot den bekräftade absoluta sökvägen till ett fristående lokalt bare-repository. Git tar bort referenser i en transaktion, tömmer refloggar och rensar objekten. Verktyget rapporterar slutförd radering först när Git bekräftar att referenser och objekt är borta.
+
 CI kör tester, typkontroll och produktionsbygge på Ubuntu med Node.js 24. Lokal utveckling använder samma npm-kommandon på Windows, macOS och Linux. GitHub-adaptern behöver ingen Git-binär i driftruntimen, medan Git-adaptern och integrationstesterna behöver Git i PATH.
 
 ## Browser-cache och batchsynkning

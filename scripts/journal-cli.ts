@@ -1,6 +1,6 @@
 import { constants } from "node:fs";
 import { link, mkdtemp, open, rm, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import {
   allowedUsers,
@@ -20,6 +20,7 @@ import { browserScope, synchronize, SyncConflict } from "../lib/sync/server";
 import { TRANSFER_MAX_BYTES } from "../lib/transfer-limits";
 import { z } from "../lib/validation";
 import { validateSignoff } from "../lib/witness/store";
+import { PurgeIncomplete, truncateJournal } from "./truncate-journal";
 
 const pendingSchema = z
   .object({
@@ -78,14 +79,19 @@ async function writeBackup(path: string, contents: string) {
 async function main() {
   let language = languageOrDefault(undefined);
   let failure:
-    "cli.usage" | "cli.config" | "cli.syncError" | "cli.exportError" =
-    "cli.usage";
+    | "cli.usage"
+    | "cli.config"
+    | "cli.syncError"
+    | "cli.exportError"
+    | "cli.truncateError"
+    | "cli.truncateUnsupported" = "cli.usage";
   try {
     const { values, positionals } = parseArgs({
       allowPositionals: true,
       options: {
         help: { type: "boolean", short: "h" },
         "github-id": { type: "string" },
+        "confirm-repository": { type: "string" },
         "env-file": { type: "string" },
         language: { type: "string" },
       },
@@ -96,10 +102,34 @@ async function main() {
       return;
     }
     const [command, path] = positionals;
+    if (command === "truncate") {
+      const confirmation = values["confirm-repository"];
+      if (
+        positionals.length !== 1 ||
+        values["github-id"] !== undefined ||
+        !confirmation
+      )
+        throw new Error();
+      failure = "cli.config";
+      if (values["env-file"]) process.loadEnvFile(values["env-file"]);
+      const repository = process.env.GIT_DATABASE_REMOTE;
+      failure = "cli.truncateUnsupported";
+      if (
+        process.env.GIT_DATABASE_PROVIDER !== "git" ||
+        !repository ||
+        !isAbsolute(repository)
+      )
+        throw new Error();
+      failure = "cli.truncateError";
+      await truncateJournal(repository, confirmation);
+      console.log(t(language, "cli.truncated"));
+      return;
+    }
     if (
       (command !== "sync" && command !== "export") ||
       !path ||
       positionals.length !== 2 ||
+      values["confirm-repository"] !== undefined ||
       !values["github-id"]
     )
       throw new Error();
@@ -164,7 +194,9 @@ async function main() {
         language,
         error instanceof SyncConflict || error instanceof DatabaseConflict
           ? "cli.conflict"
-          : failure,
+          : error instanceof PurgeIncomplete
+            ? "cli.truncateIncomplete"
+            : failure,
       ),
     );
     process.exitCode = 1;

@@ -39,26 +39,27 @@ afterEach(async () => {
 });
 
 function run(command: string, path: string, githubId = "101") {
+  return journalCommand([command, path, "--github-id", githubId]);
+}
+
+function journalCommand(args: string[], config: Record<string, string> = {}) {
   const env = Object.fromEntries(
     Object.entries(process.env).filter(
       ([key]) => !key.startsWith("GIT_DATABASE_") && !key.startsWith("GITHUB_"),
     ),
   );
-  return exec(
-    process.execPath,
-    [cli, command, path, "--github-id", githubId, "--language", "en"],
-    {
-      env: {
-        ...env,
-        NODE_ENV: "test",
-        GIT_DATABASE_PROVIDER: "git",
-        GIT_DATABASE_REMOTE: remote,
-        GIT_DATABASE_BRANCH: branch,
-        GITHUB_ALLOWED_USER_IDS: "101,202",
-        GITHUB_USER_ID_MAP: JSON.stringify({ "101": owner }),
-      },
+  return exec(process.execPath, [cli, ...args, "--language", "en"], {
+    env: {
+      ...env,
+      NODE_ENV: "test",
+      GIT_DATABASE_PROVIDER: "git",
+      GIT_DATABASE_REMOTE: remote,
+      GIT_DATABASE_BRANCH: branch,
+      GITHUB_ALLOWED_USER_IDS: "101,202",
+      GITHUB_USER_ID_MAP: JSON.stringify({ "101": owner }),
+      ...config,
     },
-  );
+  });
 }
 
 it("merges a browser journal download idempotently and exports a reimportable, owner-only snapshot", async () => {
@@ -205,4 +206,86 @@ it("rejects malformed and oversized input and denies IDs outside the installatio
   await expect(run("export", output, "303")).rejects.toMatchObject({ code: 1 });
   await expect(readFile(output)).rejects.toMatchObject({ code: "ENOENT" });
   expect((await db.snapshot("myshotlog/v1")).head).toBeNull();
+});
+
+it("truncates every branch, tag, reflog and unreachable object in the confirmed local repository", async () => {
+  const git = async (...args: string[]) =>
+    (await exec("git", ["--git-dir", remote, ...args])).stdout.trim();
+  await git("config", "core.logAllRefUpdates", "true");
+  const store = new GitJournalStore(db, owner);
+  const first = await store.mutate("profile", profile);
+  await store.mutate("profile", { ...profile, displayName: "Replacement" });
+  if (!first.head) throw new Error("Expected a commit");
+  await git("branch", "archive", first.head);
+  await git("tag", "backup", first.head);
+  await git("symbolic-ref", "refs/remotes/origin/HEAD", "refs/heads/archive");
+  await git("update-ref", "--no-deref", "HEAD", first.head);
+  await git("repack", "-ad");
+  await git("branch", "unreachable", first.head);
+  await git("branch", "-D", "unreachable");
+  await writeFile(input, "Unreachable test object");
+  const orphan = await git("hash-object", "-w", input);
+  expect(await git("reflog", "show", branch)).toContain(first.head.slice(0, 7));
+  const args = ["truncate", "--confirm-repository", remote];
+  await journalCommand(args);
+  expect(await git("for-each-ref")).toBe("");
+  expect(await git("reflog", "show", "--all")).toBe("");
+  expect(await git("cat-file", "--batch-all-objects", "--batch-check")).toBe(
+    "",
+  );
+  await expect(git("cat-file", "-e", orphan)).rejects.toMatchObject({
+    code: 1,
+  });
+  expect(await git("symbolic-ref", "HEAD")).toBe("refs/heads/" + branch);
+  expect(await git("config", "core.logAllRefUpdates")).toBe("true");
+  await journalCommand(args);
+  await store.mutate("profile", profile);
+  expect(await git("rev-list", "--count", branch)).toBe("1");
+});
+
+it("refuses to truncate without explicit confirmation, across targets, or on hosted backends", async () => {
+  const store = new GitJournalStore(db, owner);
+  await store.mutate("profile", profile);
+  const before = await store.syncSnapshot();
+  const other = join(workspace, "other.git");
+  await exec("git", ["init", "--bare", other]);
+  await expect(journalCommand(["truncate"])).rejects.toMatchObject({ code: 1 });
+  await expect(
+    journalCommand(["truncate", "--confirm-repository", other]),
+  ).rejects.toMatchObject({
+    code: 1,
+    stderr: expect.stringContaining("before deletion"),
+  });
+  const args = ["truncate", "--confirm-repository", remote];
+  await expect(
+    journalCommand(args, { GIT_DATABASE_PROVIDER: "github" }),
+  ).rejects.toMatchObject({
+    code: 1,
+    stderr: expect.stringContaining("local bare repository"),
+  });
+  await expect(
+    journalCommand(args, {
+      GIT_DATABASE_REMOTE: "ssh://example.invalid/data.git",
+    }),
+  ).rejects.toMatchObject({
+    code: 1,
+    stderr: expect.stringContaining("local bare repository"),
+  });
+  const worktree = join(workspace, "worktree");
+  await exec("git", ["init", worktree]);
+  await expect(
+    journalCommand(
+      ["truncate", "--confirm-repository", join(worktree, ".git")],
+      { GIT_DATABASE_REMOTE: join(worktree, ".git") },
+    ),
+  ).rejects.toMatchObject({ code: 1 });
+  await writeFile(
+    join(remote, "objects", "info", "alternates"),
+    join(other, "objects") + "\n",
+  );
+  await expect(journalCommand(args)).rejects.toMatchObject({
+    code: 1,
+    stderr: expect.stringContaining("before deletion"),
+  });
+  expect(await store.syncSnapshot()).toEqual(before);
 });
