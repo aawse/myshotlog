@@ -55,12 +55,14 @@ kontrolleras mot serverns verkliga autentisering. Inga testundantag finns i appe
 ## CI och testdata
 
 Det separata arbetsflödet **UI tests** (`.github/workflows/ui-tests.yml`) kör
-UI-testerna på `ubuntu-latest` med Node.js 24, oberoende av **Tests**. Det körs vid
+UI-testerna på Ubuntu 24.04 med Node.js 24, oberoende av **Tests**. Det körs vid
 pull requests, push till `main` och manuellt via **Actions → UI tests → Run workflow**.
 Arbetsflödet bygger appen en gång med testsvitens publika
 bygginställningar. Produktionsbygget sparas utan Next.js byggcache och
-hämtas av sex parallella jobb. Varje jobb installerar sin webbläsarmotor
-och kör en Playwright-profil med två arbetare och en egen fiktiv journal.
+hämtas av sex parallella jobb. Varje jobb använder den versions- och
+digestlåsta Playwright-avbildningen med förinstallerade webbläsare och
+systembibliotek. Playwright-versionen ska matcha `package.json`. Jobbet kör en
+profil med två arbetare och en egen fiktiv journal.
 Om en profil misslyckas fortsätter de andra. HTML-rapport, skärmbilder och
 spår sparas per profil i sju dagar vid fel. Den samlade kontrollen
 **Desktop and mobile browser UI** godkänns när bygget och alla profiler

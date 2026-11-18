@@ -23,7 +23,7 @@ it("builds the UI fixture once and shares it across the independent browser matr
   const expectedProjects = [...config.matchAll(/name: "([^"]+)"/g)].map(
     ([, name]) => name,
   );
-  const matrixProjects = [...uiTests.matchAll(/- project: (\S+)/g)].map(
+  const matrixProjects = [...uiTests.matchAll(/^ {10}- (\S+)$/gm)].map(
     ([, name]) => name,
   );
   expect(matrixProjects.sort()).toEqual(expectedProjects.sort());
@@ -33,6 +33,15 @@ it("builds the UI fixture once and shares it across the independent browser matr
   expect(uiTests).toContain('VERCEL: "0"');
   expect(uiTests).toContain("tar --exclude=.next/cache");
   expect(uiTests).toContain("uses: actions/download-artifact@");
+  const playwrightVersion = readFileSync("package.json", "utf8").match(
+    /"@playwright\/test": "([^"]+)"/,
+  )?.[1];
+  expect(playwrightVersion).toBeDefined();
+  expect(uiTests).toContain(
+    `image: mcr.microsoft.com/playwright:v${playwrightVersion}-noble@sha256:`,
+  );
+  expect(uiTests).toMatch(/@sha256:[a-f0-9]{64}\n/);
+  expect(uiTests).not.toContain("playwright install");
   expect(uiTests).toContain('UI_SKIP_BUILD: "1"');
   expect(uiTests).toContain(
     'npm run test:ui -- --project="$PLAYWRIGHT_PROJECT"',

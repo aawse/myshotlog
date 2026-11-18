@@ -133,7 +133,8 @@ Playwright testar Chromium, Firefox och WebKit på dator samt webbläsarprofiler
 för Android, iPhone och iPad. Kör först `npm run test:ui:install` och sedan
 `npm run test:ui`. Det separata arbetsflödet **UI tests** kör samma tester på
 Ubuntu med Node.js 24, oberoende av **Tests**. Sex parallella webbläsarjobb delar
-ett produktionsbygge som använder testsvitens publika inställningar. Arbetsflödet
+ett produktionsbygge med testsvitens publika inställningar och körs i en låst
+Playwright-avbildning med förinstallerade webbläsare. Arbetsflödet
 startar vid pull requests, push till `main` och manuellt via
 **Actions → UI tests → Run workflow**, och sparar felrapporter i sju dagar. Testerna använder fiktiva lokala uppgifter; inga riktiga konton
 eller hemligheter behövs. Mobilprofiler är emulering; kamera, installation och

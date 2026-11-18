@@ -13,7 +13,7 @@ permissions:
 jobs:
   build:
     name: Build UI test application
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       VERCEL: "0"
@@ -54,24 +54,21 @@ jobs:
   ui:
     name: UI (${{ matrix.project }})
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - project: desktop-chromium
-            browser: chromium
-          - project: desktop-firefox
-            browser: firefox
-          - project: desktop-webkit
-            browser: webkit
-          - project: android-chrome
-            browser: chromium
-          - project: ios-safari
-            browser: webkit
-          - project: ipad-safari
-            browser: webkit
+        project:
+          - desktop-chromium
+          - desktop-firefox
+          - desktop-webkit
+          - android-chrome
+          - ios-safari
+          - ipad-safari
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
+      options: --ipc=host --init
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -96,12 +93,6 @@ jobs:
       - name: Extract production build
         run: tar -xzf ui-build.tar.gz
 
-      - name: Install browser and system libraries
-        timeout-minutes: 5
-        env:
-          PLAYWRIGHT_BROWSER: ${{ matrix.browser }}
-        run: npx playwright install --with-deps "$PLAYWRIGHT_BROWSER"
-
       - name: Test browser profile
         timeout-minutes: 5
         env:
@@ -124,7 +115,7 @@ jobs:
     name: Desktop and mobile browser UI
     needs: [build, ui]
     if: ${{ always() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Require the build and every browser profile to pass
