@@ -203,39 +203,12 @@ p {
   padding: var(--space-24);
   margin-bottom: var(--space-24);
 }
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-16);
-  margin-block: var(--space-24);
-}
-.stat {
-  position: relative;
-  display: grid;
-  gap: 9px;
-  padding: 21px 24px;
-}
-.stat > span {
-  font-size: 11px;
-  color: var(--muted);
-}
-.stat strong {
-  font-variant-numeric: tabular-nums;
-  font-size: 30px;
-  font-weight: var(--weight-body);
-  letter-spacing: -0.02em;
-}
-.stat small {
-  font-size: 10px;
-  color: var(--muted);
-}
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
   gap: var(--space-24);
   margin-bottom: var(--space-24);
 }
-.stats > .card,
 .dashboard-grid > .card,
 .firearm-grid > .card,
 .qualification-grid > .card,
@@ -735,21 +708,6 @@ progress {
   .hero-mark {
     font-size: 6px;
     right: 20px;
-  }
-  .stats {
-    gap: 8px;
-  }
-  .stat {
-    padding: 15px 12px;
-  }
-  .stat strong {
-    font-size: 25px;
-  }
-  .stat > span {
-    font-size: 10px;
-  }
-  .stat small {
-    font-size: 8px;
   }
   .dashboard-grid,
   .form-grid,
@@ -1658,7 +1616,6 @@ button > svg {
   .page-heading > .button {
     align-self: flex-start;
   }
-  .stats,
   .dashboard-grid,
   .firearm-grid,
   .qualification-grid,
@@ -1888,20 +1845,6 @@ summary {
 .journal-stats {
   margin-block: var(--space-32) var(--space-48);
 }
-.journal-stats .stat {
-  padding: 0;
-  gap: var(--space-4);
-  align-content: start;
-}
-.journal-stats .stat strong {
-  font-size: 44px;
-  font-weight: var(--weight-emphasis);
-  line-height: 1.1;
-}
-.journal-stats .stat span,
-.journal-stats .stat small {
-  font-size: 14px;
-}
 .journal-overview {
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   align-items: start;
@@ -1942,28 +1885,8 @@ summary {
   color: var(--muted);
   font-size: 12px;
 }
-.journal-latest {
-  display: grid;
-  gap: var(--space-12);
-  padding: var(--space-24);
-  border-radius: var(--radius-panel);
-  color: var(--white);
-  background: var(--green);
-  overflow-wrap: anywhere;
-}
 .journal-latest:hover {
   color: var(--white);
-}
-.journal-latest :is(h2, time) {
-  margin: 0;
-  color: inherit;
-}
-.journal-latest time {
-  font-size: 12px;
-}
-.journal-average strong {
-  font-size: 46px;
-  line-height: 1.1;
 }
 .journal-recent .table-scroll {
   background: var(--surface);
@@ -2009,9 +1932,6 @@ summary {
   .journal-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin: 0 0 var(--space-24);
-  }
-  .journal-stats .stat strong {
-    font-size: 32px;
   }
   .journal-topbar {
     padding-inline: max(var(--space-20), env(safe-area-inset-left, 0px))
@@ -2172,12 +2092,8 @@ summary {
 .private-app .sidebar .mobile-quick-link {
   display: none;
 }
-.journal-heading h1,
-.journal-latest h2 {
+.journal-heading h1 {
   font-weight: var(--weight-heading);
-}
-.journal-latest time {
-  text-transform: uppercase;
 }
 .journal-overview .chart {
   border: 0;

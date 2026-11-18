@@ -49,3 +49,6 @@ totalpoäng och snitt för poänggrenar samt antalet skott. Seriernas bedömning
 regelutgåvor och vittnesuppgifter finns kvar i passvyn.
 
 Valörerna visas som färgade textblock för guld, silver och brons. Passlistan visar också antalet serier per valör. Appen och demon använder samma färger.
+
+Journalens statistik och senaste pass delar CSS med webbplatsens illustration
+och demo. Illustrationens passlista använder samma valörblock.

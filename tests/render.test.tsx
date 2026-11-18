@@ -372,9 +372,9 @@ it("links the featured session and uses the same progress chart in the dedicated
     assessments: [],
   });
   const dashboard = renderToStaticMarkup(<Dashboard />);
-  expect(dashboard).toContain('class="journal-latest"');
+  expect(dashboard).toContain('class="journal-latest journal-feature"');
   expect(dashboard).toContain(`href="/sessions/${session.id}"`);
   const progress = renderToStaticMarkup(<Dashboard progress />);
   expect(progress).toContain('class="trend-chart"');
-  expect(progress).not.toContain('class="journal-latest"');
+  expect(progress).not.toContain('class="journal-latest journal-feature"');
 });

@@ -60,6 +60,55 @@ strong {
   flex: none;
 }
 
+.journal-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+.journal-stat-grid > * {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.journal-stat-grid strong {
+  color: var(--ink);
+  font-size: clamp(32px, 4vw, 44px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.journal-feature {
+  display: grid;
+  align-content: start;
+  gap: var(--space-12);
+  padding: var(--space-24);
+  border: 0;
+  border-radius: var(--radius-panel);
+  background: var(--green);
+  color: var(--white);
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+.journal-feature time {
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.journal-feature-title {
+  display: block;
+  margin: 0;
+  color: inherit;
+  font-size: 20px;
+  font-weight: var(--weight-heading);
+  line-height: 1.2;
+}
+.journal-feature-score {
+  font-size: clamp(36px, 4vw, 46px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
 [data-medal] {
   display: inline-flex;
   align-items: center;

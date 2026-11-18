@@ -75,7 +75,7 @@ export default function View({ progress = false }: { progress?: boolean }) {
           </Link>
         </div>
       </div>
-      <div className="stats journal-stats">
+      <div className="journal-stat-grid journal-stats">
         <section className="stat">
           <span>{tr("nav.sessions")}</span>
           <strong>{monthly.length.toLocaleString(locale)}</strong>
@@ -112,7 +112,10 @@ export default function View({ progress = false }: { progress?: boolean }) {
           <ProgressChart sessions={data.sessions} compact />
         </div>
         {latest && total && (
-          <Link className="journal-latest" href={`/sessions/${latest.id}/`}>
+          <Link
+            className="journal-latest journal-feature"
+            href={`/sessions/${latest.id}/`}
+          >
             <time dateTime={latest.date}>
               {new Intl.DateTimeFormat(locale, {
                 weekday: "short",
@@ -121,14 +124,17 @@ export default function View({ progress = false }: { progress?: boolean }) {
                 timeZone: "UTC",
               }).format(new Date(latest.date + "T12:00:00Z"))}
             </time>
-            <h2>{disciplineName(language, latest.discipline)}</h2>
+            <h2 className="journal-feature-title">
+              {disciplineName(language, latest.discipline)}
+            </h2>
             <span>
               {latest.location || tr("common.noLocation")}
               {distance != null && ` · ${distance} m`}
             </span>
             {average !== undefined && (
               <div className="journal-average">
-                <strong>{average}</strong> {tr("dashboard.average")}
+                <strong className="journal-feature-score">{average}</strong>{" "}
+                {tr("dashboard.average")}
               </div>
             )}
             <span>
