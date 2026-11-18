@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const design = JSON.parse(
   await readFile(new URL("../lib/brand/design.json", import.meta.url), "utf8"),
 );
-const { green, ink, gold } = design.colours;
+const { green, ink } = design.colours;
 const font = fontkit.create(
   await readFile(
     new URL("../lib/fonts/DidactGothic-Regular.ttf", import.meta.url),
@@ -26,13 +26,26 @@ const lettering = run.glyphs
   })
   .join("");
 const width = Math.ceil(advance * scale + 270);
-function mark(mono = false) {
-  const colour = mono ? "currentColor" : green;
-  return `<g fill="none" stroke="${colour}" stroke-width="9"><circle cx="128" cy="128" r="88"/><circle cx="128" cy="128" r="48"/></g><circle cx="128" cy="128" r="9" fill="${mono ? "currentColor" : gold}"/>`;
+const shotCenters = [
+  [-10, -4],
+  [-6, -9],
+  [-3, -3],
+  [1, 3],
+  [13, -5],
+];
+function mark(colour, x, y, scale) {
+  const cutouts = shotCenters
+    .map(([cx, cy]) => `<circle cx="${cx}" cy="${cy}" r="4.6" fill="#000"/>`)
+    .join("");
+  return `<g transform="translate(${x} ${y}) scale(${scale})"><defs><mask id="shot-group" maskUnits="userSpaceOnUse" x="-25" y="-25" width="50" height="50"><rect x="-25" y="-25" width="50" height="50" fill="#fff"/>${cutouts}</mask></defs><circle r="44" fill="none" stroke="${colour}" stroke-width="2.85"/><circle r="34" fill="none" stroke="${colour}" stroke-width="2"/><circle r="24" fill="${colour}" mask="url(#shot-group)"/></g>`;
 }
+await writeFile(
+  new URL("../public/redesign/target.svg", import.meta.url),
+  `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">${mark(green, 16, 16, 0.32)}</svg>\n`,
+);
 function svg(full, mono = false) {
   const w = full ? width : 256;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="256" viewBox="0 0 ${w} 256" role="img" aria-labelledby="title desc"><title id="title">MyShotLog</title><desc id="desc">A clean concentric target and precise centre dot, with a Didact Gothic MyShotLog wordmark.</desc>${mark(mono)}${full ? `<g fill="${mono ? "currentColor" : ink}" transform="translate(246 150)">${lettering}</g>` : ""}</svg>\n`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="256" viewBox="0 0 ${w} 256" role="img" aria-labelledby="title desc"><title id="title">MyShotLog</title><desc id="desc">A concentric target with four overlapping shot holes and one slightly apart.</desc>${mark(mono ? "currentColor" : green, 128, 128, full ? 2.3 : 2.56)}${full ? `<g fill="${mono ? "currentColor" : ink}" transform="translate(246 150)">${lettering}</g>` : ""}</svg>\n`;
 }
 for (const [name, full, mono] of [
   ["MyShotLog-logo", true, false],

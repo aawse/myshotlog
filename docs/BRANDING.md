@@ -17,3 +17,6 @@ The website checkout defaults to `../myshotlog-website`. To use a different chec
 When changing the font, regenerate its WOFF2 web file from the full TTF (preserving all glyphs) and update `font.file` and `font.webFile`. Update both root layouts' `next/font/local` declarations and the PDF route's `outputFileTracingIncludes` along with the design file. Verify the browser's loaded font and the embedded PDF font. Render Swedish and English samples, including a long session and witness sign-offs, to check pagination and readability.
 
 Medaljpaletten använder gult guld, ljust blågrått silver och rödbrun brons för tydlig skillnad mellan valörerna. Samma medaljfärger används i appen och webbplatsens demo; valörernas textetiketter behålls.
+
+Målikonen har två ringar och en fylld mitt med fem genomskinliga träffar.
+Fyra överlappar och den femte ligger strax utanför gruppen.

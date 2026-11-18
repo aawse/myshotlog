@@ -1,6 +1,6 @@
 # MyShotLog
 
-Personlig journal för skytte, träning och tävling, byggd med Next.js och React. Inloggning sker med GitHub-konton. Journalen lagras i ett **konfigurerbart privat Git-repository**, med en commit per sparad post. GitHub API används på Vercel; en Git-adapter finns för egen server och lokala bare repositories. Journalen visar guld, silver och brons som färgade textblock. Journalöversiktens visuella komponenter delas med webbplatsens förhandsvisning och demo.
+Personlig journal för skytte, träning och tävling, byggd med Next.js och React. Inloggning sker med GitHub-konton. Journalen lagras i ett **konfigurerbart privat Git-repository**, med en commit per sparad post. GitHub API används på Vercel; en Git-adapter finns för egen server och lokala bare repositories. Journalen visar guld, silver och brons som färgade textblock. Journalöversiktens visuella komponenter delas med webbplatsens förhandsvisning och demo. Appen och webbplatsen delar den nya målikonen med fem träffar.
 
 Journalens startsida visar månadens pass och skott. **Utveckling** öppnar jämförbara resultat över tid. På telefon finns huvudnavigeringen nedtill och inställningarna under **Mer**.
 

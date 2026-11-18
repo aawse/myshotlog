@@ -1,9 +1,1 @@
-<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="target icon">
-<g id="Group">
-<path id="Vector" d="M27 16C27 22.0751 22.0751 27 16 27C9.92487 27 5 22.0751 5 16C5 9.92487 9.92487 5 16 5C22.0751 5 27 9.92487 27 16Z" stroke-width="1.5" stroke="#244D3D"/>
-<path id="Vector_2" d="M22 16C22 19.3137 19.3137 22 16 22C12.6863 22 10 19.3137 10 16C10 12.6863 12.6863 10 16 10C19.3137 10 22 12.6863 22 16Z" stroke-width="1.5" stroke="#244D3D"/>
-</g>
-<path id="Vector_3" d="M16 17.2C16.6627 17.2 17.2 16.6627 17.2 16C17.2 15.3373 16.6627 14.8 16 14.8C15.3373 14.8 14.8 15.3373 14.8 16C14.8 16.6627 15.3373 17.2 16 17.2Z" fill="#BC9864"/>
-</g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><g transform="translate(16 16) scale(0.32)"><defs><mask id="shot-group" maskUnits="userSpaceOnUse" x="-25" y="-25" width="50" height="50"><rect x="-25" y="-25" width="50" height="50" fill="#fff"/><circle cx="-10" cy="-4" r="4.6" fill="#000"/><circle cx="-6" cy="-9" r="4.6" fill="#000"/><circle cx="-3" cy="-3" r="4.6" fill="#000"/><circle cx="1" cy="3" r="4.6" fill="#000"/><circle cx="13" cy="-5" r="4.6" fill="#000"/></mask></defs><circle r="44" fill="none" stroke="#244d3d" stroke-width="2.85"/><circle r="34" fill="none" stroke="#244d3d" stroke-width="2"/><circle r="24" fill="#244d3d" mask="url(#shot-group)"/></g></svg>
