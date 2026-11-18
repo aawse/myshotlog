@@ -4,21 +4,45 @@ import { expect, it } from "vitest";
 const tests = readFileSync(".github/workflows/tests.yml", "utf8");
 const uiTests = readFileSync(".github/workflows/ui-tests.yml", "utf8");
 
-it("runs browser tests independently from the unit and build checks", () => {
+it("builds the UI fixture once and shares it across the independent browser matrix", () => {
   for (const command of [
     "npm test",
     "npm run typecheck",
     "npm run format:check",
-    "npm run build",
   ]) {
     expect(tests).toContain(`run: ${command}\n`);
     expect(uiTests).not.toContain(`run: ${command}\n`);
   }
+  expect(tests).toContain("run: npm run build\n");
   expect(tests).not.toContain("test:ui");
   expect(tests).not.toContain("actions/upload-artifact@");
-  expect(uiTests).toContain("run: npm run test:ui:install\n");
-  expect(uiTests).toContain("run: npm run test:ui\n");
-  expect(uiTests).not.toMatch(/UI_SKIP_BUILD|needs:|workflow_run:/);
+  expect(uiTests.match(/run: npm run build\n/g)).toHaveLength(1);
+  expect(uiTests).toContain("needs: build");
+  expect(uiTests).toContain("fail-fast: false");
+  const config = readFileSync("playwright.config.ts", "utf8");
+  const expectedProjects = [...config.matchAll(/name: "([^"]+)"/g)].map(
+    ([, name]) => name,
+  );
+  const matrixProjects = [...uiTests.matchAll(/- project: (\S+)/g)].map(
+    ([, name]) => name,
+  );
+  expect(matrixProjects.sort()).toEqual(expectedProjects.sort());
+  const siteUrl = config.match(/NEXT_PUBLIC_SITE_URL: "([^"]+)"/)?.[1];
+  expect(siteUrl).toBeDefined();
+  expect(uiTests).toContain(`NEXT_PUBLIC_SITE_URL: ${siteUrl}\n`);
+  expect(uiTests).toContain('VERCEL: "0"');
+  expect(uiTests).toContain("tar --exclude=.next/cache");
+  expect(uiTests).toContain("uses: actions/download-artifact@");
+  expect(uiTests).toContain('UI_SKIP_BUILD: "1"');
+  expect(uiTests).toContain(
+    'npm run test:ui -- --project="$PLAYWRIGHT_PROJECT"',
+  );
+  expect(uiTests).not.toContain("workflow_run:");
+  expect(uiTests).toContain("name: Desktop and mobile browser UI");
+  expect(uiTests).toContain("needs: [build, ui]");
+  expect(uiTests).toContain(
+    'test "$BUILD_RESULT" = success && test "$UI_RESULT" = success',
+  );
 });
 
 it("keeps both workflows available for pull requests, main pushes and manual runs", () => {

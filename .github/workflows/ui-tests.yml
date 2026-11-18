@@ -11,10 +11,13 @@ permissions:
   contents: read
 
 jobs:
-  ui-tests:
-    name: Desktop and mobile browser UI
+  build:
+    name: Build UI test application
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
+    env:
+      VERCEL: "0"
+      NEXT_PUBLIC_SITE_URL: https://ui.myshotlog.test
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -28,21 +31,106 @@ jobs:
           cache: npm
 
       - name: Install dependencies
+        timeout-minutes: 4
         run: npm ci
 
-      - name: Install UI test browsers
-        run: npm run test:ui:install
+      - name: Build application
+        timeout-minutes: 6
+        run: npm run build
 
-      - name: Test desktop and mobile browser UI
-        run: npm run test:ui
+      - name: Package production build
+        run: tar --exclude=.next/cache -czf ui-build.tar.gz .next
+
+      - name: Upload production build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-test-production-build
+          path: ui-build.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
+          retention-days: 7
+
+  ui:
+    name: UI (${{ matrix.project }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: desktop-chromium
+            browser: chromium
+          - project: desktop-firefox
+            browser: firefox
+          - project: desktop-webkit
+            browser: webkit
+          - project: android-chrome
+            browser: chromium
+          - project: ios-safari
+            browser: webkit
+          - project: ipad-safari
+            browser: webkit
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        timeout-minutes: 4
+        run: npm ci
+
+      - name: Download production build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ui-test-production-build
+
+      - name: Extract production build
+        run: tar -xzf ui-build.tar.gz
+
+      - name: Install browser and system libraries
+        timeout-minutes: 5
+        env:
+          PLAYWRIGHT_BROWSER: ${{ matrix.browser }}
+        run: npx playwright install --with-deps "$PLAYWRIGHT_BROWSER"
+
+      - name: Test browser profile
+        timeout-minutes: 5
+        env:
+          UI_SKIP_BUILD: "1"
+          PLAYWRIGHT_PROJECT: ${{ matrix.project }}
+        run: npm run test:ui -- --project="$PLAYWRIGHT_PROJECT"
 
       - name: Save UI test failure reports
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ui-test-report
+          name: ui-test-report-${{ matrix.project }}-${{ github.run_attempt }}
           path: |
             playwright-report/
             test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  ui-tests:
+    name: Desktop and mobile browser UI
+    needs: [build, ui]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require the build and every browser profile to pass
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          UI_RESULT: ${{ needs.ui.result }}
+        run: |
+          printf 'Build: %s\nBrowser matrix: %s\n' "$BUILD_RESULT" "$UI_RESULT"
+          test "$BUILD_RESULT" = success && test "$UI_RESULT" = success
