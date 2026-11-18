@@ -54,6 +54,15 @@ it("builds the UI fixture once and shares it across the independent browser matr
   );
 });
 
+it("repairs the Firefox container's runner home ownership before testing", () => {
+  expect(uiTests).toContain(
+    `if: matrix.project == 'desktop-firefox'\n        run: chown "$(id -u):$(id -g)" /github/home`,
+  );
+  expect(uiTests.indexOf("/github/home")).toBeLessThan(
+    uiTests.indexOf("npm run test:ui --"),
+  );
+});
+
 it("keeps both workflows available for pull requests, main pushes and manual runs", () => {
   for (const workflow of [tests, uiTests]) {
     expect(workflow).toContain("  pull_request:\n");

@@ -93,6 +93,10 @@ jobs:
       - name: Extract production build
         run: tar -xzf ui-build.tar.gz
 
+      - name: Give Firefox ownership of the runner home mount
+        if: matrix.project == 'desktop-firefox'
+        run: chown "$(id -u):$(id -g)" /github/home
+
       - name: Test browser profile
         timeout-minutes: 5
         env:

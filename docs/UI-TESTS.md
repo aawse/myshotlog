@@ -62,7 +62,8 @@ bygginställningar. Produktionsbygget sparas utan Next.js byggcache och
 hämtas av sex parallella jobb. Varje jobb använder den versions- och
 digestlåsta Playwright-avbildningen med förinstallerade webbläsare och
 systembibliotek. Playwright-versionen ska matcha `package.json`. Jobbet kör en
-profil med två arbetare och en egen fiktiv journal.
+profil med två arbetare och en egen fiktiv journal. Firefox-jobbet justerar
+ägaren för GitHub Actions tillfälliga hemkatalog till containerns användare.
 Om en profil misslyckas fortsätter de andra. HTML-rapport, skärmbilder och
 spår sparas per profil i sju dagar vid fel. Den samlade kontrollen
 **Desktop and mobile browser UI** godkänns när bygget och alla profiler
