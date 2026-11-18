@@ -30,7 +30,7 @@ import {
   type Profile,
 } from "../models";
 import { assessmentSchema, parseImport } from "../portability";
-import { sessionSetup } from "../session-setup";
+import { nameLinkedSeries, sessionSetup } from "../session-setup";
 import { rules } from "../rules/catalog";
 import { evaluate } from "../rules/engine";
 import { evaluatePendingSeries, recordSeries } from "../rules/recorded";
@@ -445,7 +445,10 @@ export class GitJournalStore {
             sessionPayload = {
               ...sessionSetup(existing),
               revision: existing.revision + 1,
-              results: [...existing.results, ...quick.map((q) => q.result)],
+              results: [
+                ...existing.results,
+                ...quick.map((q) => ({ ...q.result, label: "" })),
+              ],
               notes: [existing.notes, ...quick.map((q) => q.notes)]
                 .filter(Boolean)
                 .join("\n"),
@@ -482,6 +485,12 @@ export class GitJournalStore {
             )
           )
             throw new InvalidRecord(swText("store.attachQuick"));
+          if (quick.length)
+            entry.results = nameLinkedSeries(
+              entry.results,
+              quick.map((q) => q.id),
+              records.profile.language,
+            );
           const existing = records.sessions.find((s) => s.id === entry.id);
           if (entry.revision !== (existing?.revision ?? 0) + 1)
             throw new DatabaseConflict();

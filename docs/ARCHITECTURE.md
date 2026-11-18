@@ -38,7 +38,7 @@ Journalen beräknar brons/silver/guld från råresultat med regelkatalogen för 
 
 Sparade födelseuppgifter från seriens underlag används när de finns; annars används profilen. Åldersavdrag baseras på året före passåret. Utan födelseuppgifter gäller ordinarie gränser. Automatisk märkesbedömning finns för precision och tillämpning; övriga grenar kan registreras. Se [regeltäckningen](RULES.md).
 
-Passet har gemensamt avstånd, måltyp, starttid och skjuttid. En snabbserie kan sparas utan pass och kopplas senare till samma datum och gren. Vapen kan ha en förvald gren för nya pass. Kaliber- och mållistor kommer från JSON-kataloger. Passlistan grupperar serier efter högsta uppnådda valör och visar även antal serier och skott.
+Passet har gemensamt avstånd, måltyp, starttid och skjuttid. En snabbserie sparas utan serienamn och kan kopplas senare till ett pass med samma datum och gren. Vid koppling får snabbserier och passets generiska serienamn nummer efter passets serieordning på profilspråket. Särskilda namn på befintliga passserier bevaras. När flera snabbserier väljs i appen läggs de till med den tidigast registrerade först. Äldre snabbserier och exporter med namn kan fortfarande läsas. Vapen kan ha en förvald gren för nya pass. Kaliber- och mållistor kommer från JSON-kataloger. Passlistan grupperar serier efter högsta uppnådda valör och visar även antal serier och skott.
 
 ## Export och drift
 

@@ -16,6 +16,7 @@ import {
   exportRecords,
   parseImport,
 } from "../lib/portability";
+import { applyOperation, sameTargets, targetsFor } from "../lib/sync/model";
 import { quickEntryInputSchema } from "../lib/models";
 import { profile, session } from "./fixtures";
 vi.mock("next/navigation", () => ({
@@ -74,10 +75,16 @@ const pass = { ...session, firearmId: null, firearmSnapshot: null };
 it("saves each unlinked series in one commit and makes retries idempotent", async () => {
   const { db, store } = setup(),
     q = quick();
-  await store.mutate("quick-entry", q);
+  const { label: _legacyLabel, ...result } = q.result;
+  await store.mutate("quick-entry", { ...q, result });
   await store.mutate("quick-entry", q);
   expect(db.commits).toHaveLength(1);
-  expect((await store.records()).quickEntries).toHaveLength(1);
+  expect((await store.records()).quickEntries?.[0].result).not.toHaveProperty(
+    "label",
+  );
+  expect(JSON.parse([...db.files.values()][0]).entry.result).not.toHaveProperty(
+    "label",
+  );
   await expect(
     store.mutate("quick-entry", { ...q, notes: "Changed" }),
   ).rejects.toBeInstanceOf(DatabaseConflict);
@@ -91,15 +98,30 @@ it("atomically links multiple series without duplication after a conflict", asyn
   await store.mutate("session", pass);
   await store.mutate("quick-entry", a);
   await store.mutate("quick-entry", b);
-  db.fail = true;
-  await store.mutate("attach-quick", {
-    ids: [a.id, b.id],
-    sessionId: pass.id,
-    revision: 1,
+  const before = await store.records();
+  const payload = { ids: [a.id, b.id], sessionId: pass.id, revision: 1 };
+  const projected = applyOperation(before, {
+    id: crypto.randomUUID(),
+    action: "attach-quick",
+    payload,
+    base: targetsFor("attach-quick", payload, before),
+    photos: [],
+    recording: {
+      recordedAt: "2026-10-10T12:00:00Z",
+      birthDate: null,
+      birthYear: null,
+    },
   });
+  db.fail = true;
+  await store.mutate("attach-quick", payload);
   const data = await store.records();
   expect(data.quickEntries).toEqual([]);
-  expect(data.sessions[0].results).toHaveLength(3);
+  expect(data.sessions[0].results.map(({ id, label }) => [id, label])).toEqual([
+    [pass.results[0].id, "Serie 1"],
+    [a.id, "Serie 2"],
+    [b.id, "Serie 3"],
+  ]);
+  expect(projected.sessions[0].results).toEqual(data.sessions[0].results);
   expect(data.sessions[0].revision).toBe(2);
   expect(data.sessions[0].notes).toContain(a.notes);
   expect(
@@ -113,6 +135,31 @@ it("atomically links multiple series without duplication after a conflict", asyn
       revision: 2,
     }),
   ).rejects.toBeInstanceOf(RecordNotFound);
+});
+it("preserves custom pass names and accepts legacy quick names in queued comparisons", async () => {
+  const { store } = setup();
+  const q = quick();
+  await store.mutate("profile", { ...profile, language: "en" });
+  await store.mutate("session", {
+    ...pass,
+    results: [{ ...pass.results[0], label: "Fictional warm-up" }],
+  });
+  await store.mutate("quick-entry", q);
+  const before = await store.records();
+  const payload = { ids: [q.id], sessionId: pass.id, revision: 1 };
+  const current = targetsFor("attach-quick", payload, before);
+  const latest = before.quickEntries?.[0];
+  expect(latest).toBeDefined();
+  const legacy = current.map((target) =>
+    target.kind === "quick-entry"
+      ? { ...target, value: { ...latest, result: q.result } }
+      : target,
+  );
+  expect(sameTargets(legacy, current)).toBe(true);
+  await store.mutate("attach-quick", payload);
+  expect(
+    (await store.records()).sessions[0].results.map((r) => r.label),
+  ).toEqual(["Fictional warm-up", "Series 2"]);
 });
 it("keeps unlinked entries intact for invalid dates, revisions and missing sessions", async () => {
   const { store } = setup(),
@@ -161,6 +208,10 @@ it("creates a new session using quick series and captures birth information at q
     ),
   ).toBe(true);
   expect(data.quickEntries).toEqual([]);
+  expect(data.sessions[0].results[0]).toMatchObject({
+    id: q.id,
+    label: "Serie 1",
+  });
   expect(data.sessions[0].results[0].seconds).toBeUndefined();
 });
 it("includes unlinked series and captured inputs in JSON backup and restore", async () => {
@@ -213,6 +264,7 @@ it("renders numeric quick entry controls and prefills a new pass without exposin
     <SessionForm firearms={[]} quickEntries={[q]} />,
   );
   expect(form).toContain('value="46"');
+  expect(form).toContain('value="Serie 1"');
   expect(form).toContain('value="2026-10-10"');
   expect(form).toContain("snabbserier kopplas");
 });

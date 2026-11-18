@@ -19,6 +19,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { disciplines, discipline } from "@/lib/disciplines";
 import type { Session, Firearm, Result, QuickEntry } from "@/lib/models";
 import {
+  nameLinkedSeries,
   sessionSetup,
   changeDiscipline,
   selectFirearm,
@@ -77,7 +78,8 @@ export function SessionForm({
             : undefined,
           program: quickEntries[0]
             ? quickEntries[0].discipline === "custom"
-              ? quickEntries[0].result.label
+              ? quickEntries[0].result.label ||
+                disciplineName(language, "custom")
               : quickEntries[0].presetId &&
                   programs.find((p) => p.id === quickEntries[0].presetId)
                 ? programName(
@@ -107,7 +109,11 @@ export function SessionForm({
             .filter(Boolean)
             .join("\n"),
           results: quickEntries.length
-            ? quickEntries.map((q) => q.result)
+            ? nameLinkedSeries(
+                quickEntries.map((q) => q.result),
+                quickEntries.map((q) => q.id),
+                language,
+              )
             : [entry(tr("common.seriesLabel") + " 1")],
           revision: 0,
         };
@@ -607,6 +613,7 @@ export function SessionForm({
                 {tr("session.resultName")}
                 <input
                   value={r.label}
+                  readOnly={quickEntries.some((q) => q.id === r.id)}
                   maxLength={120}
                   onChange={(e) => resultPatch(r.id, { label: e.target.value })}
                 />

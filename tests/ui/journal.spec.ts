@@ -134,6 +134,7 @@ test("quick entry survives temporary disconnection and synchronizes after reconn
   await expect(page.locator(".quick-series-row")).toHaveCount(1);
   await context.setOffline(false);
   await expect.poll(() => journal.records.quickEntries?.length).toBe(1);
+  expect(journal.records.quickEntries?.[0].result).not.toHaveProperty("label");
   await page.reload();
   await expect(page.locator(".quick-series-row")).toHaveCount(1);
   await expectLayout(page);

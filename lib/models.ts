@@ -13,7 +13,7 @@ export const dateSchema = z
   }, swText("validation.date"));
 const n = z.number().finite().nonnegative().max(1000000);
 const integer = n.int();
-export const resultSchema = z
+const resultFields = z
   .object({
     id: z.uuid(),
     label: text(120),
@@ -43,39 +43,43 @@ export const resultSchema = z
     conditionsConfirmed: z.unknown().optional(),
     evidence: z.unknown().optional(),
   })
-  .strict()
-  .superRefine((r, c) => {
-    if (r.shots === 0 && !r.dryFire && (!r.status || r.status === "completed"))
-      c.addIssue({
-        code: "custom",
-        path: ["shots"],
-        message: swText("validation.zeroShots"),
-      });
-    if (r.dryFire && r.shots !== 0)
-      c.addIssue({
-        code: "custom",
-        path: ["shots"],
-        message: swText("validation.dryShots"),
-      });
-    if (r.hits !== undefined && r.hits > r.shots)
-      c.addIssue({
-        code: "custom",
-        message: swText("validation.hits"),
-        path: ["hits"],
-      });
-    if (r.figures !== undefined && (r.hits === undefined || r.figures > r.hits))
-      c.addIssue({
-        code: "custom",
-        message: swText("validation.figures"),
-        path: ["figures"],
-      });
-    if (r.x !== undefined && r.x > r.shots)
-      c.addIssue({
-        code: "custom",
-        message: swText("validation.innerTens"),
-        path: ["x"],
-      });
-  });
+  .strict();
+function validateResult(
+  r: Omit<z.infer<typeof resultFields>, "label">,
+  c: z.RefinementCtx,
+) {
+  if (r.shots === 0 && !r.dryFire && (!r.status || r.status === "completed"))
+    c.addIssue({
+      code: "custom",
+      path: ["shots"],
+      message: swText("validation.zeroShots"),
+    });
+  if (r.dryFire && r.shots !== 0)
+    c.addIssue({
+      code: "custom",
+      path: ["shots"],
+      message: swText("validation.dryShots"),
+    });
+  if (r.hits !== undefined && r.hits > r.shots)
+    c.addIssue({
+      code: "custom",
+      message: swText("validation.hits"),
+      path: ["hits"],
+    });
+  if (r.figures !== undefined && (r.hits === undefined || r.figures > r.hits))
+    c.addIssue({
+      code: "custom",
+      message: swText("validation.figures"),
+      path: ["figures"],
+    });
+  if (r.x !== undefined && r.x > r.shots)
+    c.addIssue({
+      code: "custom",
+      message: swText("validation.innerTens"),
+      path: ["x"],
+    });
+}
+export const resultSchema = resultFields.superRefine(validateResult);
 export type Result = z.infer<typeof resultSchema>;
 export const firearmSchema = z
   .object({
@@ -350,16 +354,20 @@ export type Assessment = {
   createdAt: string;
   input: unknown;
 };
+export type QuickResult = z.infer<typeof quickResultSchema>;
+const quickResultSchema = resultFields
+  .extend({ label: resultFields.shape.label.optional() })
+  .superRefine(validateResult);
 const quickFields = {
   presetId: text(80).optional(),
   id: z.uuid(),
   date: dateSchema,
   discipline: z.enum(disciplineIds),
-  result: resultSchema,
+  result: quickResultSchema,
   notes: text(1000),
 };
 function validateQuick(
-  entry: { id: string; discipline: string; result: Result },
+  entry: { id: string; discipline: string; result: QuickResult },
   ctx: z.RefinementCtx,
 ) {
   if (entry.id !== entry.result.id)
@@ -402,7 +410,11 @@ function validateQuick(
 export const quickEntryInputSchema = z
   .object(quickFields)
   .strict()
-  .superRefine(validateQuick);
+  .superRefine(validateQuick)
+  .transform(({ result: { label: _legacyLabel, ...result }, ...entry }) => ({
+    ...entry,
+    result,
+  }));
 export const quickEntrySchema = z
   .object({
     ...quickFields,

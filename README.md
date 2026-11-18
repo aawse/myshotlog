@@ -13,7 +13,7 @@ Journalens startsida visar månadens pass och skott. **Utveckling** öppnar jäm
 - Pass med platsförslag, starttid och gemensamt avstånd, måltyp och skjuttid för serierna.
 - Resultat med brons-, silver- och guldmarkeringar för precision och tillämpning. A optisk bedöms enligt grupp A. Regelversion väljs efter passdatum; övriga grenar kan registreras utan automatisk märkesbedömning.
 - Födelsedatum i profilen för precisionens åldersavdrag. Sparade födelseuppgifter används när de finns i seriens underlag; annars används profilen.
-- Mobilanpassad **Snabbserie** som sparas direkt och senare kan kopplas till ett pass med samma datum och gren. Serien bedöms vid koppling. På passidan går det att bedöma serier som fortfarande saknar en bedömning.
+- Mobilanpassad **Snabbserie** som sparas utan serienamn och senare kan kopplas till ett pass med samma datum och gren. Vid koppling får serien ett namn utifrån sin plats i passet och bedöms. På passidan går det att bedöma serier som fortfarande saknar en bedömning.
 - Ett valfritt tavelfoto per serie. Välj en bild; formatet avgör automatiskt om den kan användas direkt eller behöver konverteras och optimeras i webbläsaren före uppladdning.
 - Lokal IndexedDB-cache med köade sparningar, batchsynkning, commit-kontroll och konfliktgranskning. En öppen app kan läsa och spara offline; synkstatus visar vad som nått GitHub och visar senaste synkfel och ger steg för att återuppta synkningen vid avbrott, avvisade ändringar och konflikter. I synkstatus kan du också ladda ned och ladda upp en säkerhetskopia av väntande pass och serier.
 - Konfigurerbar servercache och återanvändning av immutabla Git-blobbar för snabbare läsningar.

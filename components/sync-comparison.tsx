@@ -5,7 +5,7 @@ import {
   quickEntryInputSchema,
   quickEntrySchema,
   sessionSchema,
-  type Result,
+  type QuickResult,
 } from "@/lib/models";
 import { disciplineName, targetName } from "@/lib/i18n-domain";
 import type { MessageKey } from "@/lib/i18n";
@@ -42,7 +42,7 @@ function Fields({ fields }: { fields: Field[] }) {
   );
 }
 
-function Series({ result }: { result: Result }) {
+function Series({ result }: { result: QuickResult }) {
   const { tr } = useI18n();
   const fields: Field[] = [
     ["session.shots", result.shots],

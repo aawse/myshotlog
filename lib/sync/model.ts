@@ -16,7 +16,7 @@ import { witnessSchema } from "../witness/model";
 import { photoDraftSchema } from "../photos/schema";
 import { rules } from "../rules/catalog";
 import { evaluatePendingSeries, recordSeries } from "../rules/recorded";
-import { sessionSetup } from "../session-setup";
+import { nameLinkedSeries, sessionSetup } from "../session-setup";
 export const headSchema = z
   .string()
   .regex(/^[a-f0-9]{40}$/)
@@ -196,7 +196,18 @@ export function targetsFor(
   return keys.map((key) => ({ ...key, value: valueAt(data, key) }));
 }
 export function sameTargets(a: Target[], b: Target[]) {
-  return canonical(a) === canonical(b);
+  const comparable = (targets: Target[]) =>
+    targets.map((target) => {
+      if (target.kind !== "quick-entry") return target;
+      const parsed = quickEntrySchema.safeParse(target.value);
+      if (!parsed.success) return target;
+      const {
+        result: { label: _legacyLabel, ...result },
+        ...entry
+      } = parsed.data;
+      return { ...target, value: { ...entry, result } };
+    });
+  return canonical(comparable(a)) === canonical(comparable(b));
 }
 export function capturedProfile(
   profile: Profile,
@@ -286,7 +297,10 @@ export function applyOperation(data: Records, operation: Operation): Records {
       s = sessionSchema.parse({
         ...sessionSetup(existing),
         revision: existing.revision + 1,
-        results: [...existing.results, ...quick.map((q) => q.result)],
+        results: [
+          ...existing.results,
+          ...quick.map((q) => ({ ...q.result, label: "" })),
+        ],
         notes: [existing.notes, ...quick.map((q) => q.notes)]
           .filter(Boolean)
           .join("\n"),
@@ -303,6 +317,12 @@ export function applyOperation(data: Records, operation: Operation): Records {
       )
     )
       throw new Error("sync.missingDependency");
+    if (quick.length)
+      s.results = nameLinkedSeries(
+        s.results,
+        quick.map((q) => q.id),
+        next.profile.language,
+      );
     const existing = next.sessions.find((e) => e.id === s.id);
     if (existing && existing.firearmId === s.firearmId)
       s.firearmSnapshot = existing.firearmSnapshot;

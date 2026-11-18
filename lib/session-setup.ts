@@ -1,7 +1,29 @@
 import { suggestedRuleReference } from "./events/programs";
 import { swText, t, type Language } from "@/lib/i18n";
 import { discipline, type DisciplineId } from "./disciplines";
-import { sessionSchema, type Session, type Firearm } from "./models";
+import {
+  sessionSchema,
+  type Session,
+  type Firearm,
+  type QuickResult,
+} from "./models";
+export function nameLinkedSeries(
+  results: QuickResult[],
+  quickIds: readonly string[],
+  language: Language,
+): Session["results"] {
+  const linked = new Set(quickIds);
+  return results.map((result, index) => ({
+    ...result,
+    label:
+      linked.has(result.id) ||
+      !result.label ||
+      /^(Serie|Series)( \d+)?$/.test(result.label)
+        ? t(language, "event.series", { n: index + 1 })
+        : result.label,
+  }));
+}
+
 export function sessionSetup(initial: Session): Session {
   const session = { ...initial };
   for (const key of ["distance", "target", "seconds"] as const) {

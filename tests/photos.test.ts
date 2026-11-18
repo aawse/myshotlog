@@ -144,7 +144,10 @@ it("commits a photo and its series atomically, preserving it on quick-entry link
   expect(db.commits).toHaveLength(2);
   await store.mutate("session-with-quick", {
     ids: [id],
-    session: { ...pass, results: [before.quickEntries![0].result] },
+    session: {
+      ...pass,
+      results: [{ ...before.quickEntries![0].result, label: "Serie 1" }],
+    },
   });
   expect((await store.records()).sessions[0].results[0].photoId).toBe(photoId);
   expect(await store.photos()).toHaveLength(1);

@@ -15,7 +15,7 @@ import { useJournalRouter } from "./journal-navigation";
 import { Check, Trash2 } from "lucide-react";
 import { disciplineName } from "@/lib/i18n-domain";
 import { disciplines, discipline } from "@/lib/disciplines";
-import type { QuickEntry, Session, Result } from "@/lib/models";
+import type { QuickEntry, Session, QuickResult } from "@/lib/models";
 import { RedesignIcon } from "./redesign-icon";
 import { mutate } from "./mutate";
 export type QuickSummary = Pick<
@@ -45,7 +45,6 @@ export function QuickSeries({
   const [figures, setFigures] = useState("");
   const [x, setX] = useState("");
   const [notes, setNotes] = useState("");
-  const [label, setLabel] = useState("");
   const [elapsed, setElapsed] = useState("");
   const [dryFire, setDryFire] = useState(false);
   const [programId, setProgramId] = useState("");
@@ -93,7 +92,9 @@ export function QuickSeries({
   const pointsId = useId();
   const scoreInput = useRef<HTMLInputElement>(null);
   const kind = discipline(sport).kind;
-  const chosen = entries.filter((q) => selected.includes(q.id));
+  const chosen = entries
+    .filter((q) => selected.includes(q.id))
+    .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
   const matching = sessions.filter(
     (s) =>
       chosen.length > 0 &&
@@ -145,7 +146,6 @@ export function QuickSeries({
       figures,
       x,
       notes,
-      label,
       programId,
       programStage,
       stageUnit,
@@ -156,9 +156,8 @@ export function QuickSeries({
     if (pending.current?.key !== key)
       pending.current = { key, id: crypto.randomUUID() };
     const id = pending.current.id;
-    const result: Result = {
+    const result: QuickResult = {
       id,
-      label: label.trim() || selectedStage?.label || tr("common.seriesLabel"),
       ...(selectedStage
         ? {
             stageDistance: selectedStage.stageDistance,
@@ -209,7 +208,6 @@ export function QuickSeries({
       if (selectedStage && programStage + 1 < presetResults.length) {
         setProgramStage(programStage + 1);
         setShots(String(presetResults[programStage + 1].shots));
-        setLabel("");
       }
       scoreInput.current?.focus();
     }
@@ -244,7 +242,6 @@ export function QuickSeries({
                   setProgramId("");
                   setProgramStage(0);
                   setDryFire(false);
-                  setLabel("");
                   setElapsed("");
                   setShots(id === "application" ? "6" : "5");
                   setPoints("");
@@ -270,7 +267,6 @@ export function QuickSeries({
                   onChange={(e) => {
                     setProgramId(e.target.value);
                     setProgramStage(0);
-                    setLabel("");
                     const program = eventChoices.find(
                       (p) => p.id === e.target.value,
                     );
@@ -317,7 +313,6 @@ export function QuickSeries({
                       const i = Number(e.target.value);
                       setProgramStage(i);
                       setShots(String(presetResults[i].shots));
-                      setLabel("");
                     }}
                   >
                     {presetResults.map((r, i) => (
@@ -341,17 +336,6 @@ export function QuickSeries({
                 </label>
               )}
             </div>
-          )}
-          {sport === "custom" && (
-            <label>
-              {tr("session.customEvent")}
-              <input
-                required
-                value={label}
-                maxLength={120}
-                onChange={(e) => setLabel(e.target.value)}
-              />
-            </label>
           )}
           {(sport === "application" ||
             ["time", "dynamic", "open"].includes(kind)) && (
@@ -572,7 +556,7 @@ export function QuickSeries({
                 {q.result.photoId && (
                   <PhotoViewer
                     src={"/api/photos/" + q.result.photoId + "/"}
-                    label={q.result.label}
+                    label={tr("common.seriesLabel")}
                   />
                 )}
               </div>
