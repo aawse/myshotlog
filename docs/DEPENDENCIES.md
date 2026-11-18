@@ -1,5 +1,8 @@
 # Beroenden och uppdateringar
 
+Den 18 november 2026 kontrollerades alla direkta beroenden mot npm-registrets
+stabila `latest`-versioner. Lucide uppdaterades till 1.75.0 och Vitest till 5.1.1.
+
 Den 16 november 2026 uppdaterades de sju direkta beroenden som låg efter
 npm-registrets stabila `latest`-versioner. Exakta versioner finns i
 `package.json` och hela beroendeträdet låses i `package-lock.json`. Kör
