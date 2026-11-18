@@ -18,8 +18,9 @@ favicons match. Do not edit generated brand CSS independently.
 - Use the shared control/panel/overlay radius instead of introducing a new radius.
 - Keep page-heading actions aligned with their title on wide screens and aligned
   to the content edge when stacked. Avoid adding action margins inside headings.
-- Logo widths are 180 px, or 160 px in compact headers. Standalone login and
-  promotional presentations can use larger variants of the same asset.
+- Rubrikerna i appen och på webbplatsen använder samma 32 px målikon och
+  ordbild. För export och installation finns separata logofiler och ikoner
+  som genereras från samma färgpalett.
 - Mobile session rows keep the date, location, firearm, medals, series and shots
   visible. Detailed score tables may scroll within their own container.
 - Website marketing headings are larger than journal headings; inner website

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { useI18n } from "./language-provider";
+import { BrandLogo } from "./brand-logo";
 import { LoadingIndicator } from "./loading-indicator";
 import { WitnessReviewView } from "./witness-review";
 import type { WitnessReview, WitnessPhoto } from "@/lib/witness/model";
@@ -212,6 +213,7 @@ export function WitnessSigning() {
   }
   return (
     <main className="witness-page">
+      <BrandLogo />
       <header>
         <h1>{tr("witness.inviteTitle")}</h1>
         <label>

@@ -83,12 +83,6 @@ button:disabled {
   width: fit-content;
   max-width: 100%;
 }
-.brand-logo {
-  display: block;
-  width: var(--logo-width);
-  max-width: 100%;
-  height: auto;
-}
 .brand:focus-visible {
   outline: 2px solid var(--green);
   outline-offset: 5px;
@@ -103,7 +97,7 @@ button:disabled {
   align-items: center;
   gap: 13px;
   padding: 13px 12px;
-  color: #5c695e;
+  color: var(--muted);
   border-radius: var(--radius-control);
 }
 .sidebar nav a:hover {
@@ -140,7 +134,7 @@ button:disabled {
   padding: 0 44px;
   color: var(--muted);
   font-size: 12px;
-  background: #fafbf8;
+  background: var(--surface);
 }
 .content {
   max-width: 1280px;
@@ -166,7 +160,7 @@ button:disabled {
 h1 {
   font-size: 30px;
   letter-spacing: -0.02em;
-  font-weight: var(--weight-body);
+  font-weight: var(--weight-heading);
   margin: 0 0 9px;
   line-height: 1.2;
 }
@@ -203,7 +197,7 @@ p {
   margin: 0;
 }
 .card {
-  background: var(--white);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
   padding: var(--space-24);
@@ -265,17 +259,17 @@ p {
 .pill {
   display: inline-flex;
   align-items: center;
-  background: #f2f4ef;
+  background: var(--pale);
   padding: 5px 9px;
   border-radius: var(--radius-control);
   font-size: 10px;
   font-weight: 500;
-  color: #6c7965;
+  color: var(--muted);
   line-height: 1.5;
 }
 .pill.success {
-  background: #e7f2e9;
-  color: #2d6c42;
+  background: var(--pale);
+  color: var(--green);
 }
 .table-scroll {
   overflow: auto;
@@ -289,13 +283,13 @@ th {
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 1px;
-  color: #899084;
+  color: var(--muted);
   padding: 16px 10px;
   border-bottom: 1px solid var(--line);
 }
 td {
   padding: 18px 10px;
-  border-bottom: 1px solid #edf0e9;
+  border-bottom: 1px solid var(--line);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -333,11 +327,11 @@ tbody tr:last-child td {
 }
 .empty-target {
   font-size: 40px;
-  color: #a7b5a0;
+  color: var(--muted);
 }
 .chart-placeholder {
   font-size: 30px;
-  color: #b7c5ad;
+  color: var(--line);
   margin: 15px;
 }
 .chart label {
@@ -352,7 +346,7 @@ tbody tr:last-child td {
 }
 footer {
   padding: 0 44px 24px;
-  color: #969f92;
+  color: var(--muted);
   font-size: 9px;
   letter-spacing: 0.6px;
 }
@@ -381,7 +375,7 @@ textarea {
   width: 100%;
   min-width: 0;
   background: white;
-  border: 1px solid #dbe1d6;
+  border: 1px solid var(--line);
   border-radius: var(--radius-control);
   padding: 11px 12px;
   color: var(--ink);
@@ -392,7 +386,7 @@ textarea {
   resize: vertical;
 }
 :focus-visible {
-  outline: 2px solid #718e5f;
+  outline: 2px solid var(--green);
   outline-offset: 3px;
 }
 .form > button {
@@ -433,9 +427,9 @@ summary {
   padding: 8px 0;
 }
 .notice {
-  background: #eef2e9;
-  border: 1px solid #d8e0ce;
-  color: #566d45;
+  background: var(--pale);
+  border: 1px solid var(--line);
+  color: var(--green);
   padding: 15px 18px;
   border-radius: var(--radius-control);
   line-height: 1.7;
@@ -494,7 +488,7 @@ summary {
   position: relative;
 }
 .firearm-card > svg {
-  color: #94a786;
+  color: var(--muted);
   margin-bottom: 30px;
 }
 .firearm-card > .pill {
@@ -648,9 +642,6 @@ progress {
 .auth .brand {
   margin-bottom: 42px;
 }
-.auth .brand-logo {
-  width: 300px;
-}
 .auth h1 {
   font-size: 35px;
 }
@@ -713,9 +704,6 @@ progress {
     padding: 20px 18px 10px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
-  }
-  .sidebar .brand-logo {
-    width: var(--logo-width-compact);
   }
   .sidebar-bottom {
     display: none;
@@ -881,7 +869,7 @@ progress {
   background: white;
   border: 1px solid var(--line);
   border-radius: var(--radius-control);
-  box-shadow: 0 8px 22px #23332920;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--ink) 13%, transparent);
 }
 .location-suggestions button {
   width: 100%;
@@ -935,7 +923,7 @@ progress {
 }
 .quick-score input {
   border: 2px solid var(--green);
-  background: #f5f8f2;
+  background: var(--surface);
 }
 .quick-details {
   margin-top: 18px;
@@ -1022,7 +1010,7 @@ progress {
     min-height: 82px;
   }
   .quick-save {
-    box-shadow: 0 4px 18px #23332930;
+    box-shadow: 0 4px 18px color-mix(in srgb, var(--ink) 19%, transparent);
   }
   .quick-feedback {
     grid-row: 2;
@@ -1178,6 +1166,9 @@ progress {
   max-width: 850px;
   margin: 0 auto;
   padding: 24px 18px 48px;
+}
+.witness-page > .brand-lockup {
+  margin-bottom: var(--space-24);
 }
 .witness-page header {
   display: flex;
@@ -1353,7 +1344,7 @@ input[type="time"],
   color: #896a32;
 }
 .installation-error > svg {
-  color: #a63732;
+  color: var(--danger);
 }
 
 .issue-dialog,
@@ -1469,7 +1460,7 @@ body:has(.issue-dialog[open], .sync-dialog[open]) {
   border-radius: 24px;
   background: var(--white);
   color: var(--muted);
-  box-shadow: 0 2px 8px #23332914;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 8%, transparent);
   font-size: 12px;
   font-weight: var(--weight-body);
 }
@@ -1887,12 +1878,6 @@ summary {
   padding: max(var(--space-16), env(safe-area-inset-top, 0px)) var(--space-32)
     var(--space-16);
 }
-.journal-topbar .brand {
-  gap: var(--space-8);
-  color: var(--ink);
-  font-size: 23px;
-  font-weight: var(--weight-emphasis);
-}
 .private-app .shell {
   display: grid;
   grid-template: "header header" auto "sidebar workspace" 1fr / 232px minmax(
@@ -2099,7 +2084,7 @@ summary {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-overlay);
-    box-shadow: 0 6px 22px #1c2d2522;
+    box-shadow: 0 6px 22px color-mix(in srgb, var(--ink) 13%, transparent);
   }
   .mobile-journal-menu a,
   .mobile-journal-menu form {

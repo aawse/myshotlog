@@ -13,6 +13,10 @@ for (const language of ["sv", "en"] as const) {
     await expect(page.locator("html")).toHaveAttribute("lang", language);
     await page.waitForLoadState("networkidle");
     const login = await page.goto("/login/");
+    await expect(page.locator(".brand-lockup img")).toHaveAttribute(
+      "src",
+      "/redesign/target.svg",
+    );
     expect(login?.headers()["content-security-policy"]).toContain(
       "form-action 'self'",
     );

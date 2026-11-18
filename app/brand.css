@@ -27,8 +27,6 @@
   --space-48: 48px;
   --space-64: 64px;
   --control-height: 44px;
-  --logo-width: 180px;
-  --logo-width-compact: 160px;
   --weight-body: 400;
   --weight-heading: 600;
   --weight-emphasis: 600;
@@ -47,4 +45,17 @@ h4 {
 }
 strong {
   font-weight: var(--weight-emphasis);
+}
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--ink);
+  font-size: 23px;
+  font-weight: var(--weight-emphasis);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.brand-lockup img {
+  flex: none;
 }

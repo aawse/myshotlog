@@ -90,7 +90,7 @@ await sharp({
     { input: icon, left: 100, top: 315 },
     {
       input: Buffer.from(
-        '<svg width="1100" height="290"><rect width="1100" height="290" fill="${ink}"/></svg>',
+        `<svg width="1100" height="290"><rect width="1100" height="290" fill="${ink}"/></svg>`,
       ),
       left: 0,
       top: 450,
@@ -133,7 +133,12 @@ await writeFile(
 );
 const apple = await sharp(iconSvg).resize(140, 140).png().toBuffer();
 const appleCanvas = await sharp({
-  create: { width: 180, height: 180, channels: 3, background: "#f5f6f3" },
+  create: {
+    width: 180,
+    height: 180,
+    channels: 3,
+    background: design.colours.background,
+  },
 })
   .composite([{ input: apple, left: 20, top: 20 }])
   .png()

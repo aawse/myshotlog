@@ -1,16 +1,11 @@
 import { swText } from "@/lib/i18n";
-import Image from "next/image";
+import { RedesignIcon } from "./redesign-icon";
 
 export function BrandLogo() {
   return (
-    <Image
-      className="brand-logo"
-      src="/brand/MyShotLog-logo.svg"
-      alt={swText("brand.name")}
-      width={671}
-      height={256}
-      unoptimized
-      loading="eager"
-    />
+    <span className="brand-lockup">
+      <RedesignIcon name="target" />
+      {swText("brand.name")}
+    </span>
   );
 }

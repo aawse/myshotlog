@@ -4,6 +4,7 @@ import { UpdateNotice } from "./app-updates";
 import { useI18n } from "./language-provider";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { BrandLogo } from "./brand-logo";
 import { RedesignIcon } from "./redesign-icon";
 import { signOut } from "@/app/auth/actions";
 import { ShieldCheck } from "lucide-react";
@@ -120,7 +121,7 @@ export function PrivateShell({ children }: { children: React.ReactNode }) {
         >
           <header className="topbar journal-topbar">
             <Link href="/dashboard/" className="brand">
-              <RedesignIcon name="target" /> {tr("brand.name")}
+              <BrandLogo />
             </Link>
             <span className="private-tag">
               <ShieldCheck size={14} /> {tr("nav.onlyYou")}
