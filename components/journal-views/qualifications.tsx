@@ -62,8 +62,9 @@ export default function View({ q }: { q: { year?: string; group?: string } }) {
           );
           return (
             <section className="card" key={level}>
-              <span className={"medal " + level}>◎</span>
-              <h2>{tr(`level.${level}`)}</h2>
+              <h2>
+                <span data-medal={level}>{tr(`level.${level}`)}</span>
+              </h2>
               <p className="muted">{tr("qualifications.path")}</p>
               <label>
                 {tr("qualifications.precision")}{" "}

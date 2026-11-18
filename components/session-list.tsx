@@ -2,7 +2,7 @@
 import { useI18n } from "@/components/language-provider";
 import Link from "next/link";
 import { useState } from "react";
-import { Search, ArrowUpRight, Medal } from "lucide-react";
+import { Search, ArrowUpRight } from "lucide-react";
 import type { Session } from "@/lib/models";
 import { disciplineName } from "@/lib/i18n-domain";
 import { disciplines, discipline } from "@/lib/disciplines";
@@ -155,6 +155,7 @@ export function SessionList({
                         ).map(([level, label]) => (
                           <span
                             className={"series-medal " + level}
+                            data-medal={level}
                             key={level}
                             aria-label={tr("sessions.medalCount", {
                               p0: label,
@@ -165,7 +166,7 @@ export function SessionList({
                               p1: counts[level],
                             })}
                           >
-                            <Medal size={20} aria-hidden="true" />
+                            {label}
                             <strong>{counts[level]}</strong>
                           </span>
                         ))}

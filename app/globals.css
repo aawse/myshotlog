@@ -611,17 +611,6 @@ pre {
   padding: 12px;
   max-height: 300px;
 }
-.medal {
-  display: block;
-  font-size: 50px;
-  color: var(--medal-gold);
-}
-.medal.silver {
-  color: var(--medal-silver);
-}
-.medal.bronze {
-  color: var(--medal-bronze);
-}
 .qualification-grid label {
   margin: 18px 0;
 }
@@ -808,27 +797,9 @@ progress {
 
 .series-medals {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 15px;
-  white-space: nowrap;
-}
-.series-medal {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-variant-numeric: tabular-nums;
-}
-.series-medal strong {
-  color: var(--ink);
-}
-.series-medal.gold {
-  color: var(--medal-gold);
-}
-.series-medal.silver {
-  color: var(--medal-silver);
-}
-.series-medal.bronze {
-  color: var(--medal-bronze);
+  gap: var(--space-4);
 }
 
 .session-list-row {

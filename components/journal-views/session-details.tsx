@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { mutate } from "@/components/mutate";
 import { PhotoViewer } from "@/components/photo-viewer";
-import { Medal, CircleX, CircleHelp, ChevronDown } from "lucide-react";
+import { CircleX, CircleHelp, ChevronDown } from "lucide-react";
 import { JournalMissing } from "../journal-missing";
 import { witnessCurrent } from "@/lib/witness/model";
 import { BrowserWitnessPanel } from "@/components/browser-witness-panel";
@@ -254,36 +254,29 @@ export default function View({ id }: { id: string }) {
             const summary = (
               <>
                 <strong>
-                  <span className="calculation-grade">
-                    {medal ? (
-                      <span
-                        className={`series-medal ${medal}`}
-                        role="img"
-                        aria-label={tr("details.medalSeries", {
-                          level: tr(`level.${medal}`),
-                        })}
-                      >
-                        <Medal size={20} aria-hidden="true" />
-                      </span>
-                    ) : status === "not-met" ? (
-                      <span
-                        className="assessment-cross"
-                        role="img"
-                        aria-label={tr("details.gradeNotAchieved")}
-                      >
-                        <CircleX size={20} aria-hidden="true" />
-                      </span>
-                    ) : (
-                      <CircleHelp size={20} aria-hidden="true" />
-                    )}
-                    {medal
-                      ? tr(`level.${medal}`)
-                      : status === "not-met"
+                  {medal ? (
+                    <span
+                      className={`series-medal ${medal}`}
+                      data-medal={medal}
+                    >
+                      {tr(`level.${medal}`)}
+                    </span>
+                  ) : (
+                    <span className="calculation-grade">
+                      {status === "not-met" ? (
+                        <span className="assessment-cross" aria-hidden="true">
+                          <CircleX size={20} />
+                        </span>
+                      ) : (
+                        <CircleHelp size={20} aria-hidden="true" />
+                      )}
+                      {status === "not-met"
                         ? tr("details.gradeNotAchieved")
                         : status === "not-applicable"
                           ? labels["not-applicable"]
                           : labels["not-evaluated"]}
-                  </span>
+                    </span>
+                  )}
                   <span className="assessment-series-name">{result.label}</span>
                 </strong>
                 {points !== undefined && (

@@ -27,6 +27,13 @@ for (const language of ["sv", "en"] as const) {
     await expect(page.getByRole("table").getByRole("cell")).toHaveCount(4);
     const counts = page.locator(".series-medals").first();
     await expect(counts).toBeVisible();
+    await expect(counts.locator('[data-medal="gold"]')).toContainText(
+      t["level.gold"],
+    );
+    await expect(counts.locator('[data-medal="silver"]')).toHaveCSS(
+      "background-color",
+      "rgb(229, 235, 238)",
+    );
     if (isMobile) {
       const bounds = await counts.boundingBox();
       if (!bounds) throw new Error("Missing medal counts");

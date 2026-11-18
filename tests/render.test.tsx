@@ -196,7 +196,10 @@ it("shows the same highest grade and net points once per series in the merged li
   );
   expect(html).toContain("45 av minst 34 poäng");
   expect(html).not.toContain('class="series-medal bronze"');
-  expect(html).toContain('class="series-medal silver"');
+  expect(html).toContain(
+    'class="series-medal silver" data-medal="silver">Silver</span>',
+  );
+  expect(html).not.toContain("lucide-medal");
   expect(html).not.toContain('class="assessment-cross"');
   expect(html.match(/class="series-medal silver"/g)).toHaveLength(1);
   expect(html.match(/class="assessment"/g)).toHaveLength(1);

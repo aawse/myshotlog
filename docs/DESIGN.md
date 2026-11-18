@@ -47,3 +47,5 @@ Synkstatus och feedback har reserverad plats ovanför navigeringen.
 Snabbseriens poängfält går att skriva i och justera stegvis. Passvyn visar
 totalpoäng och snitt för poänggrenar samt antalet skott. Seriernas bedömningar,
 regelutgåvor och vittnesuppgifter finns kvar i passvyn.
+
+Valörerna visas som färgade textblock för guld, silver och brons. Passlistan visar också antalet serier per valör. Appen och demon använder samma färger.
