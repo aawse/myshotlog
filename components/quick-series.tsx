@@ -6,16 +6,17 @@ import {
 } from "@/lib/events/programs";
 import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
-import { useRef, useState, useMemo } from "react";
+import { useId, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import { PhotoViewer } from "./photo-viewer";
 import { TargetPhotoInput } from "./target-photo-input";
 import type { PhotoDraft } from "@/lib/photos/schema";
 import { useJournalRouter } from "./journal-navigation";
-import { Plus, Zap, Check, Trash2 } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { disciplineName } from "@/lib/i18n-domain";
 import { disciplines, discipline } from "@/lib/disciplines";
 import type { QuickEntry, Session, Result } from "@/lib/models";
+import { RedesignIcon } from "./redesign-icon";
 import { mutate } from "./mutate";
 export type QuickSummary = Pick<
   QuickEntry,
@@ -89,6 +90,7 @@ export function QuickSeries({
     key: string;
     id: string;
   } | null>(null);
+  const pointsId = useId();
   const scoreInput = useRef<HTMLInputElement>(null);
   const kind = discipline(sport).kind;
   const chosen = entries.filter((q) => selected.includes(q.id));
@@ -221,12 +223,6 @@ export function QuickSeries({
   return (
     <div className="quick-entry-layout">
       <form className="card quick-form" onSubmit={save}>
-        <div className="section-heading">
-          <h2>
-            <Zap size={20} /> {tr("quick.next")}
-          </h2>
-          <span className="pill">{tr("quick.atRange")}</span>
-        </div>
         <fieldset disabled={busy} className="quick-controls">
           <div className="quick-context">
             <label>
@@ -400,21 +396,65 @@ export function QuickSeries({
             </label>
             {sport !== "nordic-steel" &&
               ["points", "dynamic", "open"].includes(kind) && (
-                <label className="quick-score">
-                  {tr("session.points")}
-                  <input
-                    ref={scoreInput}
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    max={sport === "precision" ? Number(shots) * 10 : undefined}
-                    step="any"
-                    required={kind === "points"}
-                    placeholder="–"
-                    value={points}
-                    onChange={(e) => setPoints(e.target.value)}
-                  />
-                </label>
+                <div className="quick-score quick-points">
+                  <label htmlFor={pointsId}>{tr("session.points")}</label>
+                  <div className="quick-stepper">
+                    <button
+                      className="secondary"
+                      type="button"
+                      aria-label={tr("quick.decrease")}
+                      disabled={Number(points) <= 0}
+                      onClick={() =>
+                        setPoints(String(Math.max(0, Number(points) - 1)))
+                      }
+                    >
+                      <RedesignIcon name="minus" />
+                    </button>
+                    <input
+                      id={pointsId}
+                      ref={scoreInput}
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      max={
+                        sport === "precision" ? Number(shots) * 10 : undefined
+                      }
+                      step="any"
+                      required={kind === "points"}
+                      placeholder="–"
+                      value={points}
+                      onChange={(e) => setPoints(e.target.value)}
+                    />
+                    <button
+                      className="secondary"
+                      type="button"
+                      aria-label={tr("quick.increase")}
+                      disabled={
+                        sport === "precision" &&
+                        Number(points) >= Number(shots) * 10
+                      }
+                      onClick={() =>
+                        setPoints(
+                          String(
+                            Math.min(
+                              sport === "precision"
+                                ? Number(shots) * 10
+                                : Infinity,
+                              Number(points) + 1,
+                            ),
+                          ),
+                        )
+                      }
+                    >
+                      <RedesignIcon name="plus" />
+                    </button>
+                  </div>
+                  {sport === "precision" && Number(shots) > 0 && (
+                    <p className="muted quick-score-help">
+                      {tr("quick.scoreRange", { max: Number(shots) * 10 })}
+                    </p>
+                  )}
+                </div>
               )}
             {kind !== "points" && (
               <label className="quick-score">
@@ -436,30 +476,33 @@ export function QuickSeries({
                 />
               </label>
             )}
+            {kind === "points" && (
+              <label>
+                {tr("quick.innerTens")}
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  max={Number(shots)}
+                  step="1"
+                  value={x}
+                  onChange={(e) => setX(e.target.value)}
+                />
+              </label>
+            )}
           </div>
           <TargetPhotoInput
+            compact
             draft={photo}
             onChange={setPhoto}
             onBusyChange={setPhotoBusy}
             disabled={busy}
           />
           <details className="quick-details">
-            <summary>{tr("quick.more")}</summary>
+            <summary>
+              <RedesignIcon name="details-plus" /> {tr("quick.more")}
+            </summary>
             <div className="form-grid">
-              {kind === "points" && (
-                <label>
-                  {tr("quick.innerTens")}
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    max={Number(shots)}
-                    step="1"
-                    value={x}
-                    onChange={(e) => setX(e.target.value)}
-                  />
-                </label>
-              )}
               {kind === "field" && (
                 <label>
                   {tr("quick.figures")}
@@ -484,15 +527,15 @@ export function QuickSeries({
               </label>
             </div>
           </details>
-          <p className="muted">{tr("quick.sessionHelp")}</p>
           <button className="quick-save" disabled={busy || photoBusy}>
-            <Plus size={20} />{" "}
             {photoBusy
               ? tr("quick.optimizing")
               : busy
                 ? tr("common.saving")
                 : tr("quick.saveNext")}
+            <RedesignIcon name="forward" />
           </button>
+          <p className="muted">{tr("quick.sessionHelp")}</p>
         </fieldset>
       </form>
       <section className="card quick-inbox">

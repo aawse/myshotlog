@@ -12,7 +12,9 @@ export default function View() {
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">{tr("sessions.eyebrow")}</span>
+          <span className="eyebrow text-uppercase">
+            {tr("sessions.eyebrow")}
+          </span>
           <h1>{tr("nav.sessions")}</h1>
           <p>{tr("sessions.intro")}</p>
         </div>

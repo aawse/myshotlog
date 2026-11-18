@@ -34,3 +34,15 @@ long names, form fields, empty and populated views, navigation states, and open
 dialogs. Check that focus outlines, complete labels and controls remain visible,
 that no page-wide horizontal scrolling appears, and that nested grids do not add
 extra card margins. Also verify the website demo and setup/training pages.
+
+## Journalvyer
+
+Journalen visar månadens pass och skott enligt profilens tidszon, det senaste
+passet och en länk till passlistan. Utvecklingsvyn visar en linjegraf med en
+utfällbar tabell. På större skärmar finns navigeringen i sidopanelen. På telefon
+ligger den nedtill, med bland annat inställningar och utloggning under **Mer**.
+Synkstatus och feedback har reserverad plats ovanför navigeringen.
+
+Snabbseriens poängfält går att skriva i och justera stegvis. Passvyn visar
+totalpoäng och snitt för poänggrenar samt antalet skott. Seriernas bedömningar,
+regelutgåvor och vittnesuppgifter finns kvar i passvyn.

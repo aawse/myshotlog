@@ -20,9 +20,11 @@ import { summarize } from "@/lib/rules/engine";
 import { appliedAgeGroups, appliedRuleGroups } from "@/lib/rules/presentation";
 import { AssessmentBasis } from "@/components/assessment-basis";
 import { SessionPrint } from "@/components/session-print";
+import { RedesignIcon } from "@/components/redesign-icon";
+import { discipline } from "@/lib/disciplines";
 import { SessionActions } from "@/components/session-actions";
 export default function View({ id }: { id: string }) {
-  const { tr, language } = useI18n();
+  const { tr, language, locale } = useI18n();
   const [evaluating, setEvaluating] = useState(false);
   const [evaluationDone, setEvaluationDone] = useState(false);
   const [evaluationError, setEvaluationError] = useState("");
@@ -64,18 +66,36 @@ export default function View({ id }: { id: string }) {
     <>
       <div className="page-heading">
         <div>
+          <div className="journal-view-title">
+            <Link
+              className="button secondary"
+              href="/sessions/"
+              aria-label={tr("common.back")}
+            >
+              <RedesignIcon name="back" />
+            </Link>
+            <span>{tr("details.sessionHeading")}</span>
+          </div>
+          <time className="eyebrow" dateTime={s.date}>
+            {new Intl.DateTimeFormat(locale, {
+              dateStyle: "long",
+              timeZone: "UTC",
+            }).format(new Date(s.date + "T12:00:00Z"))}
+          </time>
           <h1>
+            {disciplineName(language, s.discipline)} ·{" "}
             {tr(
               s.context === "practice"
                 ? "session.practice"
                 : "session.competition",
-            )}{" "}
-            · <time dateTime={s.date}>{s.date}</time>
+            )}
           </h1>
-          <p>{s.location || tr("common.noLocation")}</p>
+          <p>
+            {s.location || tr("common.noLocation")}
+            {conditions.distance != null && ` · ${conditions.distance} m`}
+          </p>
         </div>
         <div className="actions">
-          <SessionPrint id={id} date={s.date} />
           <Link
             className="button secondary"
             href={"/sessions/" + id + "/edit/"}
@@ -131,6 +151,30 @@ export default function View({ id }: { id: string }) {
                 {tr("session.ruleReference")}: {s.ruleReference}
               </p>
             )}
+        </div>
+        <div className="session-metrics">
+          {discipline(s.discipline).kind === "points" &&
+            s.results.length > 0 && (
+              <>
+                <div>
+                  <strong>{total.points.toLocaleString(locale)}</strong>
+                  <span>{tr("session.points")}</span>
+                </div>
+                <div>
+                  <strong>
+                    {(total.points / s.results.length).toLocaleString(locale, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })}
+                  </strong>
+                  <span>{tr("details.average")}</span>
+                </div>
+              </>
+            )}
+          <div>
+            <strong>{total.shots.toLocaleString(locale)}</strong>
+            <span>{tr("session.shots")}</span>
+          </div>
         </div>
         <div className="session-rules">
           {ruleGroups.length ? (
@@ -393,6 +437,9 @@ export default function View({ id }: { id: string }) {
         results={s.results}
         signoffs={signoffs}
       />
+      <div className="actions session-download">
+        <SessionPrint id={id} date={s.date} />
+      </div>
       <SessionActions id={id} />
     </>
   );

@@ -2,6 +2,8 @@
 
 Personlig journal för skytte, träning och tävling, byggd med Next.js och React. Inloggning sker med GitHub-konton. Journalen lagras i ett **konfigurerbart privat Git-repository**, med en commit per sparad post. GitHub API används på Vercel; en Git-adapter finns för egen server och lokala bare repositories.
 
+Journalens startsida visar månadens pass och skott. **Utveckling** öppnar jämförbara resultat över tid. På telefon finns huvudnavigeringen nedtill och inställningarna under **Mer**.
+
 [![Tests](https://github.com/aawse/myshotlog/actions/workflows/tests.yml/badge.svg)](https://github.com/aawse/myshotlog/actions/workflows/tests.yml) [![UI tests](https://github.com/aawse/myshotlog/actions/workflows/ui-tests.yml/badge.svg)](https://github.com/aawse/myshotlog/actions/workflows/ui-tests.yml)
 
 ## Funktioner

@@ -360,3 +360,18 @@ it("keeps unassessed series expandable with all recorded result details", async 
   expect(html).not.toContain("<table");
   expect(html).not.toContain("<details open");
 });
+
+it("links the featured session and uses the same progress chart in the dedicated view", () => {
+  recordsFixture({
+    profile,
+    firearms: [firearm],
+    sessions: [session],
+    assessments: [],
+  });
+  const dashboard = renderToStaticMarkup(<Dashboard />);
+  expect(dashboard).toContain('class="journal-latest"');
+  expect(dashboard).toContain(`href="/sessions/${session.id}"`);
+  const progress = renderToStaticMarkup(<Dashboard progress />);
+  expect(progress).toContain('class="trend-chart"');
+  expect(progress).not.toContain('class="journal-latest"');
+});

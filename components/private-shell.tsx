@@ -3,18 +3,10 @@ import { UpdateProvider } from "./update-provider";
 import { UpdateNotice } from "./app-updates";
 import { useI18n } from "./language-provider";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BrandLogo } from "./brand-logo";
+import { usePathname, useSearchParams } from "next/navigation";
+import { RedesignIcon } from "./redesign-icon";
 import { signOut } from "@/app/auth/actions";
-import {
-  LayoutDashboard,
-  Zap,
-  NotebookPen,
-  Target,
-  Settings,
-  ShieldCheck,
-  BookOpen,
-} from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { JournalTools } from "./journal-tools";
 import { JournalScreens } from "./journal-screens";
 import { navigateJournal } from "./journal-navigation";
@@ -23,12 +15,74 @@ export function PrivateShell({ children }: { children: React.ReactNode }) {
   const { tr } = useI18n();
   const { state } = useJournalState();
   const path = (usePathname() ?? "").replace(/\/$/, "");
+  const search = useSearchParams();
+  const progress = path === "/dashboard" && search?.get("view") === "progress";
   const current = (section: string) =>
     path === section
       ? ("page" as const)
       : path.startsWith(section + "/")
         ? ("location" as const)
         : undefined;
+  const mainLinks = (
+    <>
+      <Link
+        href="/dashboard/"
+        aria-current={progress ? undefined : current("/dashboard")}
+      >
+        <RedesignIcon name="journal" /> {tr("nav.dashboard")}
+      </Link>
+      <Link href="/sessions/" aria-current={current("/sessions")}>
+        <RedesignIcon name="sessions" /> {tr("nav.sessions")}
+      </Link>
+      <Link
+        className="desktop-quick-link"
+        href="/quick/"
+        aria-current={current("/quick")}
+      >
+        <RedesignIcon name="plus" /> {tr("nav.quick")}
+      </Link>
+      <Link
+        href="/dashboard/?view=progress"
+        aria-current={progress ? "page" : undefined}
+      >
+        <RedesignIcon name="progress" /> {tr("nav.progress")}
+      </Link>
+    </>
+  );
+  const extraLinks = (
+    <>
+      <Link
+        className="mobile-quick-link"
+        href="/quick/"
+        aria-current={current("/quick")}
+      >
+        {tr("nav.quick")}
+      </Link>
+      <Link href="/firearms/" aria-current={current("/firearms")}>
+        <RedesignIcon name="equipment" /> {tr("nav.firearms")}
+      </Link>
+      <Link href="/qualifications/" aria-current={current("/qualifications")}>
+        {tr("nav.qualifications")}
+      </Link>
+      <Link href="/training/" aria-current={current("/training")}>
+        <RedesignIcon name="rules" /> {tr("training.title")}
+      </Link>
+      <Link href="/settings/" aria-current={current("/settings")}>
+        <RedesignIcon name="settings" /> {tr("nav.settings")}
+      </Link>
+    </>
+  );
+  const signOutForm = (
+    <form
+      action={signOut}
+      onSubmit={(event) => {
+        if (state.pending.length && !window.confirm(tr("sync.leavePending")))
+          event.preventDefault();
+      }}
+    >
+      <button className="text-button">{tr("nav.signOut")}</button>
+    </form>
+  );
   return (
     <UpdateProvider>
       <div className="private-app">
@@ -64,67 +118,52 @@ export function PrivateShell({ children }: { children: React.ReactNode }) {
             }
           }}
         >
-          <aside className="sidebar">
+          <header className="topbar journal-topbar">
             <Link href="/dashboard/" className="brand">
-              <BrandLogo />
+              <RedesignIcon name="target" /> {tr("brand.name")}
             </Link>
-            <div className="nav-caption">{tr("nav.caption")}</div>
-            <nav>
-              <Link href="/quick/" aria-current={current("/quick")}>
-                <Zap size={19} /> {tr("nav.quick")}
-              </Link>
-              <Link href="/dashboard/" aria-current={current("/dashboard")}>
-                <LayoutDashboard size={19} /> {tr("nav.dashboard")}
-              </Link>
-              <Link href="/sessions/" aria-current={current("/sessions")}>
-                <NotebookPen size={19} /> {tr("nav.sessions")}
-              </Link>
-              <Link href="/firearms/" aria-current={current("/firearms")}>
-                <Target size={19} /> {tr("nav.firearms")}
-              </Link>
-              <Link
-                href="/qualifications/"
-                aria-current={current("/qualifications")}
-              >
-                <ShieldCheck size={19} /> {tr("nav.qualifications")}
-              </Link>
-              <Link href="/training/" aria-current={current("/training")}>
-                <BookOpen size={19} /> {tr("training.title")}
-              </Link>
-              <Link href="/settings/" aria-current={current("/settings")}>
-                <Settings size={19} /> {tr("nav.settings")}
-              </Link>
+            <span className="private-tag">
+              <ShieldCheck size={14} /> {tr("nav.onlyYou")}
+            </span>
+          </header>
+          <aside className="sidebar">
+            <nav aria-label={tr("nav.caption")}>
+              {mainLinks}
+              {extraLinks}
             </nav>
             <div className="sidebar-bottom">
               <span className="private-tag">{tr("nav.private")}</span>
               <p>{tr("nav.motto")}</p>
-              <form
-                action={signOut}
-                onSubmit={(event) => {
-                  if (
-                    state.pending.length &&
-                    !window.confirm(tr("sync.leavePending"))
-                  )
-                    event.preventDefault();
-                }}
-              >
-                <button className="text-button">{tr("nav.signOut")}</button>
-              </form>
+              {signOutForm}
             </div>
           </aside>
           <div className="workspace">
-            <header className="topbar">
-              <span>{tr("nav.caption")}</span>
-              <span className="private-tag">
-                <ShieldCheck size={14} /> {tr("nav.onlyYou")}
-              </span>
-            </header>
             <main className="content">
               <UpdateNotice />
               <JournalScreens fallback={children} />
             </main>
             <footer>{tr("nav.footer")}</footer>
           </div>
+          <nav className="mobile-journal-nav" aria-label={tr("nav.caption")}>
+            {mainLinks}
+            <details key={path + String(progress)}>
+              <summary>
+                <RedesignIcon name="more" /> {tr("nav.more")}
+              </summary>
+              <div
+                className="mobile-journal-menu"
+                onClick={(event) => {
+                  if ((event.target as Element).closest("a"))
+                    event.currentTarget
+                      .closest("details")
+                      ?.removeAttribute("open");
+                }}
+              >
+                {extraLinks}
+                {signOutForm}
+              </div>
+            </details>
+          </nav>
         </div>
         <JournalTools />
       </div>

@@ -2,6 +2,8 @@
 import { useI18n } from "@/components/language-provider";
 import { useRecords } from "@/components/journal-provider";
 import { todayInTimezone } from "@/lib/models";
+import Link from "next/link";
+import { RedesignIcon } from "@/components/redesign-icon";
 import { QuickSeries } from "@/components/quick-series";
 export default function View() {
   const { tr } = useI18n();
@@ -11,8 +13,17 @@ export default function View() {
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">{tr("quick.atRange")}</span>
-          <h1>{tr("quick.heading")}</h1>
+          <div className="journal-view-title">
+            <Link
+              className="button secondary"
+              href="/dashboard/"
+              aria-label={tr("common.back")}
+            >
+              <RedesignIcon name="back" />
+            </Link>
+            <span>{tr("nav.quick")}</span>
+          </div>
+          <h1>{tr("quick.redesignHeading")}</h1>
           <p>{tr("quick.intro")}</p>
         </div>
       </div>

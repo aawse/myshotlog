@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/dashboard/",
     scope: "/",
     display: "standalone",
-    background_color: "#f6f8f5",
-    theme_color: "#315d43",
+    background_color: "#f4f4ee",
+    theme_color: "#244d3d",
     icons: [
       {
         src: "/brand/MyShotLog-app-192.png",

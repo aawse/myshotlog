@@ -68,7 +68,8 @@ export function JournalScreens({ fallback }: { fallback: React.ReactNode }) {
       </section>
     );
   let view: React.ReactNode = fallback;
-  if (path === "/dashboard") view = <Dashboard />;
+  if (path === "/dashboard")
+    view = <Dashboard progress={query.get("view") === "progress"} />;
   else if (path === "/sessions") view = <Sessions />;
   else if (path === "/sessions/new")
     view = <NewSession quick={query.get("quick") ?? undefined} />;

@@ -36,7 +36,7 @@ for (const language of ["sv", "en"] as const) {
     }
     await page.locator(".session-list-row .row-title").first().click();
     await expect(
-      page.locator('aside nav a[aria-current="location"]'),
+      page.locator('nav a[aria-current="location"]:visible'),
     ).toBeVisible();
     await expect(page.locator(".session-rules")).toContainText(
       t["rules.edition21"],
@@ -183,8 +183,9 @@ test("narrow screens retain usable navigation and results", async ({
   await page.locator(".assessment summary").first().click();
   await expect(page.locator(".assessment-basis").first()).toBeVisible();
   await expectLayout(page);
+  await page.locator(".mobile-journal-nav summary").click();
   await page
-    .locator("aside nav")
+    .locator(".mobile-journal-nav")
     .getByRole("link", { name: sv["nav.settings"], exact: true })
     .click();
   await expect(
@@ -230,7 +231,10 @@ for (const language of ["sv", "en"] as const) {
     await expect(first).toContainText("Serie 1");
     await expect(first).toContainText("46");
     await expect(first).not.toContainText("2026-10-10");
-    await expect(page.locator(".page-heading time")).toHaveText(session.date);
+    await expect(page.locator(".page-heading time")).toHaveAttribute(
+      "datetime",
+      session.date,
+    );
     const height = await rows
       .first()
       .evaluate((row) => row.getBoundingClientRect().height);
@@ -311,5 +315,44 @@ for (const language of ["sv", "en"] as const) {
     });
     await page.setViewportSize({ width: 320, height: 740 });
     await expectLayout(page);
+  });
+}
+
+for (const language of ["sv", "en"] as const) {
+  test(`redesigned journal navigation and score controls (${language})`, async ({
+    page,
+    journal,
+  }, testInfo) => {
+    const t = { sv, en }[language];
+    journal.setLanguage(language);
+    await page.goto("/dashboard/");
+    await expect(page.locator(".journal-latest")).toBeVisible();
+    await expectLayout(page);
+    await page.screenshot({
+      path: testInfo.outputPath(`journal-${language}.png`),
+    });
+    await page
+      .getByRole("link", { name: t["nav.progress"], exact: true })
+      .click();
+    await expect(page.locator(".trend-chart svg")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: t["nav.progress"], exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await page.goto("/quick/");
+    const score = page.getByRole("spinbutton", {
+      name: t["session.points"],
+      exact: true,
+    });
+    await score.fill("49");
+    const plus = page.getByRole("button", { name: t["quick.increase"] });
+    await plus.click();
+    await expect(score).toHaveValue("50");
+    await expect(plus).toBeDisabled();
+    await page.getByRole("button", { name: t["quick.decrease"] }).click();
+    await expect(score).toHaveValue("49");
+    await expectLayout(page);
+    await page.screenshot({
+      path: testInfo.outputPath(`quick-${language}.png`),
+    });
   });
 }

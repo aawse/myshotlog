@@ -26,8 +26,8 @@ it("has identical keys and placeholders in both JSON catalogs", () => {
   }
 });
 it("selects translated text and locale without interpreting user-entered text", () => {
-  expect(t("sv", "nav.dashboard")).toBe("Översikt");
-  expect(t("en", "nav.dashboard")).toBe("Dashboard");
+  expect(t("sv", "nav.dashboard")).toBe("Journal");
+  expect(t("en", "nav.dashboard")).toBe("Journal");
   expect(translator("en").locale).toBe("en-GB");
 });
 it("localizes generated assessment messages without translating interpolated content", async () => {

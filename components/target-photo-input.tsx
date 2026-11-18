@@ -3,18 +3,21 @@ import { localizeMessage } from "@/lib/i18n";
 import { useI18n } from "@/components/language-provider";
 import { useId, useRef, useState, useEffect } from "react";
 import { PhotoViewer } from "./photo-viewer";
+import { RedesignIcon } from "./redesign-icon";
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import { prepareTargetPhoto } from "@/lib/photos/client";
 import type { PhotoDraft } from "@/lib/photos/schema";
 export function TargetPhotoInput({
   photoId,
   draft,
+  compact = false,
   onChange,
   onBusyChange,
   disabled = false,
 }: {
   photoId?: string;
   draft?: PhotoDraft;
+  compact?: boolean;
   onChange: (draft?: PhotoDraft) => void;
   onBusyChange: (busy: boolean) => void;
   disabled?: boolean;
@@ -71,7 +74,8 @@ export function TargetPhotoInput({
           disabled={busy || disabled}
           onClick={() => camera.current?.click()}
         >
-          <Camera size={18} /> {tr("photo.take")}
+          {compact ? <RedesignIcon name="camera" /> : <Camera size={18} />}{" "}
+          {tr("photo.take")}
         </button>
         <button
           type="button"

@@ -6,14 +6,14 @@
     "webFile": "DidactGothic-Regular.woff2"
   },
   "colours": {
-    "background": "#f6f8f5",
-    "ink": "#233329",
-    "muted": "#647164",
-    "line": "#d9e0d9",
-    "green": "#315d43",
-    "pale": "#e9efe6",
+    "background": "#f4f4ee",
+    "ink": "#1c2d25",
+    "muted": "#606c63",
+    "line": "#d8ded5",
+    "green": "#244d3d",
+    "pale": "#e7ede4",
     "gold": "#bc9864",
-    "surface": "#fcfdfb",
+    "surface": "#fefefa",
     "white": "#ffffff",
     "danger": "#a44736",
     "medalGold": "#c59616",
@@ -21,13 +21,13 @@
     "medalBronze": "#a65f38"
   },
   "radius": {
-    "control": 4,
-    "panel": 4,
+    "control": 8,
+    "panel": 8,
     "overlay": 8
   },
   "weight": {
     "body": 400,
-    "heading": 400,
+    "heading": 600,
     "emphasis": 600
   },
   "spacing": [4, 8, 12, 16, 20, 24, 32, 48, 64],
